@@ -1,0 +1,26 @@
+{
+  "name": "round 1: hatch",
+  "run": "node .launchpad/checks/round-1/run.mjs",
+  "timeoutSeconds": 600,
+  "tests": [
+    "the same seed prints the same genome in two runs",
+    "every genome has the required fields, inside the rules' ranges",
+    "different seeds hatch different creatures",
+    "over 10,000 seeds: at least six species, each 2 % or more, all three affinities, and about one rare creature in 64",
+    "uppercase, surrounding spaces, repeated spaces and decomposed accents do not change the creature",
+    "seeds in any script, with digits, spaces, hyphens and apostrophes, hatch",
+    "a bad seed exits 2 with a reason on stderr and nothing on stdout",
+    "the built page loads offline with no error and reports ready with webgl2 or webgpu",
+    "?seed= opens that seed's creature, exactly the genome the command prints",
+    "typing a seed and pressing Enter hatches it and puts it in the address",
+    "a bad seed typed in the page shows a reason and keeps the creature",
+    "Random hatches another seed's creature, exactly the genome the command prints",
+    "the card shows the creature's name, species, affinity and stats",
+    "two seeds draw two different images",
+    "the scene is drawn in art pixels of 3 CSS pixels or more",
+    "Save GIF downloads an animated GIF: 12 frames or more, 64 colors at most, frames that differ",
+    "Save card downloads a PNG card of at least 300 × 300 pixels",
+    "the page requests nothing outside its own server",
+    "the built page works under a sub-path"
+  ]
+}
