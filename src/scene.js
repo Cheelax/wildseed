@@ -7,7 +7,8 @@ export const HATCH_SECONDS = 0.85;
 export function createScene(host) {
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, preserveDrawingBuffer: true });
   renderer.setPixelRatio(1); renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.BasicShadowMap;
-  renderer.domElement.dataset.testid = 'scene'; renderer.domElement.setAttribute('aria-label', 'Creature diorama. Drag to turn; tap to greet.');
+  renderer.domElement.dataset.testid = 'scene'; renderer.domElement.tabIndex = 0;
+  renderer.domElement.setAttribute('aria-label', 'Creature diorama. Drag or use left and right arrows to turn; tap or press Enter to greet.');
   renderer.domElement.style.imageRendering = 'pixelated'; host.append(renderer.domElement);
   const scene = new THREE.Scene(); scene.background = new THREE.Color('#dce7d2');
   const camera = new THREE.OrthographicCamera(-3, 3, 2.3, -2.3, 0.1, 30);
@@ -55,6 +56,10 @@ export function createScene(host) {
   });
   canvas.addEventListener('pointerup', (event) => { if (drag && Math.abs(event.clientX - drag.start) < 8) { reactionAt = currentTime; canvas.dispatchEvent(new CustomEvent('greet')); } drag = null; });
   canvas.addEventListener('pointercancel', () => { drag = null; });
+  canvas.addEventListener('keydown', (event) => {
+    if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') { event.preventDefault(); yaw += event.code === 'ArrowLeft' ? -0.2 : 0.2; }
+    if (event.code === 'Enter' || event.code === 'Space') { event.preventDefault(); reactionAt = currentTime; canvas.dispatchEvent(new CustomEvent('greet')); }
+  });
   return {
     canvas, pixel: PIXEL,
     hatch(genome, time) { if (creature) { scene.remove(creature.root); creature.dispose(); } creature = buildCreature(genome); scene.add(creature.root); hatchAt = time; yaw = 0; },
