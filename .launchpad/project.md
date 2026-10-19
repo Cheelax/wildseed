@@ -3,7 +3,7 @@ title: Wildseed
 payout: top3-60-25-15
 pick: creator-in-judging
 build_hours: 24
-reveal_hours: 6
+reveal_hours: 1
 rank_hours: 24
 ---
 
