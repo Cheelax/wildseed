@@ -31,7 +31,8 @@ export function genomeOf(seed) {
   const rare = next() % RARE_ONE_IN === 0;
   const starts = ['Lu', 'Mo', 'Bri', 'Pe', 'Ta', 'Fi', 'No', 'Wim', 'O', 'Za', 'Clo', 'Tu'];
   const ends = ['mble', 'flet', 'nook', 'belle', 'tini', 'lo', 'spri', 'mori', 'puff', 'dle', 'vi', 'nna'];
-  const name = starts[next() % starts.length] + ends[next() % ends.length];
+  const middles = ['va', 'mi', 'ra', 'ni', 'lu', 'fi', 'sa', 'mo', 'ta', 'le', 'ri', 'bo', 'da', 'na', 'wi', ''];
+  const name = starts[next() % starts.length] + middles[(hash >>> 16) % middles.length] + ends[next() % ends.length];
   const stats = Object.fromEntries(STATS.map((key) => [key, 40 + next() % 26]));
   const palette = [...palettes[affinity]];
   if (rare) { palette[1] = '#9569bd'; palette[2] = '#d7a6f3'; palette[3] = '#ffdb82'; }

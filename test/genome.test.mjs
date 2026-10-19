@@ -35,6 +35,11 @@ test('v1 moss fixture protects permanent creatures from call-order drift', () =>
     traits: { body: 87, ears: 95, tail: 96, eyes: 1, marking: 3, crest: 1, voice: 4, signature: '315f190c' } });
 });
 
+test('2000 words have more than 900 generated names, independently of the seed field', () => {
+  const names = new Set(Array.from({ length: 2000 }, (_, i) => genomeOf(`name-${i}`).name));
+  assert.ok(names.size > 900, `${names.size} distinct names`);
+});
+
 test('separate processes print identical genomes and batch errors emit no partial stdout', () => {
   const args = ['bin/hatch.mjs', 'moss', 'daniel', '東京'];
   const a = spawnSync(process.execPath, args, { encoding: 'utf8', env: { ...process.env, TZ: 'UTC', LANG: 'C' } });
