@@ -178,12 +178,12 @@ h1 em {
 .scene-wrap {
   width:100%;
   height:448px;
-  display:flex;
-  justify-content:center;
-  align-items:center
+  position:relative;
+  display:flow-root
 }
 .scene-wrap canvas {
   display:block;
+  position:absolute;
   image-rendering:pixelated;
   image-rendering:crisp-edges;
   touch-action:none;
@@ -779,7 +779,4 @@ dialog p:not(.eyebrow) {
     scroll-behavior:auto!important;
     transition:none!important
   }
-}
-.scene-wrap {
-  display:flow-root
 }

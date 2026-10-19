@@ -3,16 +3,19 @@ import { makeCreature, animateCreature, disposeObject } from './creature.js';
 
 const vertexShader = `varying vec2 vUv; void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`;
 const fragmentShader = `
-uniform sampler2D image; uniform sampler2D depth; uniform vec2 texel;
+uniform sampler2D image; uniform sampler2D depth; uniform vec2 texel; uniform float pixelSize;
 varying vec2 vUv;
 void main(){
-  vec3 color=texture2D(image,vUv).rgb;
-  float d=texture2D(depth,vUv).x;
+  // All output fragments in one art pixel read the exact same texel centre.
+  // This also keeps the outline one art pixel wide at any presentation size.
+  vec2 uv=(floor(gl_FragCoord.xy/pixelSize)+.5)*texel;
+  vec3 color=texture2D(image,uv).rgb;
+  float d=texture2D(depth,uv).x;
   float edge=0.;
-  edge=max(edge,texture2D(depth,vUv+vec2(texel.x,0.)).x-d);
-  edge=max(edge,texture2D(depth,vUv+vec2(0.,texel.y)).x-d);
-  edge=max(edge,texture2D(depth,vUv-vec2(texel.x,0.)).x-d);
-  edge=max(edge,texture2D(depth,vUv-vec2(0.,texel.y)).x-d);
+  edge=max(edge,texture2D(depth,uv+vec2(texel.x,0.)).x-d);
+  edge=max(edge,texture2D(depth,uv+vec2(0.,texel.y)).x-d);
+  edge=max(edge,texture2D(depth,uv-vec2(texel.x,0.)).x-d);
+  edge=max(edge,texture2D(depth,uv-vec2(0.,texel.y)).x-d);
   color=mix(color,vec3(.055,.085,.073),step(.018,edge)*.94);
   gl_FragColor=vec4(color,1.);
   #include <tonemapping_fragment>
@@ -24,6 +27,8 @@ export class HatchScene {
     this.canvas = canvas; this.onHello = onHello;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, preserveDrawingBuffer: true, powerPreference: 'low-power' });
     this.renderer.setPixelRatio(1);
+    // Hardware dithering must not introduce different RGB values inside a block.
+    const gl = this.renderer.getContext(); gl.disable(gl.DITHER);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.BasicShadowMap;
@@ -37,7 +42,7 @@ export class HatchScene {
     this.target.depthTexture.type = THREE.UnsignedIntType;
     this.postScene = new THREE.Scene();
     this.postCamera = new THREE.Camera();
-    this.post = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms: { image: { value: this.target.texture }, depth: { value: this.target.depthTexture }, texel: { value: new THREE.Vector2(1, 1) } } });
+    this.post = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms: { image: { value: this.target.texture }, depth: { value: this.target.depthTexture }, texel: { value: new THREE.Vector2(1, 1) }, pixelSize: { value: 1 } } });
     this.postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.post));
     this.scene.add(new THREE.HemisphereLight('#fff4d5', '#7c967b', 2.4));
     const sun = new THREE.DirectionalLight('#fff2d6', 3);
@@ -103,13 +108,25 @@ export class HatchScene {
     const width = Math.max(40, Math.floor(parent.clientWidth / pixel));
     const height = Math.max(40, Math.floor(parent.clientHeight / pixel));
     this.pixel = pixel; this.width = width; this.height = height;
-    this.renderer.setSize(width, height, false);
+    // Rasterize geometry at art resolution, then expand texels in WebGL into a
+    // CSS-sized framebuffer. The compositor receives a 1:1 image, not a small
+    // canvas that it must enlarge at a potentially fractional page position.
+    this.renderer.setSize(width * pixel, height * pixel, false);
     this.canvas.style.width = `${width * pixel}px`; this.canvas.style.height = `${height * pixel}px`;
-    this.canvas.style.marginLeft = `${Math.floor((parent.clientWidth - width * pixel) / 2)}px`;
-    this.canvas.style.marginTop = `${Math.floor((parent.clientHeight - height * pixel) / 2)}px`;
     this.target.setSize(width, height); this.post.uniforms.texel.value.set(1 / width, 1 / height);
+    this.post.uniforms.pixelSize.value = pixel;
+    this.alignCanvas();
     if (window.__wild) window.__wild.pixel = pixel;
     this.cameraFor(width / height);
+  }
+  alignCanvas() {
+    const parent = this.canvas.parentElement, rect = parent.getBoundingClientRect();
+    const x = rect.left + Math.floor((parent.clientWidth - this.width * this.pixel) / 2);
+    const y = rect.top + Math.floor((parent.clientHeight - this.height * this.pixel) / 2);
+    // Typography can place the whole panel at a fraction of a CSS pixel. Snap
+    // the canvas itself, so element screenshots start exactly on the art grid.
+    this.canvas.style.left = `${Math.ceil(x) - rect.left}px`;
+    this.canvas.style.top = `${Math.ceil(y) - rect.top}px`;
   }
   cameraFor(aspect, yaw = this.yaw, pitch = this.pitch) {
     const half = (aspect < 1 ? 2.8 : 2.35) / this.zoom;
@@ -120,6 +137,7 @@ export class HatchScene {
   }
   draw(time, hatchTime = time - this.hatchStart, exporting = false) {
     if (!this.creature || this.lost) return false;
+    if (!exporting) this.alignCanvas();
     const duration = this.reduced ? .3 : 1.25;
     const progress = Math.min(1, Math.max(0, hatchTime / duration));
     this.egg.visible = progress < 1;
@@ -182,12 +200,17 @@ export class HatchScene {
     const old = { width: this.width, height: this.height, zoom: this.zoom };
     this.width = this.height = size; this.zoom = 1;
     this.renderer.setSize(size, size, false); this.target.setSize(size, size); this.post.uniforms.texel.value.set(1 / size, 1 / size);
-    this.draw(time, hatchTime, true);
-    const capture = document.createElement('canvas'); capture.width = capture.height = size;
-    capture.getContext('2d').drawImage(this.canvas, 0, 0);
-    this.width = old.width; this.height = old.height; this.zoom = old.zoom;
-    this.renderer.setSize(old.width, old.height, false); this.target.setSize(old.width, old.height);
-    this.post.uniforms.texel.value.set(1 / old.width, 1 / old.height);
-    return capture;
+    this.post.uniforms.pixelSize.value = 1;
+    try {
+      this.draw(time, hatchTime, true);
+      const capture = document.createElement('canvas'); capture.width = capture.height = size;
+      capture.getContext('2d').drawImage(this.canvas, 0, 0);
+      return capture;
+    } finally {
+      this.width = old.width; this.height = old.height; this.zoom = old.zoom;
+      this.renderer.setSize(old.width * this.pixel, old.height * this.pixel, false); this.target.setSize(old.width, old.height);
+      this.post.uniforms.texel.value.set(1 / old.width, 1 / old.height);
+      this.post.uniforms.pixelSize.value = this.pixel;
+    }
   }
 }

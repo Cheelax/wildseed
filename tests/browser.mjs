@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, extname, sep } from 'node:path';
 import { chromium } from 'playwright-core';
 import { genomeOf, SPECIES } from '../src/genome.mjs';
+import { inspectPixelGrid, assertPixelGrid } from './pixel-grid.mjs';
 
 const out = resolve('.work/browser'); mkdirSync(out, { recursive: true });
 const root = resolve('dist');
@@ -20,8 +21,8 @@ const server = createServer((request, response) => {
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const url = `http://127.0.0.1:${server.address().port}/`;
 const browser = await chromium.launch({ headless: true, args: ['--no-sandbox', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-const observations = { scenarios: [], errors: [], external: [], warnings: [], consoleErrors: [] };
-const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1, acceptDownloads: true });
+const observations = { scenarios: [], errors: [], external: [], warnings: [], consoleErrors: [], pixelGrids: [] };
+const context = await browser.newContext({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1, acceptDownloads: true });
 const page = await context.newPage();
 page.on('pageerror', (e) => observations.errors.push(e.message));
 page.on('console', (msg) => { if (msg.type() === 'error') observations.consoleErrors.push(msg.text()); else if (msg.type() === 'warning') observations.warnings.push(msg.text()); });
@@ -34,11 +35,33 @@ async function hatch(seed) {
   await page.getByTestId('seed-input').fill(seed); await page.getByTestId('seed-input').press('Enter'); await ready(seed);
 }
 async function scenario(name, fn) { await fn(); observations.scenarios.push(name); console.log(`PASS ${name}`); }
+async function checkPixels(label) {
+  // Match the official screenshot path, including its scroll-into-view behavior.
+  const png = await page.getByTestId('scene').screenshot({ path: `${out}/pixel-grid-${label}.png`, timeout: 30000 });
+  const geometry = await page.getByTestId('scene').evaluate((canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    return { x: rect.x, y: rect.y, width: rect.width, height: rect.height, bufferWidth: canvas.width, bufferHeight: canvas.height, pixel: window.__wild.pixel, data: canvas.toDataURL('image/png') };
+  });
+  const { data, ...dimensions } = geometry;
+  const screenshot = inspectPixelGrid(png, geometry.pixel);
+  const framebuffer = inspectPixelGrid(Buffer.from(data.split(',')[1], 'base64'), geometry.pixel);
+  observations.pixelGrids.push({ label, dimensions, screenshot, framebuffer });
+  assertPixelGrid(screenshot, `${label} screenshot`);
+  assertPixelGrid(framebuffer, `${label} framebuffer`, 1);
+  for (const coordinate of [geometry.x, geometry.y]) assert.ok(Math.abs(coordinate - Math.round(coordinate)) < .01, `${label}: fractional canvas origin ${coordinate}`);
+  assert.equal(geometry.bufferWidth, geometry.width, `${label}: compositor must not enlarge the canvas`);
+  assert.equal(geometry.bufferHeight, geometry.height);
+  assert.equal(screenshot.width, geometry.width); assert.equal(screenshot.height, geometry.height);
+  console.log(`PIXELS ${label}: screenshot ${(screenshot.share * 100).toFixed(2)}%, framebuffer ${(framebuffer.share * 100).toFixed(2)}%`);
+}
 try {
   await page.goto(`${url}?seed=moss`); await ready('moss');
   await scenario('desktop first hatch and honest renderer', async () => {
     assert.equal(await page.evaluate(() => window.__wild.renderer), 'webgl2');
     await page.screenshot({ path: `${out}/desktop.png`, fullPage: true });
+  });
+  await scenario('official art-pixel condition at 1280 × 720 for moss and pebble', async () => {
+    for (const seed of ['moss', 'pebble']) { await hatch(seed); await page.waitForTimeout(1500); await checkPixels(seed); }
   });
   await scenario('six archetypes and rare variant', async () => {
     const examples = new Map(); let rare;
@@ -67,6 +90,7 @@ try {
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
     await page.mouse.move(box.x + box.width / 2 + 150, box.y + box.height / 2 + 30, { steps: 12 }); await page.mouse.up();
     await page.waitForTimeout(200); await page.getByTestId('scene').screenshot({ path: `${out}/rotated.png` });
+    await checkPixels('rotated');
     await page.locator('#reset-camera').click(); await page.locator('#hello').click();
     await page.locator('#sound').click(); assert.equal(await page.locator('#sound').getAttribute('aria-pressed'), 'true');
   });
@@ -90,6 +114,8 @@ try {
     const card = await download; await card.saveAs(`${out}/moss-card.png`);
     observations.gifBytes = readFileSync(`${out}/moss.gif`).length;
     observations.cardBytes = readFileSync(`${out}/moss-card.png`).length;
+    await page.waitForFunction(() => !document.querySelector('[data-testid="save-card"]').disabled);
+    await checkPixels('after-exports');
   });
   await scenario('phone, tablet and narrow viewport have no horizontal overflow', async () => {
     for (const [width, height] of [[390, 844], [768, 1024], [320, 740]]) {
@@ -97,8 +123,10 @@ try {
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
       assert.equal(overflow, false, `overflow at ${width}px`);
       await page.screenshot({ path: `${out}/responsive-${width}.png`, fullPage: true });
+      await checkPixels(`responsive-${width}`);
     }
-    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.waitForTimeout(300); await checkPixels('desktop-restored');
   });
   await scenario('twenty random words remain distinct from the preceding seed', async () => {
     for (let i = 0; i < 20; i++) {

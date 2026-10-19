@@ -54,8 +54,10 @@ render their own timeline in the browser. Camera changes and a greeting do not c
   with bounded shape parameters, facial geometry and species animations. Golden variants have a crown
   and a distinct palette. All creature assets are generated at runtime.
 - `src/scene.js`: Three.js WebGL 2, orthographic orbit camera, toon gradient, shadows, low-resolution
-  color/depth render target and a one-texel depth-edge outline. Canvas dimensions are integer multiples
-  of the CSS art pixel; the drawing buffer does not multiply with device pixel ratio.
+  color/depth render target and a one-texel depth-edge outline. The final WebGL pass repeats each art
+  texel into a CSS-sized framebuffer, with hardware dithering disabled. The canvas has a 1:1 CSS/backing
+  size and its origin is snapped to whole CSS pixels, including when surrounding text has fractional
+  line heights. Device pixel ratio does not change the art resolution.
 - `src/audio.js`: short envelopes and pitch sequences derived from the genome, activated by user gestures.
 - `src/export.js`, `src/gif.mjs`: PNG composition and indexed GIF encoding. GIF uses median-cut palette
   reduction, no dithering and frequent LZW dictionary resets to bound memory. The tradeoff is a larger
@@ -77,6 +79,10 @@ The second command needs the Chromium supplied by the pinned runner. The officia
 `tests/browser.mjs` performs additional functional and visual review of all six species, a rare variant,
 camera/keyboard controls, greeting, storage/reload, rapid hatches, downloads, responsive layouts, Random,
 and reduced motion. It writes images and a JSON report to ignored `.work/browser/`.
+The pixel-grid regression decodes whole scene screenshots at 1280×720 for `moss` and `pebble`, after
+camera rotation and exports, and at phone/tablet sizes. Starting at the top-left corner, it requires
+at least 95% of the declared pixel-sized RGB blocks to be exactly uniform, matching the official check.
+It also checks that the underlying framebuffer is entirely block-uniform and is displayed at 1:1 size.
 
 On the configured Debian host, after creating a clean local candidate commit, `bash tools/test-host.sh`
 runs installation, unit tests, build, browser review and the official gate sequentially. It uses the
