@@ -90,8 +90,8 @@ export function buildCreature(genome) {
     face.rotation.y = pointer.x * 0.16; face.rotation.x = -pointer.y * 0.09;
     const blink = time % (3.2 + t.voice * 0.1) < 0.14;
     eyes.forEach((eye) => { eye.scale.y = blink ? 0.12 : 1; });
-    wings.forEach((wing, i) => { wing.rotation.y = Math.sin(time * (g.species === 'lanternmoth' ? 4 : 2)) * 0.15 * (i ? -1 : 1); });
-    if (halo) halo.rotation.z = time * 0.4;
+    wings.forEach((wing, i) => { wing.rotation.y = reduced ? 0 : Math.sin(time * (g.species === 'lanternmoth' ? 4 : 2)) * 0.15 * (i ? -1 : 1); });
+    if (halo) halo.rotation.z = reduced ? 0 : time * 0.4;
   }, dispose() {
     const geometries = new Set(), materials = new Set();
     root.traverse((node) => { if (node.isMesh) { geometries.add(node.geometry); materials.add(node.material); } });

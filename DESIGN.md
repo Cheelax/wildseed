@@ -12,7 +12,7 @@ Header wordmark and sound toggle. Desktop: central diorama with 320 px field-not
 Procedural 3D meshes, six species: bellfin (fins), bramblebun (long ears), lanternmoth (wide wings), pebblepup (floppy ears and tail), sproutling (tall leaf crest), tumbletoad (wide body and squat legs). Palette-driven toon shading, outline shell, pixel-shaped faces. Shared 4 CSS px raster grid for egg, creature, shadows and ground. Nearest-neighbor scaling; no temporal antialiasing. Orbital camera drag, pointer gaze, blink, breathing, tap bounce, genome cry. Rare creatures have a gold orbital halo and altered palette.
 
 ## Accessibility and configuration
-Native form and buttons, visible focus, explicit input label, readable text contrast, reduced motion keeps expressive eyes but disables bounce. Sound starts only from a gesture and can be muted. Render pixel scale, animation duration and export frames are named constants. Seed validation never discards the current creature.
+Native form and buttons, visible focus, explicit input label, readable text contrast, reduced motion keeps expressive eyes but disables breathing, sway, bounce, wing flutter and halo motion. Sound starts only from a gesture and can be muted; unavailable audio leaves hatching usable. Render pixel scale, animation duration and export frames are named constants. Seed validation never discards the current creature. Exports use dedicated targets, adaptive colors, a neutral camera and fixed timing independent of the current viewport.
 
 ## Genome compatibility
 Version 1 uses UTF-8 FNV-1a plus an explicitly unsigned integer PRNG. Species ids and call order are part of the public format. New rounds append fields; fixture tests protect existing output.

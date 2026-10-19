@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { genomeOf, normalizeSeed, SPECIES } from '../src/genome.mjs';
-import { encodeGif, quantize } from '../src/gif.mjs';
+import { encodeGif, paletteOf, quantize } from '../src/gif.mjs';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 
@@ -35,6 +35,12 @@ test('v1 moss fixture protects permanent creatures from call-order drift', () =>
     traits: { body: 87, ears: 95, tail: 96, eyes: 1, marking: 3, crest: 1, voice: 4, signature: '315f190c' } });
 });
 
+test('all 10000 established genomes retain their pre-refinement bytes', () => {
+  const hash = createHash('sha256');
+  for (let i = 0; i < 10000; i++) hash.update(JSON.stringify(genomeOf(`seed-${i}`)));
+  assert.equal(hash.digest('hex'), '860c6e38ece52206958df60b02c99eb9c4071c3e27503ce8e4feeb5a78c16566');
+});
+
 test('2000 words have more than 900 generated names, independently of the seed field', () => {
   const names = new Set(Array.from({ length: 2000 }, (_, i) => genomeOf(`name-${i}`).name));
   assert.ok(names.size > 900, `${names.size} distinct names`);
@@ -64,4 +70,22 @@ test('GIF is a deterministic GIF89a with dimensions, frames and palette; rejects
   assert.equal(bytes[6], 8); assert.equal(bytes[8], 8); assert.equal(bytes.at(-1), 0x3b);
   assert.equal(createHash('sha256').update(bytes).digest('hex'), createHash('sha256').update(encodeGif(frames, 8, 8)).digest('hex'));
   for (const [f, w, h] of [[[], 8, 8], [[new Uint8Array(1)], 8, 8], [frames, 0, 8], [[new Uint8Array(64).fill(64)], 8, 8]]) assert.throws(() => encodeGif(f, w, h));
+  for (const index of [-1, 0.5, NaN]) assert.throws(() => encodeGif([Array(64).fill(index)], 8, 8));
+  for (const delay of [0, -1, 0.5, 65536, [8], [8, NaN]]) assert.throws(() => encodeGif(frames, 8, 8, delay));
+  assert.throws(() => encodeGif(frames, 8, 8, 9, [[0, 0, 0]]));
+});
+
+test('adaptive palette preserves exact artwork colors instead of rounding to a fixed cube', () => {
+  const colors = [[220, 231, 210], [21, 43, 40], [128, 184, 119], [250, 242, 210]];
+  const rgba = new Uint8ClampedArray(colors.flatMap((c) => [...c, 255]));
+  const palette = paletteOf([rgba]);
+  assert.equal(palette.length, 64);
+  const decoded = [...quantize(rgba, palette)].map((index) => palette[index]);
+  assert.deepEqual(decoded, colors);
+  assert.deepEqual(paletteOf([rgba]), palette);
+  assert.throws(() => paletteOf([]));
+});
+
+test('bounded dictionary compression makes flat-color frames compact', () => {
+  assert.ok(encodeGif([new Uint8Array(192 * 192).fill(1)], 192, 192).length < 2000);
 });
