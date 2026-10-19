@@ -6,7 +6,24 @@
     <title>Wildseed</title>
   </head>
   <body>
-    <main id="app"></main>
+    <header><a href="./" class="wordmark">wildseed<span>A word. A creature.</span></a><button id="sound" aria-pressed="true">Sound on</button></header>
+    <main id="app">
+      <section class="hatchery" aria-label="Hatch a creature">
+        <div id="diorama"></div>
+        <form id="seed-form"><label for="seed">Every word has a little life inside.</label><div class="input-row"><input id="seed" data-testid="seed-input" autocomplete="off" spellcheck="false" placeholder="Try your name…" aria-describedby="seed-error"><button type="submit">Hatch</button><button type="button" data-testid="random">Random</button></div><p id="seed-error" data-testid="seed-error" role="alert"></p></form>
+      </section>
+      <aside data-testid="creature-card" class="field-card" aria-label="Creature field notes">
+        <p class="note-label">YOUR FIELD NOTES</p><h1 id="name">A little mystery</h1><p><span id="species"></span> · <span id="affinity"></span></p><p id="rarity"></p>
+        <dl class="stats">
+          <div><dt>Health</dt><dd id="hp-value"></dd><meter id="hp-meter" min="0" max="100" aria-label="Health"></meter></div>
+          <div><dt>Attack</dt><dd id="attack-value"></dd><meter id="attack-meter" min="0" max="100" aria-label="Attack"></meter></div>
+          <div><dt>Defense</dt><dd id="defense-value"></dd><meter id="defense-meter" min="0" max="100" aria-label="Defense"></meter></div>
+          <div><dt>Speed</dt><dd id="speed-value"></dd><meter id="speed-meter" min="0" max="100" aria-label="Speed"></meter></div>
+        </dl>
+        <p id="seed-note"></p><div class="share"><button class="export" data-testid="save-gif" disabled>Save GIF</button><button class="export" data-testid="save-card" disabled>Save card</button></div><p class="hint">Made from your word, forever.<br>The same seed always finds the same friend.</p>
+      </aside>
+    </main>
+    <footer><p id="notice" role="status" aria-live="polite">Waking the hatchery…</p><span>Grown in code. Kept by you.</span></footer>
     <script type="module" src="./src/main.js"></script>
   </body>
 </html>
