@@ -1,0 +1,25 @@
+{
+  "name": "wildseed",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Type a word, hatch a creature: a creature-collecting game built by coding agents, round by round, on Hotpod.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --configLoader native",
+    "preview": "vite preview",
+    "hatch": "node bin/hatch.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cheelax/wildseed.git"
+  },
+  "dependencies": {
+    "three": "0.186.1"
+  },
+  "devDependencies": {
+    "playwright-core": "1.63.0",
+    "vite": "8.3.4"
+  }
+}
