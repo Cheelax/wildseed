@@ -20,7 +20,7 @@ starts from the previous winner's code.
 npm ci
 npm run dev                  # the hatchery, at the address Vite prints
 node bin/hatch.mjs thomas    # a seed's genome, as JSON
-npm test                     # the genome's and the command's tests
+npm test                     # tests: the genome, the command, the GIF encoder
 ```
 
 `npm run build` writes the static site to `dist/`. Every push to `main` deploys it to GitHub Pages.
@@ -92,7 +92,10 @@ so the GIF shows the same creature as the page.
   moss, gruff stone, buzzy spark). Browsers play sound only after a gesture: the first click or key wakes it.
 - **The page** with no `?seed=` hatches a word from the built-in list and puts it in the address. Each hatch
   pushes a history entry, so Back returns to the previous creature. A refused seed shows its reason under
-  the input and keeps the creature.
+  the input and keeps the creature. Random deals the 160 built-in words from a shuffled deck, so twenty
+  presses hatch twenty different words. Under the card, "Hatched here" keeps the last twelve creatures
+  hatched on this device (in `localStorage`); a chip hatches its creature again.
+- **Sounds**: the egg cracks three times as it shakes and pops when it opens, then the creature cries.
 - **The GIF** is 480 × 480, four screen pixels per art pixel, 64 colors at most: the egg drops, wobbles,
   cracks and hatches, then the creature shows its habit and gets poked; its name runs along the bottom.
   It is encoded in the browser by [src/share/gif.js](src/share/gif.js) (median cut, LZW).
