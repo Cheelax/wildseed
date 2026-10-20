@@ -14,16 +14,24 @@ import { domeback } from "./species/domeback.js";
 
 const BUILDERS = { pipkin, hopple, trundle, drift, prickle, wyrmlet, inchling, domeback };
 
-/** How each mood moves when nobody touches it. */
+/**
+ * How each mood moves when nobody touches it, and its habit: every `every` seconds, for `for` seconds,
+ * a bouncy one hops, a sleepy one naps, a curious one tilts its head, a shy one looks away, a proud one
+ * puffs up.
+ */
 const MOODS = {
-  bouncy: { breath: 0.55, hop: 2.6, hopHeight: 0.26, wander: 0.5, tilt: 0.05, pitch: 0 },
-  sleepy: { breath: 0.28, hop: 0, hopHeight: 0, wander: 0.25, tilt: 0.12, pitch: 0.12, droop: true },
-  curious: { breath: 0.45, hop: 0, hopHeight: 0, wander: 1, tilt: 0.22, pitch: -0.04 },
-  shy: { breath: 0.42, hop: 0, hopHeight: 0, wander: 0.4, tilt: 0.1, pitch: 0.16 },
-  proud: { breath: 0.4, hop: 4.4, hopHeight: 0.14, wander: 0.35, tilt: 0.04, pitch: -0.12 },
+  bouncy: { breath: 0.55, wander: 0.5, tilt: 0.05, pitch: 0, habit: "hop", every: 2.6, for: 0.56 },
+  sleepy: { breath: 0.3, wander: 0.25, tilt: 0.1, pitch: 0.1, habit: "nap", every: 7, for: 2.6 },
+  curious: { breath: 0.45, wander: 1, tilt: 0.12, pitch: -0.04, habit: "tilt", every: 4.5, for: 1.3 },
+  shy: { breath: 0.42, wander: 0.4, tilt: 0.08, pitch: 0.14, habit: "peek", every: 5.5, for: 1.8 },
+  proud: { breath: 0.4, wander: 0.35, tilt: 0.04, pitch: -0.12, habit: "puff", every: 5, for: 1.3 },
 };
 
-const REACT = 1.1; // seconds a reaction lasts
+const REACT = 1.1; // seconds a reaction to a poke lasts
+export const HABIT_START = 1.2; // seconds after the hatch when a creature first shows its habit
+
+/** How long a mood's habit lasts, in seconds. */
+export const habitLength = (mood) => MOODS[mood].for;
 
 export class Creature {
   constructor(genome) {
@@ -61,44 +69,57 @@ export class Creature {
 
   /**
    * Poses the creature at `t` seconds of life. `look` is where it looks, from -1 to 1 on each axis;
-   * `react` is how long ago it was poked; `crying` opens its mouth.
+   * `react` is how long ago it was poked and `pokes` how many times; `crying` opens its mouth. Returns
+   * what it is doing, for the effects around it.
    */
-  pose(t, { look = null, react = Infinity, crying = false } = {}) {
+  pose(t, { look = null, react = Infinity, pokes = 0, crying = false } = {}) {
     const { rig, mood } = this;
-    const tau = Math.PI * 2;
+    const size = this.genome.traits.size;
     for (const { obj, prop, base } of this.moving.values()) obj[prop].copy(base);
 
-    // Where it looks: told by the pointer, or wandering on its own.
-    const wanderX = mood.wander * (0.55 * Math.sin(t * 0.43) + 0.25 * Math.sin(t * 1.13 + 1));
-    const wanderY = mood.wander * 0.3 * Math.sin(t * 0.61 + 2);
-    const lx = look ? look.x : wanderX;
-    const ly = look ? look.y : wanderY;
+    // Its habit, first a second after it hatches, then every so often: s goes from 0 to 1 while it lasts.
+    const h = (t - HABIT_START + mood.every * 100) % mood.every;
+    const habit = t >= HABIT_START && h < mood.for ? mood.habit : null;
+    const s = habit ? h / mood.for : 0;
+    const bump = Math.sin(s * Math.PI);
+
+    // Where it looks: toward the pointer, or wandering on its own.
+    const lx = look ? look.x : mood.wander * (0.55 * Math.sin(t * 0.43) + 0.25 * Math.sin(t * 1.13 + 1));
+    const ly = look ? look.y : mood.wander * 0.3 * Math.sin(t * 0.61 + 2);
     rig.head.rotation.set(
-      this.headBase.x + mood.pitch - 0.28 * ly + (mood.droop ? 0.06 * Math.sin(t * 0.5) : 0),
-      this.headBase.y + 0.5 * lx,
-      this.headBase.z + mood.tilt * Math.sin(t * 0.37),
+      this.headBase.x + mood.pitch - 0.28 * ly + (habit === "nap" ? 0.2 * bump : habit === "puff" ? -0.22 * bump : 0),
+      this.headBase.y + 0.5 * lx + (habit === "peek" ? 0.75 * bump : 0),
+      this.headBase.z + mood.tilt * Math.sin(t * 0.37) + (habit === "tilt" ? 0.42 * bump : 0),
     );
 
-    const breath = Math.sin(t * mood.breath * tau);
+    const breath = Math.sin(t * mood.breath * Math.PI * 2) * (habit === "nap" ? 1.6 : 1);
     rig.body.scale.set(1 - 0.014 * breath, 1 + 0.03 * breath, 1 - 0.014 * breath);
 
     let y = rig.hover ? rig.hover + 0.07 * Math.sin(t * 1.7) : 0;
-    let squash = 0;
-    if (mood.hop) {
-      const h = (t + 0.7) % mood.hop;
-      if (h < 0.42) y += mood.hopHeight * 4 * (h / 0.42) * (1 - h / 0.42);
-      else if (h < 0.56) squash = 0.08 * Math.sin(((h - 0.42) / 0.14) * Math.PI);
+    let squash = habit === "puff" ? -0.07 * bump : 0;
+    if (habit === "hop") {
+      if (s < 0.75) y += 0.26 * 4 * (s / 0.75) * (1 - s / 0.75);
+      else squash = 0.08 * Math.sin(((s - 0.75) / 0.25) * Math.PI);
     }
+
+    // A poke: it hops, spins or wiggles, by turns, laughing all the while.
     const reacting = react < REACT;
-    let flap = 0;
+    let flap = 0, spin = 0, shake = 0;
     if (reacting) {
-      const s = react / 0.6;
-      if (s < 1) y += 0.5 * 4 * s * (1 - s);
-      else squash = 0.12 * Math.sin(Math.min(1, (react - 0.6) / 0.2) * Math.PI);
-      flap = Math.sin(react * 22) * Math.max(0, 1 - react / REACT);
+      const k = react / REACT;
+      const kind = pokes % 3;
+      if (kind === 0 || kind === 1) {
+        const j = react / 0.6;
+        if (j < 1) y += 0.5 * 4 * j * (1 - j);
+        else squash = 0.12 * Math.sin(Math.min(1, (react - 0.6) / 0.2) * Math.PI);
+      }
+      if (kind === 1) spin = Math.PI * 2 * Math.min(1, react / 0.6) ** 0.8;
+      if (kind === 2) shake = 0.22 * Math.sin(react * 30) * (1 - k);
+      flap = Math.sin(react * 22) * (1 - k);
     }
     this.pivot.position.y = y;
-    const size = this.genome.traits.size;
+    this.pivot.rotation.y = spin;
+    this.pivot.rotation.z = shake;
     this.pivot.scale.set(size * (1 + squash), size * (1 - squash), size * (1 + squash));
 
     for (const w of rig.wiggles) {
@@ -109,17 +130,19 @@ export class Creature {
 
     const blinkT = t % this.blinkEvery;
     const blink = blinkT < 0.13 || (this.blinkEvery > 3.5 && blinkT > 0.3 && blinkT < 0.42);
-    const droopy = mood.droop && Math.sin(t * 0.3) > 0.4;
+    const asleep = habit === "nap" && s > 0.08 && s < 0.92;
     for (const eye of rig.face.eyes) {
       eye.visible = !reacting;
-      eye.scale.y = blink ? 0.12 : droopy ? 0.55 : 1;
+      eye.scale.setScalar(habit === "tilt" ? 1 + 0.15 * bump : 1);
+      eye.scale.y *= blink || asleep ? 0.12 : 1;
     }
     for (const eye of rig.face.happy) eye.visible = reacting;
 
-    const open = crying || reacting;
+    const open = crying || reacting || (habit === "nap" && s > 0.35 && s < 0.6);
     const m = rig.face.mouth;
     if (m.idle) m.idle.visible = !open;
     if (m.open) m.open.visible = open;
     if (m.jaw) m.jaw.rotation.x = open ? 0.45 : 0;
+    return { habit, s };
   }
 }

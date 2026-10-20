@@ -65,7 +65,7 @@ float tri(float x) { return abs(fract(x) - 0.5) * 2.0; }
 bool marked(vec3 p, vec3 n) {
   int kind = int(uMarkP.x + 0.5);
   float scale = uMarkP.y, cut = uMarkP.z, off = uMarkP.w;
-  if (kind == 1) return cells(p * scale + off) < cut && n.z < 0.92;
+  if (kind == 1) return n.z < uMarkQ.w && cells(p * scale + off) < cut;
   if (kind == 2) return n.z < 0.35 && fract((p.y + off) * scale) < cut;
   if (kind == 3) return length(p - uMarkQ.xyz) < cut;
   if (kind == 4) return p.z > 0.25 && abs(p.y - uMarkQ.y) < cut;
@@ -102,7 +102,8 @@ export function tick(seconds) {
 
 /**
  * A toon material. `base` is the part's color; `mark` and `belly` colors with their patterns are
- * optional: { pattern: PATTERN.spots, scale, cut, offset, at: [x, y, z] }, and { nz, top, bottom, axis }: the
+ * optional: { pattern: PATTERN.spots, scale, cut, offset, at: [x, y, z], front }, where spots stay off the
+ * front where the normal's z passes `front` (a face); and { nz, top, bottom, axis }: the
  * belly covers the part where the normal leans along `axis` (the front) by more than `nz`.
  */
 export function toon(base, { mark = null, belly = null, stars = 0, cls = CLASS.creature, side = THREE.FrontSide, bands = [0.42, 0.66, 0.96] } = {}) {
@@ -114,7 +115,7 @@ export function toon(base, { mark = null, belly = null, stars = 0, cls = CLASS.c
     uBelly: { value: belly ? ramp(belly.color) : baseRamp },
     uBands: { value: new THREE.Vector3(...bands) },
     uMarkP: { value: new THREE.Vector4(mark?.pattern ?? 0, mark?.scale ?? 1, mark?.cut ?? 0, mark?.offset ?? 0) },
-    uMarkQ: { value: new THREE.Vector4(...(mark?.at ?? [0, 0, 0]), 0) },
+    uMarkQ: { value: new THREE.Vector4(...(mark?.at ?? [0, 0, 0]), mark?.front ?? 0.92) },
     uBellyP: { value: new THREE.Vector4(belly ? 1 : 0, belly?.nz ?? 0.4, belly?.top ?? 0.3, belly?.bottom ?? -2) },
     uBellyAxis: { value: new THREE.Vector3(...(belly?.axis ?? [0, 0, 1])).normalize() },
     uStars: { value: stars },

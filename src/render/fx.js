@@ -8,6 +8,7 @@ const SHAPES = {
   star: ["..#..", ".###.", "#####", ".###.", "..#.."],
   sparkle: ["..#..", "..#..", "##.##", "..#..", "..#.."],
   puff: [".###.", "#####", "#####", "#####", ".###."],
+  z: ["####", "..#.", ".#..", "####"],
 };
 
 const SPRITE_VERTEX = /* glsl */ `
@@ -104,6 +105,9 @@ export class Fx {
     }));
     this.motes.frustumCulled = false;
     this.group.add(this.motes);
+    // A sleepy creature's z's, rising from its head while it naps.
+    this.zs = [0, 1, 2].map(() => sprite("z", "#ffffff", this.pixel * 2));
+    this.zs.forEach((z) => this.group.add(z));
     this.stars = [];
     if (genome.rare) {
       for (let i = 0; i < 7; i++) {
@@ -128,9 +132,16 @@ export class Fx {
     this.events.push({ kind, t0, at: at.clone(), parts });
   }
 
-  /** Poses every effect at time t, facing the camera. */
-  pose(t, camera, center) {
+  /** Poses every effect at time t, facing the camera, `doing` what the creature does. */
+  pose(t, camera, center, doing = {}) {
     if (this.motes) this.motes.material.uniforms.uTime.value = t;
+    this.zs.forEach((z, i) => {
+      const k = ((doing.s ?? 0) * 2.6 + i / 3) % 1;
+      z.visible = doing.habit === "nap" && doing.s > 0.15 && doing.s < 0.95;
+      z.position.set(center.x + 0.35 + 0.5 * k, this.height * 0.85 + 0.9 * k, center.z + 0.2);
+      z.scale.setScalar(0.6 + 0.6 * k);
+      z.quaternion.copy(camera.quaternion);
+    });
     this.stars.forEach((s, i) => {
       const a = t * 0.5 + (i / this.stars.length) * Math.PI * 2;
       s.position.set(center.x + Math.cos(a) * 1.3, center.y + 0.6 * Math.sin(a * 1.7 + i), center.z + Math.sin(a) * 1.3);

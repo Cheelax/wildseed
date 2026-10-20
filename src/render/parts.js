@@ -220,8 +220,8 @@ export function materialsOf(genome) {
   const c = colorsOf(genome);
   const { marking } = genome.traits;
   const stars = genome.rare ? 0.12 : 0;
-  const markOf = (scale) => {
-    if (marking === "spots") return { color: c.accent, pattern: PATTERN.spots, scale: 2.6 * scale, cut: 0.3, offset: 3.7 };
+  const markOf = (scale, front = 0.92) => {
+    if (marking === "spots") return { color: c.accent, pattern: PATTERN.spots, scale: 2.6 * scale, cut: 0.3, offset: 3.7, front };
     if (marking === "stripes") return { color: c.accent, pattern: PATTERN.stripes, scale: 3.2 * scale, cut: 0.4, offset: 0.1 };
     if (marking === "patch") return { color: c.accent, pattern: PATTERN.patch, cut: 0.62, at: [0.55, 0.45, 0.55] };
     return null;
@@ -231,7 +231,7 @@ export function materialsOf(genome) {
     body: toon(c.body, { mark: markOf(1), stars }),
     torso: toon(c.body, { mark: markOf(1), belly: { color: c.belly, nz: 0.42, top: 0.25 }, stars }),
     head: toon(c.body, {
-      mark: marking === "mask" ? { color: c.accent, pattern: PATTERN.mask, cut: 0.2, at: [0, 0.12, 0] } : markOf(0.8),
+      mark: marking === "mask" ? { color: c.accent, pattern: PATTERN.mask, cut: 0.2, at: [0, 0.12, 0] } : markOf(0.8, 0.35),
       stars,
     }),
     limb: toon(marking === "socks" ? c.accent : c.body, { stars }),

@@ -82,6 +82,7 @@ export class Egg {
       const a = (i / 9) * Math.PI * 2 + 0.3;
       s.userData.velocity = new THREE.Vector3(Math.sin(a) * 2.4, 2.6 + (i % 3) * 0.8, Math.cos(a) * 2.4);
       s.userData.spin = new THREE.Vector3(3 + i, 5 - i * 0.5, 2);
+      s.userData.size = s.scale.clone();
       s.visible = false;
       this.root.add(s);
       this.shards.push(s);
@@ -138,7 +139,7 @@ export class Egg {
       const v = s.userData.velocity;
       s.position.set(v.x * after, HEIGHT * 0.55 + v.y * after - 4.5 * after * after, v.z * after);
       s.rotation.set(s.userData.spin.x * after, s.userData.spin.y * after, s.userData.spin.z * after);
-      s.scale.setScalar(Math.max(0.01, 1 - after / 0.7));
+      s.scale.copy(s.userData.size).multiplyScalar(Math.max(0.01, 1 - after / 0.7));
     }
     return !open || after < 0.7;
   }

@@ -12,6 +12,19 @@ import { hash32, stream } from "../genome/genes.mjs";
 /** The hatch, in seconds: the egg lands, shakes and cracks, pops; the creature is out and ready. */
 export const HATCH = { drop: 0.32, pop: 1.3, ready: 1.85 };
 
+/**
+ * Puts a camera where it sees a sphere of `radius` around `center`, `margin` times over, from a little
+ * to the right and above. Returns its distance.
+ */
+export function aim(camera, center, radius, margin, { azimuth = 0.4, elevation = 0.2 } = {}) {
+  const vfov = THREE.MathUtils.degToRad(camera.fov);
+  const hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
+  const d = (radius * margin) / Math.sin(Math.min(vfov, hfov) / 2);
+  camera.position.set(center.x + d * Math.sin(azimuth) * Math.cos(elevation), center.y + d * Math.sin(elevation), center.z + d * Math.cos(azimuth) * Math.cos(elevation));
+  camera.lookAt(center);
+  return d;
+}
+
 /** Each affinity's ground, sky (top band first) and outline inks. */
 const WORLDS = {
   moss: { grass: "#8fd06e", dirt: "#b47d55", rock: "#8c6a55", sky: ["#8fd3ea", "#a9def0", "#c4e9ef", "#ddf3ea"], ink: "#24331f", decor: ["tuft", "flower", "mushroom", "tuft", "bush"] },
@@ -46,7 +59,12 @@ export class Stage {
     this.egg = new Egg(genome);
     this.creature = new Creature(genome);
     this.world.add(this.egg.root, this.creature.root);
-    this.center.set(0, this.creature.height * 0.46, 0);
+    // Its size at rest, for the cameras: a sphere around the creature, egg and pop included.
+    this.creature.pose(0);
+    const box = new THREE.Box3().setFromObject(this.creature.root);
+    box.union(new THREE.Box3(new THREE.Vector3(-0.6, 0, -0.6), new THREE.Vector3(0.6, 1.3, 0.6)));
+    this.bounds = box.getBoundingSphere(new THREE.Sphere());
+    this.center.set(0, this.bounds.center.y, 0);
     this.fx.setup(genome, this.creature.height);
     this.fx.burst("puff", HATCH.pop, new THREE.Vector3(0, 0.6, 0));
     this.colors = {
@@ -75,10 +93,11 @@ export class Stage {
       const pop = s < 1 ? 1 - Math.cos(s * Math.PI * 2.5) * Math.exp(-4 * s) : 1;
       creature.root.scale.setScalar(Math.max(0.05, pop));
       creature.root.position.y = s < 1 ? 0.6 * Math.sin(s * Math.PI) : 0;
-      const poke = this.pokes.filter((p) => p <= t).at(-1);
-      creature.pose(t - HATCH.pop, { look, react: poke === undefined ? Infinity : t - poke, crying: crying || (s > 0.2 && s < 0.9) });
-    }
-    this.fx.pose(t, this.camera, this.center);
+      const past = this.pokes.filter((p) => p <= t);
+      const react = past.length ? t - past.at(-1) : Infinity;
+      this.doing = creature.pose(t - HATCH.pop, { look, react, pokes: past.length - 1, crying: crying || (s > 0.2 && s < 0.9) });
+    } else this.doing = { habit: null, s: 0 };
+    this.fx.pose(t, this.camera, this.center, this.doing);
   }
 }
 
@@ -105,7 +124,7 @@ function island(look, seed) {
     item.rotation.y = r() * Math.PI * 2;
     g.add(item);
   }
-  for (let i = 0; i < 3; i++) g.add(cloud(r, i));
+  for (let i = 0; i < 5; i++) g.add(cloud(r, i));
   g.traverse((o) => {
     if (o.isMesh && o !== top && o !== under) o.receiveShadow = true;
   });
@@ -145,12 +164,13 @@ function decor(kind, r, look) {
   return g;
 }
 
-/** A small cloud far behind the island; it turns with the world, so the camera sees it pass. */
+/** A cloud far out in the sky, farther than the camera ever goes: it passes as the camera turns. */
 function cloud(r, i) {
   const white = toon("#ffffff", { cls: CLASS.fx, bands: [0.3, 0.55, 2] });
   const g = new THREE.Group();
-  const a = (i / 3) * Math.PI * 2 + r() * 1.2 + 2.2;
-  g.position.set(Math.sin(a) * 9, 0.6 + r() * 2.4, Math.cos(a) * 9);
+  const a = (i / 5) * Math.PI * 2 + r() * 0.8;
+  g.position.set(Math.sin(a) * 26, -3 + r() * 9, Math.cos(a) * 26);
+  g.scale.setScalar(2.4 + r() * 1.2);
   for (let k = 0; k < 3; k++) {
     const p = ellipsoid(white, [0.7 - k * 0.15, 0.36 - k * 0.06, 0.45], { at: [(k - 1) * 0.6, k === 1 ? 0.18 : 0, 0] });
     p.castShadow = false;

@@ -65,11 +65,13 @@ body {
   display: flex;
   flex: 1 1 420px;
   gap: 8px;
+  min-width: 0;
   max-width: 620px;
 }
 
 .hatch input {
-  flex: 1;
+  flex: 1 1 auto;
+  width: 0;
   min-width: 0;
   padding: 9px 14px;
   border: 3px solid var(--line);

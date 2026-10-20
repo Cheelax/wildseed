@@ -1,7 +1,7 @@
 // Films a creature off screen, on a stage of its own: the same hatch and the same life as the page,
 // frame by frame at chosen times, in art pixels. The GIF and the card are made from these frames.
-import * as THREE from "three";
-import { HATCH, Stage } from "../render/stage.js";
+import { HATCH, Stage, aim } from "../render/stage.js";
+import { HABIT_START, habitLength } from "../render/creature.js";
 import { encodeGif } from "./gif.js";
 import { pixelText, measure } from "./font.js";
 
@@ -14,12 +14,7 @@ export function studio(renderer, genome, w, h, { zoom = 1 } = {}) {
   const cam = stage.camera;
   cam.aspect = w / h;
   cam.updateProjectionMatrix();
-  const height = stage.creature.height;
-  const center = new THREE.Vector3(0, height * 0.45 + 0.1, 0);
-  const d = ((height * 0.62 + 0.75) / Math.tan(THREE.MathUtils.degToRad(cam.fov / 2))) / zoom;
-  const azimuth = 0.42, elevation = 0.26;
-  cam.position.set(d * Math.sin(azimuth) * Math.cos(elevation), center.y + d * Math.sin(elevation), d * Math.cos(azimuth) * Math.cos(elevation));
-  cam.lookAt(center);
+  aim(cam, stage.center, stage.bounds.radius, 1.02 / zoom, { elevation: 0.22 });
   return stage;
 }
 
@@ -41,11 +36,13 @@ export async function film(renderer, stage, times, w, h) {
 export async function makeGif(renderer, genome) {
   const W = 120, H = 120, scale = 4;
   const stage = studio(renderer, genome, W, H);
-  stage.poke(HATCH.ready + 1.6);
+  // It shows its habit (a hop, a nap, a tilt…), then gets poked.
+  const poke = HATCH.pop + HABIT_START + habitLength(genome.traits.mood) + 0.3;
+  stage.poke(poke);
   const times = [];
   for (let t = 0; t < HATCH.ready; t += 0.08) times.push(t);
   const hatchFrames = times.length;
-  for (let t = HATCH.ready; t < HATCH.ready + 3.6; t += 0.1) times.push(t);
+  for (let t = HATCH.ready; t < poke + 1.4; t += 0.1) times.push(t);
   const frames = await film(renderer, stage, times, W, H);
   const banner = nameBanner(genome, W);
   for (const f of frames) stamp(f, W, banner);

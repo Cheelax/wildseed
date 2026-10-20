@@ -3,24 +3,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { PixelRenderer } from "./pixel.js";
-import { HATCH, Stage } from "./stage.js";
+import { HATCH, Stage, aim } from "./stage.js";
 
 /** The art pixel's size in CSS pixels for a scene of w × h: about 160 art pixels tall, 3 or more. */
 export function pixelSize(w, h) {
   return Math.max(3, Math.round(Math.min(w * 0.72, h) / 165));
-}
-
-/** The default view: a little from the right and above, far enough to see the whole island. */
-export function frameCamera(camera, center, height, aspect) {
-  const vfov = THREE.MathUtils.degToRad(camera.fov);
-  const hfov = 2 * Math.atan(Math.tan(vfov / 2) * aspect);
-  const fitHeight = Math.max(1.75, height * 0.95) / Math.tan(vfov / 2);
-  const fitWidth = 2.1 / Math.tan(hfov / 2);
-  const d = Math.max(fitHeight, fitWidth);
-  const azimuth = 0.38, elevation = 0.2;
-  camera.position.set(center.x + d * Math.sin(azimuth) * Math.cos(elevation), center.y + d * Math.sin(elevation), center.z + d * Math.cos(azimuth) * Math.cos(elevation));
-  camera.lookAt(center);
-  return d;
 }
 
 export class Hatchery {
@@ -75,8 +62,8 @@ export class Hatchery {
   }
 
   reframe() {
-    const { camera, center, creature } = this.stage;
-    const d = frameCamera(camera, center, creature.height, camera.aspect);
+    const { camera, center, bounds } = this.stage;
+    const d = aim(camera, center, Math.max(bounds.radius, 1.3), 1.28);
     this.controls.target.copy(center);
     this.controls.minDistance = d * 0.7;
     this.controls.maxDistance = d * 1.6;
