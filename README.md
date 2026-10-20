@@ -93,8 +93,8 @@ so the GIF shows the same creature as the page.
   moss, gruff stone, buzzy spark). Browsers play sound only after a gesture: the first click or key wakes it.
 - **The page** with no `?seed=` hatches a word from the built-in list and puts it in the address. Each hatch
   pushes a history entry, so Back returns to the previous creature. A refused seed shows its reason under
-  the input and keeps the creature. Random deals the 160 built-in words from a shuffled deck, so twenty
-  presses hatch twenty different words. Under the card, "Hatched here" keeps the last twelve creatures
+  the input and keeps the creature. Random deals the 160 built-in words, sixteen per species, from a shuffled
+  deck, so twenty presses hatch twenty different words. Under the card, "Hatched here" keeps the last twelve creatures
   hatched on this device (in `localStorage`); a chip hatches its creature again.
 - **Sounds**: the egg cracks three times as it shakes and pops when it opens, then the creature cries. The
   Sound button turns them off, and the page remembers it.
