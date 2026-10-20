@@ -197,6 +197,38 @@ body {
   box-shadow: 0 5px 0 var(--line);
 }
 
+.card.fresh {
+  animation: hop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 1.3s both;
+}
+
+@keyframes hop {
+  from {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-10px) scale(1.02);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.fresh {
+    animation: none;
+  }
+}
+
+.sound {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.sound[aria-pressed="false"] {
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
 .card .name {
   margin: 0;
   font-size: 34px;
@@ -396,7 +428,39 @@ body {
     overflow: visible;
   }
 
-  .card .name {
+  .card.fresh {
+  animation: hop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 1.3s both;
+}
+
+@keyframes hop {
+  from {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-10px) scale(1.02);
+  }
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.fresh {
+    animation: none;
+  }
+}
+
+.sound {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.sound[aria-pressed="false"] {
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.card .name {
     font-size: 30px;
   }
 }

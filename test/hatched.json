@@ -80,6 +80,7 @@
    },
    "horns": "nub",
    "hornLength": 0.71,
+   "mane": 0.92,
    "wings": 1.16,
    "tail": 1.16,
    "tailTip": "spade",
@@ -125,9 +126,10 @@
    },
    "horns": "branch",
    "hornLength": 0.87,
+   "mane": 1,
    "wings": 1.02,
    "tail": 1.14,
-   "tailTip": "flame",
+   "tailTip": "tuft",
    "spines": 2
   }
  },
@@ -301,8 +303,9 @@
     "contour": "rise",
     "vowel": "u"
    },
-   "horns": "curve",
+   "horns": "curl",
    "hornLength": 0.85,
+   "mane": 0.85,
    "wings": 0.88,
    "tail": 0.98,
    "tailTip": "leaf",
@@ -392,6 +395,7 @@
    },
    "horns": "branch",
    "hornLength": 0.95,
+   "mane": 0.93,
    "wings": 1.27,
    "tail": 1.09,
    "tailTip": "leaf",

@@ -4,7 +4,7 @@ import { genomeOf, normalizeSeed, seedProblem } from "./genome.mjs";
 import { WORDS } from "./words.mjs";
 import { Hatchery } from "./render/hatchery.js";
 import { HATCH, skyOf } from "./render/stage.js";
-import { cry, hatchSounds, wakeAudio } from "./audio/cry.js";
+import { cry, hatchSounds, mute, wakeAudio } from "./audio/cry.js";
 import { makeGif } from "./share/film.js";
 import { makeCard } from "./share/card.js";
 import { save } from "./share/save.js";
@@ -123,6 +123,9 @@ function hatch(seed, { push = true } = {}) {
   view?.hatch(genome);
   if (view) hatchSounds(HATCH);
   showCard(genome);
+  card.classList.remove("fresh");
+  void card.offsetWidth; // restart the card's little hop
+  card.classList.add("fresh");
   remember(genome);
   const url = new URL(location.href);
   url.search = `?seed=${encodeURIComponent(genome.seed)}`;
@@ -162,6 +165,21 @@ $("random").addEventListener("click", () => {
 addEventListener("pointerdown", wakeAudio);
 addEventListener("keydown", wakeAudio);
 
+/** The sound switch, remembered on this device. */
+const sound = document.querySelector(".sound");
+function setSound(on) {
+  mute(!on);
+  sound.setAttribute("aria-pressed", String(on));
+  sound.textContent = on ? "Sound on" : "Sound off";
+  try {
+    localStorage.setItem("wildseed.sound", on ? "on" : "off");
+  } catch {}
+}
+sound.addEventListener("click", () => setSound(sound.getAttribute("aria-pressed") !== "true"));
+try {
+  setSound(localStorage.getItem("wildseed.sound") !== "off");
+} catch {}
+
 /** Runs a slow export with its button showing that it works. */
 async function exporting(button, busyText, make, filename) {
   if (button.disabled || !view) return;
@@ -170,7 +188,7 @@ async function exporting(button, busyText, make, filename) {
   button.disabled = true;
   button.textContent = busyText;
   try {
-    save(await make(view.renderer, genome), `${filename(genome)}`);
+    save(await make(view.renderer, genome), filename(genome));
   } finally {
     button.disabled = false;
     button.textContent = text;

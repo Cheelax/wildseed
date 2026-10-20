@@ -10,6 +10,12 @@ const TIMBRE = {
 };
 
 let live = null;
+let muted = false;
+
+/** Turns every sound off or back on. */
+export function mute(off) {
+  muted = off;
+}
 
 /** Browsers start sound only after a gesture: call this from one (a click, a key). */
 export function wakeAudio() {
@@ -21,7 +27,7 @@ export function wakeAudio() {
 
 /** The egg's sounds, from now: a crack at each of `cracks` seconds, then a pop at `pop`. */
 export function hatchSounds({ cracks, pop }) {
-  if (live?.state !== "running") return;
+  if (muted || live?.state !== "running") return;
   const now = live.currentTime + 0.02;
   cracks.forEach((t, i) => burst(live, now + t, 0.035, 1800 + 500 * i, 0.5));
   burst(live, now + pop, 0.12, 900, 0.9);
@@ -46,7 +52,7 @@ function burst(ctx, at, length, freq, gain) {
 
 /** Plays the creature's cry now. Does nothing until the page has had a gesture. */
 export function cry(genome) {
-  if (live?.state === "running") sing(live, genome, live.currentTime + 0.02);
+  if (!muted && live?.state === "running") sing(live, genome, live.currentTime + 0.02);
 }
 
 /**

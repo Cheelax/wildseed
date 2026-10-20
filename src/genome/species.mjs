@@ -63,16 +63,18 @@ export const SPECIES = {
       ears: g("ears").num(0.7, 1.2),
     }),
   },
-  // A small dragon: horns, wings too small to fly, and a long tail with a tip of its own.
+  // A dragon pup that sits like a dog: a fluffy mane, ram's horns, plates down its chest, wings too
+  // small to fly and a long tail curled at its side.
   wyrmlet: {
     stats: { hp: 3, attack: 5, defense: 2, speed: 3 },
     voice: 330,
     knobs: (g) => ({
-      horns: g("horns").pick(["nub", "curve", "branch"]),
+      horns: g("horns").pick(["nub", "curl", "branch"]),
       hornLength: g("hornLength").num(0.7, 1.3),
+      mane: g("mane").num(0.8, 1.25),
       wings: g("wings").num(0.75, 1.3),
       tail: g("tail").num(0.8, 1.3),
-      tailTip: g("tailTip").pick(["spade", "flame", "leaf", "orb"]),
+      tailTip: g("tailTip").pick(["spade", "tuft", "leaf", "orb"]),
       spines: g("spines").int(0, 5),
     }),
   },

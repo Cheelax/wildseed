@@ -26,15 +26,15 @@ export function aim(camera, center, radius, margin, { azimuth = 0.4, elevation =
   return d;
 }
 
-/** The four bands of an affinity's sky, top first. */
-export const skyOf = (affinity) => WORLDS[affinity].sky;
-
 /** Each affinity's ground, sky (top band first) and outline inks. */
 const WORLDS = {
   moss: { grass: "#8fd06e", dirt: "#b47d55", rock: "#8c6a55", sky: ["#8fd3ea", "#a9def0", "#c4e9ef", "#ddf3ea"], ink: "#24331f", decor: ["tuft", "flower", "mushroom", "tuft", "bush"] },
   stone: { grass: "#c9c6b8", dirt: "#9b908a", rock: "#7d7270", sky: ["#a7b2e2", "#bac3ea", "#ccd2ef", "#dfe1f2"], ink: "#2a2633", decor: ["pebble", "rock", "pebble", "crystal", "cairn"] },
   spark: { grass: "#e4cd6b", dirt: "#c98a52", rock: "#a8694a", sky: ["#f7a98f", "#f9bf98", "#fbd4a6", "#fde6bd"], ink: "#3a2416", decor: ["crystal", "tuft", "flower", "crystal", "rock"] },
 };
+
+/** The four bands of an affinity's sky, top first. */
+export const skyOf = (affinity) => WORLDS[affinity].sky;
 
 export class Stage {
   constructor() {

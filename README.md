@@ -74,7 +74,8 @@ so the GIF shows the same creature as the page.
 - **Ten species**, each about one creature in ten: pipkin (a round bird with a crest and a beak),
   hopple (a hopper with long ears up, flopped or out to the sides), trundle (a four-legged trotter with a
   long nose), drift (a floating jelly with curling tentacles), prickle (a hedgehog with a soft face),
-  wyrmlet (a small dragon with horns, wings and a tipped tail), inchling (a caterpillar that rears up),
+  wyrmlet (a dragon pup that sits like a dog, with a fluffy mane, horns, plates down its chest, small wings
+  and a tail curled at its side), inchling (a caterpillar that rears up),
   domeback (a walker under a dome of a shell), toadle (a squat frog with its eyes on two domes and a throat
   that swells when it sings) and flutterling (a fluffy moth hovering on two pairs of wings).
 - **Affinity** sets the palette's family, the egg, the island's ground, the sky and a charm the creature
@@ -95,7 +96,8 @@ so the GIF shows the same creature as the page.
   the input and keeps the creature. Random deals the 160 built-in words from a shuffled deck, so twenty
   presses hatch twenty different words. Under the card, "Hatched here" keeps the last twelve creatures
   hatched on this device (in `localStorage`); a chip hatches its creature again.
-- **Sounds**: the egg cracks three times as it shakes and pops when it opens, then the creature cries.
+- **Sounds**: the egg cracks three times as it shakes and pops when it opens, then the creature cries. The
+  Sound button turns them off, and the page remembers it.
 - **The GIF** is 480 × 480, four screen pixels per art pixel, 64 colors at most: the egg drops, wobbles,
   cracks and hatches, then the creature shows its habit and gets poked; its name runs along the bottom.
   It is encoded in the browser by [src/share/gif.js](src/share/gif.js) (median cut, LZW).
