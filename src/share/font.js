@@ -39,17 +39,25 @@ export function pixelText(g, text, x, y, color, scale = 1) {
   });
 }
 
+const scratch = () => document.createElement("canvas").getContext("2d");
+
+/** The width of `text` drawn by anyText at `size`. */
+export function anyWidth(text, size = 9) {
+  const s = scratch();
+  s.font = `bold ${size}px system-ui, sans-serif`;
+  return Math.ceil(s.measureText(text).width) + 2;
+}
+
 /**
  * Text in any script, snapped to whole pixels: drawn with the system font on a scratch canvas, then
  * every pixel more than half covered is filled. Returns the width drawn.
  */
 export function anyText(g, text, x, y, color, size = 9) {
-  const scratch = document.createElement("canvas");
-  const s = scratch.getContext("2d");
-  s.font = `bold ${size}px system-ui, sans-serif`;
-  const w = Math.ceil(s.measureText(text).width) + 2;
-  scratch.width = w;
-  scratch.height = size + 4;
+  const s = scratch();
+  const scratchCanvas = s.canvas;
+  const w = anyWidth(text, size);
+  scratchCanvas.width = w;
+  scratchCanvas.height = size + 4;
   s.font = `bold ${size}px system-ui, sans-serif`;
   s.textBaseline = "top";
   s.fillStyle = "#000";
@@ -60,11 +68,3 @@ export function anyText(g, text, x, y, color, size = 9) {
   return w;
 }
 
-/** Draws text in the pixel font when it can, else in the snapped system font. Returns the width. */
-export function label(g, text, x, y, color, scale = 1) {
-  if (drawable(text)) {
-    pixelText(g, text, x, y, color, scale);
-    return measure(text, scale);
-  }
-  return anyText(g, text, x, y - 1, color, 8 * scale);
-}

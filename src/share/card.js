@@ -3,7 +3,7 @@
 // line about its mood, and its seed. Rare creatures get a gold frame that sparkles.
 import { HATCH } from "../render/stage.js";
 import { film, studio } from "./film.js";
-import { anyText, drawable, measure, pixelText } from "./font.js";
+import { anyText, anyWidth, drawable, measure, pixelText } from "./font.js";
 
 const W = 160, H = 224, SCALE = 4;
 
@@ -120,12 +120,16 @@ export async function makeCard(renderer, genome) {
   g.fillStyle = ink;
   for (let x = 10; x < W - 10; x += 2) g.fillRect(x, y, 1, 1);
   y += 4;
+  // The seed in the pixel font when it can be, else in the system font, smaller for a long seed.
   const seed = `seed "${genome.seed}"`;
   const room = W - 20;
-  if (!drawable(seed) || measure(seed) > room) anyText(g, seed, 10, y - 2, ink, 9);
-  else {
+  if (drawable(seed) && measure(seed) <= room) {
     pixelText(g, seed, 10, y, ink);
     if (measure(seed) + 8 + measure("wildseed") <= room) pixelText(g, "wildseed", W - 10 - measure("wildseed"), y, frame === belly ? body : frame);
+  } else {
+    const size = anyWidth(seed, 9) <= room ? 9 : 7;
+    const text = anyWidth(seed, size) <= room ? seed : `"${genome.seed}"`;
+    anyText(g, text, 10, y - (size === 9 ? 2 : 0), ink, size);
   }
 
   const out = document.createElement("canvas");
