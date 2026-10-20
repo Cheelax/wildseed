@@ -55,7 +55,7 @@ export class Creature {
     this.pivot.add(rig.body);
     this.height = (rig.height + (rig.hover ?? 0)) * traits.size;
     this.mood = MOODS[traits.mood];
-    this.blinkEvery = 2.6 + (traits.voice.pitch % 17) / 10;
+    this.blinkEvery = 2.6 + (traits.voice.pitch % 17) / 10; // a blink rhythm of its own, 2.6 to 4.2 s
     // Everything that moves is moved from where the builder left it.
     this.moving = new Map();
     for (const w of [...rig.wiggles, ...rig.flaps]) {

@@ -20,21 +20,25 @@ export function trundle(g, m) {
   const e = eyes(radii, t, m.colors, { level: 0.22 });
   head.add(e.group, cheeks(radii, t, m.colors, e, 0.22));
 
-  const S = t.snout;
-  const snoutRadii = [0.18, 0.15, 0.2 + 0.12 * S];
-  const snout = joint([0, -0.1, 0.3 + 0.08 * S], [0.15, 0, 0]);
-  snout.add(ellipsoid(m.belly, snoutRadii));
-  snout.add(ellipsoid(m.nose, [0.08, 0.06, 0.06], { at: [0, 0.03, snoutRadii[2] - 0.01] }));
-  const mo = mouth(snoutRadii, t, m.colors, { level: -0.55, size: e.radius * 0.55 });
-  snout.add(mo.group);
-  head.add(snout);
+  // A soft snout that reaches forward and droops a little, like a tapir's, with a pad at its tip.
+  const len = 0.3 + 0.3 * t.snout;
+  const tip = [0, -0.2 - 0.07 * t.snout, 0.28 + len];
+  head.add(tube(m.plain, [[0, -0.1, 0.24], [0, -0.13, 0.28 + len * 0.55], tip], 0.17, 0.115, { segments: 10 }));
+  head.add(ellipsoid(m.nose, [0.1, 0.085, 0.05], { at: [tip[0], tip[1], tip[2] + 0.1], rot: [-0.25, 0, 0] }));
+  const chin = joint([0, -0.24, 0.32]);
+  const chinRadii = [0.16, 0.12, 0.16];
+  chin.add(ellipsoid(m.belly, chinRadii));
+  const mo = mouth(chinRadii, t, m.colors, { level: -0.1, size: e.radius * 0.5 });
+  chin.add(mo.group);
+  head.add(chin);
+  for (let k = -1; k <= 1; k++) head.add(ellipsoid(m.accent, [0.07, 0.12, 0.07], { at: [k * 0.07, 0.46, 0.06 - Math.abs(k) * 0.04], rot: [0.4, 0, -k * 0.5] }));
 
   const wiggles = [], flaps = [];
   for (const side of [-1, 1]) {
     const ear = joint([side * 0.26, 0.3, -0.04], [0, 0, -side * 0.5]);
-    if (t.ears === "pointy") ear.add(cone(m.plain, 0.11, 0.26));
-    else if (t.ears === "leaf") ear.add(ellipsoid(m.plain, [0.1, 0.2, 0.04], { at: [0, 0.16, 0], rot: [0, 0, -side * 0.7] }));
-    else ear.add(ellipsoid(m.plain, [0.14, 0.14, 0.05], { at: [0, 0.08, 0] }));
+    if (t.ears === "pointy") ear.add(cone(m.plain, 0.13, 0.3));
+    else if (t.ears === "leaf") ear.add(ellipsoid(m.plain, [0.12, 0.25, 0.045], { at: [0, 0.2, 0], rot: [0, 0, -side * 0.7] }));
+    else ear.add(ellipsoid(m.plain, [0.17, 0.17, 0.05], { at: [0, 0.1, 0] }));
     ear.add(ellipsoid(m.accent, [0.06, 0.08, 0.03], { at: [0, 0.09, 0.03] }));
     head.add(ear);
     wiggles.push({ obj: ear, axis: "z", amp: 0.1, speed: 2.8, phase: side * 1.3 });
