@@ -11,7 +11,7 @@ function bell(material, R, h) {
     pts.push(new THREE.Vector2(R * Math.sin(a) * (1 + 0.1 * (i / 12) ** 3), h * Math.cos(a)));
   }
   pts.push(new THREE.Vector2(R * 1.06, -0.06), new THREE.Vector2(R * 0.8, -0.1), new THREE.Vector2(0.001, -0.06));
-  const g = new THREE.LatheGeometry(pts, 24);
+  const g = new THREE.LatheGeometry(pts.reverse(), 24); // bottom to top, so its faces look outward
   g.computeVertexNormals();
   return mesh(g, material);
 }

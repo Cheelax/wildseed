@@ -55,7 +55,7 @@ export function tube(material, points, r0, r1, { radial = 8, segments = 16 } = {
   for (let i = 0; i < segments; i++) {
     for (let j = 0; j < radial; j++) {
       const a = i * (radial + 1) + j, b = a + radial + 1;
-      idx.push(a, b, a + 1, b, b + 1, a + 1);
+      idx.push(a, a + 1, b, b, a + 1, b + 1); // counter-clockwise seen from outside
     }
   }
   const g = new THREE.BufferGeometry();
