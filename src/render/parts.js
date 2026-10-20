@@ -201,14 +201,22 @@ export function face(head, traits, colors, { eyeLevel = 0.12, mouthLevel = -0.2,
   return { group, eyes: e.open, happy: e.happy, mouth: m, radius: e.radius };
 }
 
-/** The colors of a creature's parts, from its palette. */
+/** Hue distance in degrees between two colors. */
+export function hueGap(a, b) {
+  const [x, y] = [new THREE.Color(a).getHSL({}), new THREE.Color(b).getHSL({})];
+  return Math.abs(((x.h - y.h + 1.5) % 1) - 0.5) * 360;
+}
+
+/** The colors of a creature's parts, from its palette. A bright eye that would melt into the body turns to its complement. */
 export function colorsOf(genome) {
   const [body, belly, accent, detail, eye, ink] = genome.palette;
   const blushBase = new THREE.Color(accent).lerp(new THREE.Color("#ff7c96"), 0.65);
+  const iris = new THREE.Color(eye);
+  if (iris.getHSL({}).s > 0.4 && hueGap(eye, body) < 50) iris.offsetHSL(0.5, 0, 0);
   return {
     body, belly, accent, detail, ink,
-    iris: eye,
-    eyeDark: genome.traits.eyes === "gem" ? new THREE.Color(ink).lerp(new THREE.Color("#000000"), 0.3) : eye,
+    iris,
+    eyeDark: genome.traits.eyes === "gem" ? new THREE.Color(ink).lerp(new THREE.Color("#000000"), 0.3) : iris,
     mouth: new THREE.Color(ink).lerp(new THREE.Color("#3a1020"), 0.4),
     tongue: "#ff6f8e",
     blush: blushBase,

@@ -6,7 +6,7 @@ import { Creature } from "./creature.js";
 import { Egg } from "./egg.js";
 import { Fx } from "./fx.js";
 import { CLASS, PATTERN, tick, toon } from "./toon.js";
-import { cone, cylinder, ellipsoid, gem, mesh } from "./parts.js";
+import { cone, cylinder, ellipsoid, gem, hueGap, mesh } from "./parts.js";
 import { hash32, stream } from "../genome/genes.mjs";
 
 /** The hatch, in seconds: the egg lands, shakes and cracks, pops; the creature is out and ready. */
@@ -54,7 +54,7 @@ export class Stage {
   set(genome) {
     this.genome = genome;
     this.world.clear();
-    const look = WORLDS[genome.affinity];
+    const look = { ...WORLDS[genome.affinity], grass: groundFor(WORLDS[genome.affinity].grass, genome.palette[0]) };
     this.world.add(island(look, genome.seed));
     this.egg = new Egg(genome);
     this.creature = new Creature(genome);
@@ -99,6 +99,22 @@ export class Stage {
     } else this.doing = { habit: null, s: 0 };
     this.fx.pose(t, this.center, this.doing);
   }
+}
+
+/**
+ * The island's ground, turned away from the creature's body color when the two are close, so that a
+ * green creature never stands on grass of its own green.
+ */
+function groundFor(ground, body) {
+  const c = new THREE.Color(ground);
+  const b = new THREE.Color(body).getHSL({});
+  const g = c.getHSL({});
+  if (b.s > 0.25 && hueGap(ground, body) < 40) {
+    const away = ((b.h - g.h + 1.5) % 1) - 0.5 > 0 ? -1 : 1;
+    c.offsetHSL((away * 42) / 360, -0.05, 0);
+  }
+  if (Math.abs(c.getHSL({}).l - b.l) < 0.08) c.offsetHSL(0, 0, g.l > b.l ? 0.08 : -0.08);
+  return `#${c.getHexString()}`;
 }
 
 /** The floating island: a faceted disc of ground over a cone of rock, with decor seeded by the word. */
