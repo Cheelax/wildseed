@@ -1,5 +1,7 @@
 // Little effects, drawn in art pixels: hearts when the creature is poked, a puff when it hatches, the
-// stars around a rare one, motes drifting in the air. Each is a function of time, like the creature.
+// stars around a rare one, z's over a napping one, motes drifting in the air. Each sprite is a point
+// whose size is a whole number of art pixels, so its pixels stay square however the camera turns.
+// Like the creature, every effect is a function of time.
 import * as THREE from "three";
 import { CLASS } from "./toon.js";
 
@@ -12,21 +14,25 @@ const SHAPES = {
 };
 
 const SPRITE_VERTEX = /* glsl */ `
-varying vec2 vUv;
+uniform float uSize;
 void main() {
-  vUv = uv;
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  gl_PointSize = uSize;
 }`;
 const SPRITE_FRAGMENT = /* glsl */ `
 uniform sampler2D map;
 uniform vec3 uColor;
-varying vec2 vUv;
+uniform vec2 uShape;
+uniform float uScale;
+uniform float uSize;
 void main() {
-  if (texture2D(map, vUv).a < 0.5) discard;
+  vec2 cell = floor(gl_PointCoord * uSize / uScale) - floor((uSize / uScale - uShape) / 2.0);
+  if (cell.x < 0.0 || cell.y < 0.0 || cell.x >= uShape.x || cell.y >= uShape.y) discard;
+  if (texture2D(map, (cell + 0.5) / uShape).a < 0.5) discard;
   gl_FragColor = vec4(uColor, ${CLASS.fx}.0 / 255.0);
 }`;
 
-/** A pixel shape as a texture, one texel per art pixel. */
+/** A pixel shape as a texture, one texel per art pixel, top row first. */
 function texture(rows) {
   const c = document.createElement("canvas");
   c.width = rows[0].length;
@@ -37,24 +43,33 @@ function texture(rows) {
   const t = new THREE.CanvasTexture(c);
   t.magFilter = t.minFilter = THREE.NearestFilter;
   t.generateMipmaps = false;
+  t.flipY = false;
   return t;
 }
 
 const textures = {};
-function sprite(shape, color, pixel) {
+const POINT = new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute([0, 0, 0], 3));
+
+/** A sprite of a shape, `scale` art pixels per texel. */
+function sprite(shape, color, scale = 1) {
   textures[shape] ??= texture(SHAPES[shape]);
   const rows = SHAPES[shape];
-  const m = new THREE.Mesh(
-    new THREE.PlaneGeometry(rows[0].length * pixel, rows.length * pixel),
-    new THREE.ShaderMaterial({
-      uniforms: { map: { value: textures[shape] }, uColor: { value: new THREE.Color(color) } },
-      vertexShader: SPRITE_VERTEX,
-      fragmentShader: SPRITE_FRAGMENT,
-      depthWrite: false,
-    }),
-  );
-  m.renderOrder = 10;
-  return m;
+  const w = rows[0].length, h = rows.length;
+  const p = new THREE.Points(POINT, new THREE.ShaderMaterial({
+    uniforms: {
+      map: { value: textures[shape] },
+      uColor: { value: new THREE.Color(color) },
+      uShape: { value: new THREE.Vector2(w, h) },
+      uScale: { value: scale },
+      uSize: { value: Math.max(w, h) * scale },
+    },
+    vertexShader: SPRITE_VERTEX,
+    fragmentShader: SPRITE_FRAGMENT,
+    depthWrite: false,
+  }));
+  p.frustumCulled = false;
+  p.renderOrder = 10;
+  return p;
 }
 
 const MOTE_VERTEX = /* glsl */ `
@@ -78,14 +93,14 @@ export class Fx {
     this.group = new THREE.Group();
     scene.add(this.group);
     this.events = [];
-    this.pixel = 0.035;
   }
 
   /** Rebuilds the steady effects for a creature: motes in its affinity's color, stars if it is rare. */
-  setup(genome, height) {
+  setup(genome, height, radius) {
     this.group.clear();
     this.events = [];
     this.height = height;
+    this.radius = radius;
     const n = 26;
     const pos = new Float32Array(n * 3), speed = new Float32Array(n);
     for (let i = 0; i < n; i++) {
@@ -105,67 +120,56 @@ export class Fx {
     }));
     this.motes.frustumCulled = false;
     this.group.add(this.motes);
-    // A sleepy creature's z's, rising from its head while it naps.
-    this.zs = [0, 1, 2].map(() => sprite("z", "#ffffff", this.pixel * 2));
-    this.zs.forEach((z) => this.group.add(z));
+    this.zs = [0, 1, 2].map((i) => sprite("z", "#ffffff", i === 2 ? 2 : 1));
     this.stars = [];
-    if (genome.rare) {
-      for (let i = 0; i < 7; i++) {
-        const s = sprite(i % 2 ? "sparkle" : "star", i % 3 ? "#ffe27a" : "#ffffff", this.pixel * 2);
-        this.stars.push(s);
-        this.group.add(s);
-      }
-    }
+    if (genome.rare) for (let i = 0; i < 8; i++) this.stars.push(sprite(i % 2 ? "sparkle" : "star", i % 3 ? "#ffe27a" : "#ffffff"));
+    this.group.add(...this.zs, ...this.stars);
   }
 
   /** Something happened at time t0 at a point: "hearts" when poked, "puff" when hatched. */
   burst(kind, t0, at) {
     const parts = [];
-    const n = kind === "puff" ? 10 : 5;
+    const n = kind === "puff" ? 12 : 6;
     for (let i = 0; i < n; i++) {
-      const s = kind === "puff" ? sprite("puff", "#ffffff", this.pixel * 2) : sprite(i % 2 ? "heart" : "sparkle", i % 2 ? "#ff6f91" : "#fff4b8", this.pixel * 2);
+      const s = kind === "puff"
+        ? sprite(i % 3 ? "puff" : "sparkle", i % 3 ? "#ffffff" : "#fff4b8", i % 3 ? 2 : 1)
+        : sprite(i % 2 ? "sparkle" : "heart", i % 2 ? "#fff4b8" : "#ff6f91", i % 2 ? 1 : 2);
       const a = (i / n) * Math.PI * 2 + 0.4;
-      s.userData.dir = new THREE.Vector3(Math.cos(a), kind === "puff" ? 0.4 + (i % 3) * 0.3 : 1.2 + (i % 2) * 0.5, Math.sin(a));
+      s.userData.dir = new THREE.Vector3(Math.cos(a), kind === "puff" ? 0.3 + (i % 3) * 0.35 : 1.2 + (i % 2) * 0.5, Math.sin(a));
       this.group.add(s);
       parts.push(s);
     }
     this.events.push({ kind, t0, at: at.clone(), parts });
   }
 
-  /** Poses every effect at time t, facing the camera, `doing` what the creature does. */
-  pose(t, camera, center, doing = {}) {
+  /** Poses every effect at time t, `doing` what the creature does now. */
+  pose(t, center, doing = {}) {
     if (this.motes) this.motes.material.uniforms.uTime.value = t;
     this.zs.forEach((z, i) => {
       const k = ((doing.s ?? 0) * 2.6 + i / 3) % 1;
       z.visible = doing.habit === "nap" && doing.s > 0.15 && doing.s < 0.95;
-      z.position.set(center.x + 0.35 + 0.5 * k, this.height * 0.85 + 0.9 * k, center.z + 0.2);
-      z.scale.setScalar(0.6 + 0.6 * k);
-      z.quaternion.copy(camera.quaternion);
+      z.position.set(center.x + 0.3 + 0.5 * k, this.height * 0.85 + 0.9 * k, center.z + 0.2);
     });
     this.stars.forEach((s, i) => {
-      const a = t * 0.5 + (i / this.stars.length) * Math.PI * 2;
-      s.position.set(center.x + Math.cos(a) * 1.3, center.y + 0.6 * Math.sin(a * 1.7 + i), center.z + Math.sin(a) * 1.3);
+      const a = t * 0.45 + (i / this.stars.length) * Math.PI * 2;
+      const r = this.radius + 0.35;
+      s.position.set(center.x + Math.cos(a) * r, center.y + 0.7 * Math.sin(a * 1.7 + i), center.z + Math.sin(a) * r);
       s.visible = Math.sin(t * 3 + i * 1.9) > -0.3;
-      s.quaternion.copy(camera.quaternion);
     });
     for (const e of this.events) {
       const age = t - e.t0;
-      const life = e.kind === "puff" ? 0.6 : 1.2;
+      const life = e.kind === "puff" ? 0.65 : 1.2;
       e.parts.forEach((s, i) => {
         s.visible = age >= 0 && age < life;
         if (!s.visible) return;
         const d = s.userData.dir;
-        const k = e.kind === "puff" ? 1.6 * age : 0.9 * age;
+        const k = e.kind === "puff" ? 2.2 * age - 1.2 * age * age : 0.9 * age;
         s.position.set(e.at.x + d.x * k, e.at.y + d.y * k + (e.kind === "puff" ? 0 : 0.2 * Math.sin(age * 6 + i)), e.at.z + d.z * k);
-        s.quaternion.copy(camera.quaternion);
-        const shrink = e.kind === "puff" ? Math.max(0.2, 1 - age / life) : 1;
-        s.scale.setScalar(shrink);
       });
     }
     for (const e of this.events.filter((e) => t - e.t0 > 1.5)) {
       for (const s of e.parts) {
         this.group.remove(s);
-        s.geometry.dispose();
         s.material.dispose();
       }
     }

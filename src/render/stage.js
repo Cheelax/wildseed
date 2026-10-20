@@ -65,7 +65,7 @@ export class Stage {
     box.union(new THREE.Box3(new THREE.Vector3(-0.6, 0, -0.6), new THREE.Vector3(0.6, 1.3, 0.6)));
     this.bounds = box.getBoundingSphere(new THREE.Sphere());
     this.center.set(0, this.bounds.center.y, 0);
-    this.fx.setup(genome, this.creature.height);
+    this.fx.setup(genome, this.creature.height, this.bounds.radius);
     this.fx.burst("puff", HATCH.pop, new THREE.Vector3(0, 0.6, 0));
     this.colors = {
       sky: look.sky,
@@ -97,7 +97,7 @@ export class Stage {
       const react = past.length ? t - past.at(-1) : Infinity;
       this.doing = creature.pose(t - HATCH.pop, { look, react, pokes: past.length - 1, crying: crying || (s > 0.2 && s < 0.9) });
     } else this.doing = { habit: null, s: 0 };
-    this.fx.pose(t, this.camera, this.center, this.doing);
+    this.fx.pose(t, this.center, this.doing);
   }
 }
 
