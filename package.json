@@ -9,7 +9,8 @@
     "dev": "vite",
     "build": "vite build --configLoader native",
     "preview": "vite preview",
-    "hatch": "node bin/hatch.mjs"
+    "hatch": "node bin/hatch.mjs",
+    "test": "node --test test/*.test.mjs"
   },
   "repository": {
     "type": "git",

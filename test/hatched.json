@@ -1,0 +1,531 @@
+[
+ {
+  "seed": "thomas",
+  "name": "Thomnub",
+  "species": "domeback",
+  "affinity": "stone",
+  "rare": false,
+  "stats": {
+   "hp": 80,
+   "attack": 40,
+   "defense": 100,
+   "speed": 25
+  },
+  "palette": [
+   "#b2a6c5",
+   "#e8e6ea",
+   "#46d8bf",
+   "#f4ebd7",
+   "#271d35",
+   "#18101e"
+  ],
+  "traits": {
+   "size": 0.96,
+   "build": 0.7,
+   "eyes": "round",
+   "eyeSize": 0.93,
+   "eyeGap": 1.07,
+   "mouth": "fang",
+   "cheeks": false,
+   "marking": "patch",
+   "charm": "stack",
+   "mood": "proud",
+   "voice": {
+    "pitch": 347,
+    "notes": 1,
+    "contour": "fall",
+    "vowel": "u"
+   },
+   "shell": 1.09,
+   "shellPattern": "rings",
+   "neck": 0.96,
+   "head": 1.11
+  }
+ },
+ {
+  "seed": "hotpod",
+  "name": "Hotik",
+  "species": "prickle",
+  "affinity": "spark",
+  "rare": false,
+  "stats": {
+   "hp": 51,
+   "attack": 37,
+   "defense": 79,
+   "speed": 54
+  },
+  "palette": [
+   "#f9c958",
+   "#eae5cc",
+   "#6177e5",
+   "#5a523f",
+   "#2b2517",
+   "#2b2812"
+  ],
+  "traits": {
+   "size": 1.02,
+   "build": 0.66,
+   "eyes": "round",
+   "eyeSize": 0.88,
+   "eyeGap": 1.09,
+   "mouth": "smile",
+   "cheeks": true,
+   "marking": "socks",
+   "charm": "none",
+   "mood": "proud",
+   "voice": {
+    "pitch": 512,
+    "notes": 2,
+    "contour": "trill",
+    "vowel": "o"
+   },
+   "spikes": 17,
+   "spikeLength": 1.27,
+   "spikeTip": "sharp",
+   "muzzle": 1.12,
+   "ears": 0.91
+  }
+ },
+ {
+  "seed": "moss",
+  "name": "Mossdor",
+  "species": "prickle",
+  "affinity": "stone",
+  "rare": false,
+  "stats": {
+   "hp": 47,
+   "attack": 41,
+   "defense": 76,
+   "speed": 33
+  },
+  "palette": [
+   "#8897b9",
+   "#dddee4",
+   "#c67ed7",
+   "#e7c055",
+   "#911fad",
+   "#0e1125"
+  ],
+  "traits": {
+   "size": 1.04,
+   "build": 0.76,
+   "eyes": "button",
+   "eyeSize": 0.99,
+   "eyeGap": 1.11,
+   "mouth": "fang",
+   "cheeks": false,
+   "marking": "spots",
+   "charm": "stack",
+   "mood": "sleepy",
+   "voice": {
+    "pitch": 608,
+    "notes": 1,
+    "contour": "fall",
+    "vowel": "e"
+   },
+   "spikes": 27,
+   "spikeLength": 1.26,
+   "spikeTip": "sharp",
+   "muzzle": 1.07,
+   "ears": 1.01
+  }
+ },
+ {
+  "seed": "a",
+  "name": "Avolt",
+  "species": "trundle",
+  "affinity": "spark",
+  "rare": false,
+  "stats": {
+   "hp": 82,
+   "attack": 46,
+   "defense": 46,
+   "speed": 67
+  },
+  "palette": [
+   "#f58d42",
+   "#f3ebe2",
+   "#4c9bf0",
+   "#735845",
+   "#1f64ad",
+   "#221b11"
+  ],
+  "traits": {
+   "size": 0.97,
+   "build": 0.52,
+   "eyes": "round",
+   "eyeSize": 1.19,
+   "eyeGap": 1.02,
+   "mouth": "fang",
+   "cheeks": false,
+   "marking": "spots",
+   "charm": "none",
+   "mood": "curious",
+   "voice": {
+    "pitch": 376,
+    "notes": 2,
+    "contour": "rise",
+    "vowel": "o"
+   },
+   "snout": 0.66,
+   "ears": "leaf",
+   "legs": 0.82,
+   "tail": "fluff",
+   "ridge": "fur"
+  }
+ },
+ {
+  "seed": "pebble",
+  "name": "Pebo",
+  "species": "pipkin",
+  "affinity": "stone",
+  "rare": false,
+  "stats": {
+   "hp": 58,
+   "attack": 41,
+   "defense": 65,
+   "speed": 86
+  },
+  "palette": [
+   "#ba826d",
+   "#e1dad6",
+   "#bc89dc",
+   "#604439",
+   "#35231d",
+   "#281d15"
+  ],
+  "traits": {
+   "size": 0.89,
+   "build": 0.29,
+   "eyes": "gem",
+   "eyeSize": 1.17,
+   "eyeGap": 0.91,
+   "mouth": "cat",
+   "cheeks": true,
+   "marking": "stripes",
+   "charm": "stack",
+   "mood": "proud",
+   "voice": {
+    "pitch": 751,
+    "notes": 2,
+    "contour": "fall",
+    "vowel": "o"
+   },
+   "crest": 3,
+   "crestLength": 1,
+   "beak": 0.95,
+   "wings": 0.95,
+   "tailFeathers": 4
+  }
+ },
+ {
+  "seed": "noé",
+  "name": "Noenub",
+  "species": "drift",
+  "affinity": "stone",
+  "rare": false,
+  "stats": {
+   "hp": 33,
+   "attack": 59,
+   "defense": 51,
+   "speed": 74
+  },
+  "palette": [
+   "#a297bf",
+   "#e0dde4",
+   "#ae6cda",
+   "#524672",
+   "#1d172b",
+   "#1d122b"
+  ],
+  "traits": {
+   "size": 1.03,
+   "build": 0.16,
+   "eyes": "button",
+   "eyeSize": 1.03,
+   "eyeGap": 1.02,
+   "mouth": "cat",
+   "cheeks": false,
+   "marking": "none",
+   "charm": "crystal",
+   "mood": "bouncy",
+   "voice": {
+    "pitch": 530,
+    "notes": 1,
+    "contour": "fall",
+    "vowel": "o"
+   },
+   "dome": 0.92,
+   "tentacles": 4,
+   "tentacleLength": 1.07,
+   "curl": 0.72,
+   "frills": 10,
+   "antenna": "curl"
+  }
+ },
+ {
+  "seed": "東京",
+  "name": "Chifizz",
+  "species": "prickle",
+  "affinity": "spark",
+  "rare": false,
+  "stats": {
+   "hp": 49,
+   "attack": 39,
+   "defense": 79,
+   "speed": 47
+  },
+  "palette": [
+   "#f7c64b",
+   "#f1efdf",
+   "#609af0",
+   "#5c5542",
+   "#352e1d",
+   "#282610"
+  ],
+  "traits": {
+   "size": 0.94,
+   "build": 0.45,
+   "eyes": "round",
+   "eyeSize": 1.08,
+   "eyeGap": 0.94,
+   "mouth": "cat",
+   "cheeks": true,
+   "marking": "spots",
+   "charm": "none",
+   "mood": "curious",
+   "voice": {
+    "pitch": 673,
+    "notes": 1,
+    "contour": "rise",
+    "vowel": "u"
+   },
+   "spikes": 19,
+   "spikeLength": 1.29,
+   "spikeTip": "sharp",
+   "muzzle": 0.92,
+   "ears": 0.83
+  }
+ },
+ {
+  "seed": "кот",
+  "name": "Kotble",
+  "species": "drift",
+  "affinity": "stone",
+  "rare": false,
+  "stats": {
+   "hp": 34,
+   "attack": 44,
+   "defense": 47,
+   "speed": 58
+  },
+  "palette": [
+   "#b7ab8f",
+   "#eaeae6",
+   "#59c3cf",
+   "#eecb58",
+   "#1f9fad",
+   "#222011"
+  ],
+  "traits": {
+   "size": 1.05,
+   "build": 0.05,
+   "eyes": "button",
+   "eyeSize": 1,
+   "eyeGap": 0.88,
+   "mouth": "smile",
+   "cheeks": false,
+   "marking": "stripes",
+   "charm": "none",
+   "mood": "proud",
+   "voice": {
+    "pitch": 519,
+    "notes": 1,
+    "contour": "trill",
+    "vowel": "a"
+   },
+   "dome": 0.77,
+   "tentacles": 3,
+   "tentacleLength": 1.07,
+   "curl": 0.39,
+   "frills": 8,
+   "antenna": "bulb"
+  }
+ },
+ {
+  "seed": "o'brien",
+  "name": "Obwick",
+  "species": "prickle",
+  "affinity": "moss",
+  "rare": false,
+  "stats": {
+   "hp": 69,
+   "attack": 41,
+   "defense": 82,
+   "speed": 31
+  },
+  "palette": [
+   "#62bc8f",
+   "#e7eeec",
+   "#41752f",
+   "#496959",
+   "#1e382b",
+   "#12211c"
+  ],
+  "traits": {
+   "size": 0.92,
+   "build": 0.91,
+   "eyes": "round",
+   "eyeSize": 1.18,
+   "eyeGap": 1.07,
+   "mouth": "open",
+   "cheeks": true,
+   "marking": "mask",
+   "charm": "mushroom",
+   "mood": "proud",
+   "voice": {
+    "pitch": 599,
+    "notes": 2,
+    "contour": "hop",
+    "vowel": "u"
+   },
+   "spikes": 27,
+   "spikeLength": 0.9,
+   "spikeTip": "round",
+   "muzzle": 0.96,
+   "ears": 0.85
+  }
+ },
+ {
+  "seed": "x-1",
+  "name": "Xupix",
+  "species": "trundle",
+  "affinity": "spark",
+  "rare": false,
+  "stats": {
+   "hp": 70,
+   "attack": 51,
+   "defense": 50,
+   "speed": 64
+  },
+  "palette": [
+   "#f37e3f",
+   "#eadbcd",
+   "#6cdfe5",
+   "#ebc55c",
+   "#38271e",
+   "#2e2214"
+  ],
+  "traits": {
+   "size": 0.9,
+   "build": 0.66,
+   "eyes": "round",
+   "eyeSize": 1,
+   "eyeGap": 1.07,
+   "mouth": "cat",
+   "cheeks": true,
+   "marking": "spots",
+   "charm": "star",
+   "mood": "shy",
+   "voice": {
+    "pitch": 473,
+    "notes": 1,
+    "contour": "trill",
+    "vowel": "i"
+   },
+   "snout": 1.02,
+   "ears": "leaf",
+   "legs": 1.09,
+   "tail": "tuft",
+   "ridge": "plates"
+  }
+ },
+ {
+  "seed": "big blue",
+  "name": "Bigbun",
+  "species": "drift",
+  "affinity": "moss",
+  "rare": false,
+  "stats": {
+   "hp": 51,
+   "attack": 49,
+   "defense": 37,
+   "speed": 57
+  },
+  "palette": [
+   "#49be41",
+   "#d7e5d8",
+   "#efd762",
+   "#e8ddc9",
+   "#1e351d",
+   "#172b19"
+  ],
+  "traits": {
+   "size": 0.96,
+   "build": 0.27,
+   "eyes": "button",
+   "eyeSize": 1.09,
+   "eyeGap": 0.86,
+   "mouth": "beam",
+   "cheeks": true,
+   "marking": "none",
+   "charm": "mushroom",
+   "mood": "curious",
+   "voice": {
+    "pitch": 534,
+    "notes": 2,
+    "contour": "rise",
+    "vowel": "a"
+   },
+   "dome": 1.13,
+   "tentacles": 3,
+   "tentacleLength": 1.17,
+   "curl": 0.87,
+   "frills": 8,
+   "antenna": "none"
+  }
+ },
+ {
+  "seed": "norwin",
+  "name": "Norvolt",
+  "species": "domeback",
+  "affinity": "spark",
+  "rare": false,
+  "stats": {
+   "hp": 72,
+   "attack": 41,
+   "defense": 73,
+   "speed": 40
+  },
+  "palette": [
+   "#f0804c",
+   "#ecdfd5",
+   "#44c9e4",
+   "#6e5549",
+   "#2b1e17",
+   "#2d2115"
+  ],
+  "traits": {
+   "size": 0.94,
+   "build": 0.24,
+   "eyes": "round",
+   "eyeSize": 1.08,
+   "eyeGap": 0.98,
+   "mouth": "fang",
+   "cheeks": true,
+   "marking": "patch",
+   "charm": "orb",
+   "mood": "shy",
+   "voice": {
+    "pitch": 351,
+    "notes": 3,
+    "contour": "trill",
+    "vowel": "o"
+   },
+   "shell": 0.92,
+   "shellPattern": "rings",
+   "neck": 0.72,
+   "head": 1.12
+  }
+ }
+]
