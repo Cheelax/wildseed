@@ -1,5 +1,6 @@
 // An animated GIF encoder: one palette of at most 64 colors for every frame (median cut when the frames
 // hold more), LZW compression, endless looping. No dependency.
+import { GIF_MAX_COLORS } from "../rules.mjs";
 
 /** Splits the colors into at most `max` boxes along their widest channel; one average color per box. */
 function medianCut(counts, max) {
@@ -42,7 +43,7 @@ function medianCut(counts, max) {
 }
 
 /** One palette for all frames (RGBA arrays), and each frame as palette indices. */
-export function quantize(frames, max = 64) {
+export function quantize(frames, max = GIF_MAX_COLORS) {
   const counts = new Map();
   for (const f of frames) {
     for (let i = 0; i < f.length; i += 4) {
@@ -125,7 +126,7 @@ function lzw(indices, minCodeSize, out) {
  * frame shown for `delays[i]` hundredths of a second.
  */
 export function encodeGif(frames, width, height, { scale = 1, delays }) {
-  const { palette, indexed } = quantize(frames, 64);
+  const { palette, indexed } = quantize(frames);
   const bitsPerIndex = Math.max(1, Math.ceil(Math.log2(palette.length)));
   const tableSize = 1 << bitsPerIndex;
   const W = width * scale, H = height * scale;

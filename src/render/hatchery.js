@@ -2,12 +2,13 @@
 // creature, a creature that follows the pointer and laughs when it is poked.
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { PIXEL_MIN } from "../rules.mjs";
 import { PixelRenderer } from "./pixel.js";
 import { HATCH, Stage, aim } from "./stage.js";
 
 /** The art pixel's size in CSS pixels for a scene of w × h: about 160 art pixels tall, 3 or more. */
 export function pixelSize(w, h) {
-  return Math.max(3, Math.round(Math.min(w * 0.72, h) / 165));
+  return Math.max(PIXEL_MIN, Math.round(Math.min(w * 0.72, h) / 165));
 }
 
 export class Hatchery {
