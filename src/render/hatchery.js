@@ -42,18 +42,31 @@ export class Hatchery {
     return this.renderer.kind;
   }
 
-  /** Fits the canvas to its box: whole art pixels of `pixel` CSS pixels, from the top-left corner. */
+  /**
+   * Fits the canvas to its box: whole art pixels of `pixel` CSS pixels, its top-left corner on a whole
+   * device pixel wherever the layout puts the box, so that every art pixel is a crisp square.
+   */
   resize() {
-    const box = this.canvas.parentElement.getBoundingClientRect();
-    const pixel = pixelSize(box.width, box.height);
-    const width = Math.max(40, Math.floor(box.width / pixel));
-    const height = Math.max(40, Math.floor(box.height / pixel));
+    const box = this.canvas.parentElement;
+    const rect = box.getBoundingClientRect();
+    const innerW = rect.width - 2 * box.clientLeft, innerH = rect.height - 2 * box.clientTop;
+    const pixel = pixelSize(innerW, innerH);
+    const width = Math.max(40, Math.floor(innerW / pixel));
+    const height = Math.max(40, Math.floor(innerH / pixel));
+    const dpr = window.devicePixelRatio || 1;
+    const snap = (v) => Math.round(v * dpr) / dpr;
+    const x0 = rect.left + box.clientLeft, y0 = rect.top + box.clientTop;
+    const left = snap(x0 + Math.floor((innerW - width * pixel) / 2)) - x0;
+    const top = snap(y0 + Math.floor((innerH - height * pixel) / 2)) - y0;
+    const layout = `${width}x${height}x${pixel}+${left}+${top}`;
+    if (layout === this.layout) return;
+    this.layout = layout;
+    this.canvas.style.left = `${left}px`;
+    this.canvas.style.top = `${top}px`;
     if (width === this.size.width && height === this.size.height && pixel === this.size.pixel) return;
     this.size = { width, height, pixel };
     this.canvas.style.width = `${width * pixel}px`;
     this.canvas.style.height = `${height * pixel}px`;
-    this.canvas.style.left = `${Math.floor((box.width - width * pixel) / 2)}px`;
-    this.canvas.style.top = `${Math.floor((box.height - height * pixel) / 2)}px`;
     this.renderer.setSize(width, height);
     this.onResize(this.size);
     this.stage.camera.aspect = width / height;
