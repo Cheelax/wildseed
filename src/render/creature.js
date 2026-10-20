@@ -11,8 +11,10 @@ import { prickle } from "./species/prickle.js";
 import { wyrmlet } from "./species/wyrmlet.js";
 import { inchling } from "./species/inchling.js";
 import { domeback } from "./species/domeback.js";
+import { toadle } from "./species/toadle.js";
+import { flutterling } from "./species/flutterling.js";
 
-const BUILDERS = { pipkin, hopple, trundle, drift, prickle, wyrmlet, inchling, domeback };
+const BUILDERS = { pipkin, hopple, trundle, drift, prickle, wyrmlet, inchling, domeback, toadle, flutterling };
 
 /**
  * How each mood moves when nobody touches it, and its habit: every `every` seconds, for `for` seconds,
@@ -141,6 +143,7 @@ export class Creature {
     if (m.idle) m.idle.visible = !open;
     if (m.open) m.open.visible = open;
     if (m.jaw) m.jaw.rotation.x = open ? 0.45 : 0;
+    for (const p of rig.puffs ?? []) p.scale.setScalar(1 + 0.06 * Math.sin(t * 3.1) + (open ? 0.55 : 0));
     return { habit, s };
   }
 }

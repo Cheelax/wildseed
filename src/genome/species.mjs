@@ -98,4 +98,26 @@ export const SPECIES = {
       head: g("head").num(0.85, 1.2),
     }),
   },
+  // A squat frog: its eyes up on two domes, a wide grin, a throat that swells when it sings.
+  toadle: {
+    stats: { hp: 4, attack: 3, defense: 2, speed: 3 },
+    voice: 300,
+    knobs: (g) => ({
+      domes: g("domes").num(0.85, 1.25),
+      throat: g("throat").num(0.75, 1.3),
+      legs: g("legs").num(0.85, 1.2),
+    }),
+  },
+  // A fluffy moth that hovers on two pairs of wings, a ruff around its neck, feathered antennae.
+  flutterling: {
+    stats: { hp: 2, attack: 3, defense: 2, speed: 5 },
+    voice: 820,
+    knobs: (g) => ({
+      wings: g("wings").num(0.85, 1.2),
+      wingShape: g("wingShape").pick(["round", "pointed", "swallowtail"]),
+      antennae: g("antennae").pick(["feather", "club"]),
+      fluff: g("fluff").num(0.85, 1.25),
+      eyespots: g("eyespots").chance(0.6),
+    }),
+  },
 };

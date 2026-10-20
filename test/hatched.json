@@ -2,14 +2,14 @@
  {
   "seed": "thomas",
   "name": "Thomnub",
-  "species": "domeback",
+  "species": "toadle",
   "affinity": "stone",
   "rare": false,
   "stats": {
-   "hp": 80,
-   "attack": 40,
-   "defense": 100,
-   "speed": 25
+   "hp": 78,
+   "attack": 53,
+   "defense": 59,
+   "speed": 55
   },
   "palette": [
    "#b2a6c5",
@@ -31,28 +31,27 @@
    "charm": "stack",
    "mood": "proud",
    "voice": {
-    "pitch": 347,
+    "pitch": 372,
     "notes": 1,
     "contour": "fall",
     "vowel": "u"
    },
-   "shell": 1.09,
-   "shellPattern": "rings",
-   "neck": 0.96,
-   "head": 1.11
+   "domes": 0.89,
+   "throat": 1.17,
+   "legs": 0.92
   }
  },
  {
   "seed": "hotpod",
   "name": "Hotik",
-  "species": "prickle",
+  "species": "wyrmlet",
   "affinity": "spark",
   "rare": false,
   "stats": {
-   "hp": 51,
-   "attack": 37,
-   "defense": 79,
-   "speed": 54
+   "hp": 48,
+   "attack": 74,
+   "defense": 35,
+   "speed": 64
   },
   "palette": [
    "#f9c958",
@@ -74,29 +73,30 @@
    "charm": "none",
    "mood": "proud",
    "voice": {
-    "pitch": 512,
+    "pitch": 291,
     "notes": 2,
     "contour": "trill",
     "vowel": "o"
    },
-   "spikes": 17,
-   "spikeLength": 1.27,
-   "spikeTip": "sharp",
-   "muzzle": 1.12,
-   "ears": 0.91
+   "horns": "nub",
+   "hornLength": 0.71,
+   "wings": 1.16,
+   "tail": 1.16,
+   "tailTip": "spade",
+   "spines": 2
   }
  },
  {
   "seed": "moss",
   "name": "Mossdor",
-  "species": "prickle",
+  "species": "wyrmlet",
   "affinity": "stone",
   "rare": false,
   "stats": {
-   "hp": 47,
-   "attack": 41,
-   "defense": 76,
-   "speed": 33
+   "hp": 42,
+   "attack": 77,
+   "defense": 38,
+   "speed": 40
   },
   "palette": [
    "#8897b9",
@@ -118,29 +118,30 @@
    "charm": "stack",
    "mood": "sleepy",
    "voice": {
-    "pitch": 608,
+    "pitch": 346,
     "notes": 1,
     "contour": "fall",
     "vowel": "e"
    },
-   "spikes": 27,
-   "spikeLength": 1.26,
-   "spikeTip": "sharp",
-   "muzzle": 1.07,
-   "ears": 1.01
+   "horns": "branch",
+   "hornLength": 0.87,
+   "wings": 1.02,
+   "tail": 1.14,
+   "tailTip": "flame",
+   "spines": 2
   }
  },
  {
   "seed": "a",
   "name": "Avolt",
-  "species": "trundle",
+  "species": "drift",
   "affinity": "spark",
   "rare": false,
   "stats": {
-   "hp": 82,
-   "attack": 46,
-   "defense": 46,
-   "speed": 67
+   "hp": 51,
+   "attack": 52,
+   "defense": 38,
+   "speed": 100
   },
   "palette": [
    "#f58d42",
@@ -162,16 +163,17 @@
    "charm": "none",
    "mood": "curious",
    "voice": {
-    "pitch": 376,
+    "pitch": 534,
     "notes": 2,
     "contour": "rise",
     "vowel": "o"
    },
-   "snout": 0.66,
-   "ears": "leaf",
-   "legs": 0.82,
-   "tail": "fluff",
-   "ridge": "fur"
+   "dome": 1.16,
+   "tentacles": 5,
+   "tentacleLength": 0.71,
+   "curl": 0.43,
+   "frills": 8,
+   "antenna": "curl"
   }
  },
  {
@@ -221,14 +223,14 @@
  {
   "seed": "noé",
   "name": "Noenub",
-  "species": "drift",
+  "species": "prickle",
   "affinity": "stone",
   "rare": false,
   "stats": {
-   "hp": 33,
-   "attack": 59,
-   "defense": 51,
-   "speed": 74
+   "hp": 43,
+   "attack": 42,
+   "defense": 91,
+   "speed": 41
   },
   "palette": [
    "#a297bf",
@@ -250,30 +252,29 @@
    "charm": "crystal",
    "mood": "bouncy",
    "voice": {
-    "pitch": 530,
+    "pitch": 569,
     "notes": 1,
     "contour": "fall",
     "vowel": "o"
    },
-   "dome": 0.92,
-   "tentacles": 4,
-   "tentacleLength": 1.07,
-   "curl": 0.72,
-   "frills": 10,
-   "antenna": "curl"
+   "spikes": 21,
+   "spikeLength": 0.99,
+   "spikeTip": "round",
+   "muzzle": 0.74,
+   "ears": 1.14
   }
  },
  {
   "seed": "東京",
   "name": "Chifizz",
-  "species": "prickle",
+  "species": "wyrmlet",
   "affinity": "spark",
   "rare": false,
   "stats": {
-   "hp": 49,
-   "attack": 39,
-   "defense": 79,
-   "speed": 47
+   "hp": 46,
+   "attack": 77,
+   "defense": 35,
+   "speed": 56
   },
   "palette": [
    "#f7c64b",
@@ -295,29 +296,30 @@
    "charm": "none",
    "mood": "curious",
    "voice": {
-    "pitch": 673,
+    "pitch": 383,
     "notes": 1,
     "contour": "rise",
     "vowel": "u"
    },
-   "spikes": 19,
-   "spikeLength": 1.29,
-   "spikeTip": "sharp",
-   "muzzle": 0.92,
-   "ears": 0.83
+   "horns": "curve",
+   "hornLength": 0.85,
+   "wings": 0.88,
+   "tail": 0.98,
+   "tailTip": "leaf",
+   "spines": 1
   }
  },
  {
   "seed": "кот",
   "name": "Kotble",
-  "species": "drift",
+  "species": "prickle",
   "affinity": "stone",
   "rare": false,
   "stats": {
-   "hp": 34,
-   "attack": 44,
-   "defense": 47,
-   "speed": 58
+   "hp": 43,
+   "attack": 31,
+   "defense": 78,
+   "speed": 31
   },
   "palette": [
    "#b7ab8f",
@@ -339,30 +341,29 @@
    "charm": "none",
    "mood": "proud",
    "voice": {
-    "pitch": 519,
+    "pitch": 558,
     "notes": 1,
     "contour": "trill",
     "vowel": "a"
    },
-   "dome": 0.77,
-   "tentacles": 3,
-   "tentacleLength": 1.07,
-   "curl": 0.39,
-   "frills": 8,
-   "antenna": "bulb"
+   "spikes": 18,
+   "spikeLength": 1.11,
+   "spikeTip": "sharp",
+   "muzzle": 1.09,
+   "ears": 1.05
   }
  },
  {
   "seed": "o'brien",
   "name": "Obwick",
-  "species": "prickle",
+  "species": "wyrmlet",
   "affinity": "moss",
   "rare": false,
   "stats": {
-   "hp": 69,
-   "attack": 41,
-   "defense": 82,
-   "speed": 31
+   "hp": 65,
+   "attack": 82,
+   "defense": 36,
+   "speed": 40
   },
   "palette": [
    "#62bc8f",
@@ -384,29 +385,30 @@
    "charm": "mushroom",
    "mood": "proud",
    "voice": {
-    "pitch": 599,
+    "pitch": 341,
     "notes": 2,
     "contour": "hop",
     "vowel": "u"
    },
-   "spikes": 27,
-   "spikeLength": 0.9,
-   "spikeTip": "round",
-   "muzzle": 0.96,
-   "ears": 0.85
+   "horns": "branch",
+   "hornLength": 0.95,
+   "wings": 1.27,
+   "tail": 1.09,
+   "tailTip": "leaf",
+   "spines": 4
   }
  },
  {
   "seed": "x-1",
   "name": "Xupix",
-  "species": "trundle",
+  "species": "drift",
   "affinity": "spark",
   "rare": false,
   "stats": {
-   "hp": 70,
-   "attack": 51,
-   "defense": 50,
-   "speed": 64
+   "hp": 42,
+   "attack": 54,
+   "defense": 39,
+   "speed": 100
   },
   "palette": [
    "#f37e3f",
@@ -428,29 +430,30 @@
    "charm": "star",
    "mood": "shy",
    "voice": {
-    "pitch": 473,
+    "pitch": 672,
     "notes": 1,
     "contour": "trill",
     "vowel": "i"
    },
-   "snout": 1.02,
-   "ears": "leaf",
-   "legs": 1.09,
-   "tail": "tuft",
-   "ridge": "plates"
+   "dome": 1.09,
+   "tentacles": 3,
+   "tentacleLength": 1.03,
+   "curl": 0.76,
+   "frills": 7,
+   "antenna": "bulb"
   }
  },
  {
   "seed": "big blue",
   "name": "Bigbun",
-  "species": "drift",
+  "species": "prickle",
   "affinity": "moss",
   "rare": false,
   "stats": {
-   "hp": 51,
-   "attack": 49,
-   "defense": 37,
-   "speed": 57
+   "hp": 59,
+   "attack": 33,
+   "defense": 71,
+   "speed": 31
   },
   "palette": [
    "#49be41",
@@ -472,30 +475,29 @@
    "charm": "mushroom",
    "mood": "curious",
    "voice": {
-    "pitch": 534,
+    "pitch": 574,
     "notes": 2,
     "contour": "rise",
     "vowel": "a"
    },
-   "dome": 1.13,
-   "tentacles": 3,
-   "tentacleLength": 1.17,
-   "curl": 0.87,
-   "frills": 8,
-   "antenna": "none"
+   "spikes": 26,
+   "spikeLength": 1.09,
+   "spikeTip": "round",
+   "muzzle": 0.87,
+   "ears": 0.94
   }
  },
  {
   "seed": "norwin",
   "name": "Norvolt",
-  "species": "domeback",
+  "species": "flutterling",
   "affinity": "spark",
   "rare": false,
   "stats": {
-   "hp": 72,
-   "attack": 41,
-   "defense": 73,
-   "speed": 40
+   "hp": 40,
+   "attack": 55,
+   "defense": 34,
+   "speed": 97
   },
   "palette": [
    "#f0804c",
@@ -517,15 +519,16 @@
    "charm": "orb",
    "mood": "shy",
    "voice": {
-    "pitch": 351,
+    "pitch": 1029,
     "notes": 3,
     "contour": "trill",
     "vowel": "o"
    },
-   "shell": 0.92,
-   "shellPattern": "rings",
-   "neck": 0.72,
-   "head": 1.12
+   "wings": 1.1,
+   "wingShape": "pointed",
+   "antennae": "feather",
+   "fluff": 1.05,
+   "eyespots": true
   }
  }
 ]

@@ -34,7 +34,7 @@ see, made in the browser.
 ```
 src/seed.mjs            seeds: normalize, validate, the reason a seed is refused
 src/genome.mjs          genomeOf(seed): species, affinity, rarity, name, stats, palette, traits
-src/genome/             genes (one stream per gene), names, palettes, the eight species' knobs
+src/genome/             genes (one stream per gene), names, palettes, the ten species' knobs
 bin/hatch.mjs           the command
 src/render/             the scene: pixel renderer, toon materials, stage, egg, creature, species, effects
 src/share/              the GIF encoder, the card, the pixel font
@@ -71,11 +71,12 @@ so the GIF shows the same creature as the page.
   transliterated (`thomas` → Thom…, `кот` → Kot…), and take an ending from the creature's affinity
   (moss: -bun, -kin, -let…; stone: -bo, -nub, -rock…; spark: -zap, -pix, -volt…). A word with no such
   letter (`東京`) gets a syllable of its own.
-- **Eight species**, each about one creature in eight: pipkin (a round bird with a crest and a beak),
+- **Ten species**, each about one creature in ten: pipkin (a round bird with a crest and a beak),
   hopple (a hopper with long ears up, flopped or out to the sides), trundle (a four-legged trotter with a
   long nose), drift (a floating jelly with curling tentacles), prickle (a hedgehog with a soft face),
-  wyrmlet (a small dragon with horns, wings and a tipped tail), inchling (a caterpillar that rears up), and
-  domeback (a walker under a dome of a shell).
+  wyrmlet (a small dragon with horns, wings and a tipped tail), inchling (a caterpillar that rears up),
+  domeback (a walker under a dome of a shell), toadle (a squat frog with its eyes on two domes and a throat
+  that swells when it sings) and flutterling (a fluffy moth hovering on two pairs of wings).
 - **Affinity** sets the palette's family, the egg, the island's ground, the sky and a charm the creature
   may wear (moss: a sprout, a leaf, a flower, a mushroom; stone: a pebble, a crystal, a stack of stones;
   spark: a bolt, an orb, a star).

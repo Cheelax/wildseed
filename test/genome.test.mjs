@@ -32,11 +32,11 @@ test("stats are integers from 10 to 100 that add up to 160 to 280", () => {
   }
 });
 
-test("eight species, each about one creature in eight; all three affinities; about one in 64 rare", () => {
+test("ten species, each about one creature in ten; all three affinities; about one in 64 rare", () => {
   const count = (f) => genomes.reduce((m, g) => m.set(f(g), (m.get(f(g)) ?? 0) + 1), new Map());
   const species = count((g) => g.species);
-  assert.equal(species.size, 8);
-  for (const n of species.values()) assert.ok(n / genomes.length > 0.09);
+  assert.equal(species.size, 10);
+  for (const n of species.values()) assert.ok(n / genomes.length > 0.07);
   assert.equal(count((g) => g.affinity).size, 3);
   const rare = genomes.filter((g) => g.rare).length / genomes.length;
   assert.ok(rare > 1 / 100 && rare < 1 / 40, `rare share ${rare}`);
