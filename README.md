@@ -53,11 +53,11 @@ genomes for a few seeds, and `npm test` checks that they never change.
 **The scene** is drawn at about 160 art pixels high into a render target, then one pass paints the sky in
 bands and inks a one-pixel outline wherever a part stands in front of what is behind it (depth, and the
 part's class kept in the alpha channel). The canvas holds exactly the art pixels and CSS scales it up
-without smoothing; its corner is snapped to a whole screen pixel. Every material is a toon material: three.js
-lights it (sun, shadows, ambient), then the light level picks one of four flat bands of the part's own color,
-shadows leaning cool and highlights warm. Markings (spots, stripes, a patch, a mask, socks) are drawn in each
-part's own space, so they stick to it and come out as pixel shapes. Eyes, mouths and cheeks are small flat
-shapes on the head's surface.
+without smoothing; its corner is snapped to a whole screen pixel. Every lit part has a toon material:
+three.js lights it (sun, shadows, ambient), then the light level picks one of four flat bands of the part's
+own color, shadows leaning cool and highlights warm. Markings (spots, stripes, a patch, a mask, socks) are
+drawn in each part's own space, so they stick to it and come out as pixel shapes. Eyes, mouths and cheeks
+are small flat shapes on the head's surface.
 
 **A body** is built by its species ([src/render/species/](src/render/species/)) from ellipsoids, cones,
 tapered tubes and lathes, inside the ranges the species' knobs allow, then
@@ -93,9 +93,9 @@ so the GIF shows the same creature as the page.
   moss, gruff stone, buzzy spark). Browsers play sound only after a gesture: the first click or key wakes it.
 - **The page** with no `?seed=` hatches a word from the built-in list and puts it in the address. Each hatch
   pushes a history entry, so Back returns to the previous creature. A refused seed shows its reason under
-  the input and keeps the creature. Random deals the 160 built-in words, sixteen per species, from a shuffled
-  deck, so twenty presses hatch twenty different words. Under the card, "Hatched here" keeps the last twelve creatures
-  hatched on this device (in `localStorage`); a chip hatches its creature again.
+  the input and keeps the creature. Random deals the 160 built-in words, sixteen per species, from a
+  shuffled deck, so twenty presses hatch twenty different words. Under the card, "Hatched here" keeps the
+  last twelve creatures hatched on this device (in `localStorage`); a chip hatches its creature again.
 - **Sounds**: the egg cracks three times as it shakes and pops when it opens, then the creature cries. The
   Sound button turns them off, and the page remembers it.
 - **The GIF** is 480 × 480, four screen pixels per art pixel, 64 colors at most: the egg drops, wobbles,
