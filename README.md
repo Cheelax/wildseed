@@ -96,10 +96,15 @@ so the GIF shows the same creature as the page.
   the input and keeps the creature. Random deals the 160 built-in words, sixteen per species, from a
   shuffled deck, so twenty presses hatch twenty different words. Under the card, "Hatched here" keeps the
   last twelve creatures hatched on this device (in `localStorage`); a chip hatches its creature again.
-- **Sounds**: the egg cracks three times as it shakes and pops when it opens, then the creature cries. The
-  Sound button turns them off, and the page remembers it.
-- **The GIF** is 480 × 480, four screen pixels per art pixel, 64 colors at most: the egg drops, wobbles,
-  cracks and hatches, then the creature shows its habit and gets poked; its name runs along the bottom.
+- **The hatch** takes about two and a half seconds. The egg drops and wobbles; a jagged crack, its teeth
+  drawn from the seed, starts on the side facing you and runs around in three knocks, branching, chips of
+  shell flying off. The cap pops off and only the head comes out first, looking around (the rest of the
+  body is not drawn while it is still in the shell). Then the bottom falls open in three pieces, the body
+  shows from the top down, and the creature grows to its full size and hops out.
+- **Sounds**: the egg cracks three times, pops when the cap comes off and crumbles when it falls open,
+  then the creature cries. The Sound button turns them off, and the page remembers it.
+- **The GIF** is 480 × 480, four screen pixels per art pixel, 64 colors at most: the whole hatch, then the
+  creature shows its habit and gets poked; its name runs along the bottom.
   It is encoded in the browser by [src/share/gif.js](src/share/gif.js) (median cut, LZW).
 - **The card** is 640 × 896, four pixels per art pixel: name, the creature on its island, species and
   affinity, the four stats as bars and numbers, a line about its mood, and the seed, in a 5 × 7 pixel font

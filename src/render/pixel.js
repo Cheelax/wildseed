@@ -66,6 +66,7 @@ export class PixelRenderer {
     this.gl.setPixelRatio(1);
     this.gl.shadowMap.enabled = true;
     this.gl.shadowMap.type = THREE.BasicShadowMap;
+    this.gl.localClippingEnabled = true; // a hatching creature shows only what is out of its shell
     this.gl.setClearColor(0x000000, 0);
     this.kind = "webgl2"; // three.js renders through WebGL 2 only
     this.targets = new Map();

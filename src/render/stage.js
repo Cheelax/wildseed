@@ -3,15 +3,18 @@
 // calls it every frame, the GIF calls it at the times it records.
 import * as THREE from "three";
 import { Creature } from "./creature.js";
-import { Egg } from "./egg.js";
+import { Egg, RIM } from "./egg.js";
 import { Fx } from "./fx.js";
 import { CLASS, PATTERN, tick, toon } from "./toon.js";
 import { cone, cylinder, ellipsoid, gem, hueGap, mesh } from "./parts.js";
 import { hash32, stream } from "../genome/genes.mjs";
 import { dispose } from "./dispose.js";
 
-/** The hatch, in seconds: the egg lands, cracks three times as it shakes, pops; the creature is out and ready. */
-export const HATCH = { drop: 0.32, cracks: [0.66, 0.9, 1.12], pop: 1.3, ready: 1.85 };
+/**
+ * The hatch, in seconds: the egg lands, cracks three times as it shakes, its cap pops off and the head
+ * peeks out (open), the shell falls apart as the creature climbs out (burst), and it is ready.
+ */
+export const HATCH = { drop: 0.32, cracks: [0.62, 0.86, 1.08], open: 1.28, burst: 1.84, ready: 2.45 };
 
 /**
  * Puts a camera where it sees a sphere of `radius` around `center`, `margin` times over, from a little
@@ -64,14 +67,24 @@ export class Stage {
     this.egg = new Egg(genome);
     this.creature = new Creature(genome);
     this.world.add(this.egg.root, this.creature.root);
+    // What of the creature is still in its shell is not drawn: everything below this plane.
+    this.shell = new THREE.Plane(new THREE.Vector3(0, 1, 0), 10);
+    this.creature.root.traverse((o) => {
+      for (const m of [o.material ?? []].flat()) m.clippingPlanes = [this.shell];
+    });
     // Its size at rest, for the cameras: a sphere around the creature, egg and pop included.
     this.creature.pose(0);
     const box = new THREE.Box3().setFromObject(this.creature.root);
+    // While it peeks out of the egg it is small enough to fit in the shell, its head above the rim.
+    const size = box.getSize(new THREE.Vector3());
+    const small = THREE.MathUtils.clamp(0.95 / Math.max(size.x, size.z), 0.35, 0.7);
+    this.emerge = { small, low: RIM - 0.9 * box.max.y * small, high: RIM - 0.55 * box.max.y * small };
     box.union(new THREE.Box3(new THREE.Vector3(-0.6, 0, -0.6), new THREE.Vector3(0.6, 1.3, 0.6)));
     this.bounds = box.getBoundingSphere(new THREE.Sphere());
     this.center.set(0, this.bounds.center.y, 0);
     this.fx.setup(genome, this.creature.height, this.bounds.radius);
-    this.fx.burst("puff", HATCH.pop, new THREE.Vector3(0, 0.6, 0));
+    this.fx.burst("sparkles", HATCH.open, new THREE.Vector3(0, RIM + 0.3, 0));
+    this.fx.burst("puff", HATCH.burst, new THREE.Vector3(0, RIM * 0.7, 0));
     this.colors = {
       sky: look.sky,
       ink: { ground: look.ink, decor: look.ink, creature: genome.palette[5], egg: genome.rare ? "#14122e" : "#3b3328" },
@@ -98,16 +111,33 @@ export class Stage {
     const { egg, creature } = this;
     const eggVisible = egg.pose(t, HATCH);
     egg.root.visible = eggVisible;
-    const out = t >= HATCH.pop;
-    creature.root.visible = out;
-    if (out) {
-      const s = Math.min(1, (t - HATCH.pop) / (HATCH.ready - HATCH.pop));
-      const pop = s < 1 ? 1 - Math.cos(s * Math.PI * 2.5) * Math.exp(-4 * s) : 1;
-      creature.root.scale.setScalar(Math.max(0.05, pop));
-      creature.root.position.y = s < 1 ? 0.6 * Math.sin(s * Math.PI) : 0;
+    const { open, burst, ready } = HATCH;
+    creature.root.visible = t >= open;
+    if (t >= open) {
+      const { small, low, high } = this.emerge;
+      let scale = 1, y = 0, cries = false, shellAt = -10;
+      if (t < burst) {
+        // The cap is off: only its head is out, pushing up, wriggling, looking around.
+        const s = (t - open) / (burst - open);
+        scale = small;
+        y = low + (high - low) * (1 - (1 - s) ** 3) + 0.015 * Math.sin(t * 38) * (1 - s);
+        shellAt = RIM - 0.1;
+      } else if (t < ready) {
+        // The shell falls open: the body shows from the top down as the pieces fall away, and the
+        // creature grows to its full size and hops out.
+        const s = (t - burst) / (ready - burst);
+        const g = s * s * (3 - 2 * s);
+        scale = small + (1 - small) * g + 0.07 * Math.sin(Math.PI * s);
+        y = high * (1 - g) + 0.3 * Math.sin(Math.PI * s);
+        shellAt = RIM - 0.1 - (RIM + 0.6) * Math.min(1, s / 0.55);
+        cries = s > 0.1 && s < 0.8;
+      }
+      this.shell.constant = -shellAt;
+      creature.root.scale.setScalar(scale);
+      creature.root.position.y = y;
       const past = this.pokes.filter((p) => p <= t);
       const react = past.length ? t - past.at(-1) : Infinity;
-      this.doing = creature.pose(t - HATCH.pop, { look, react, pokes: past.length - 1, crying: crying || (s > 0.2 && s < 0.9) });
+      this.doing = creature.pose(t - open, { look, react, pokes: past.length - 1, crying: crying || cries });
     } else this.doing = { habit: null, s: 0 };
     this.fx.pose(t, this.center, this.doing);
   }

@@ -37,7 +37,7 @@ export async function makeGif(renderer, genome) {
   const W = 120, H = 120, scale = 4;
   const stage = studio(renderer, genome, W, H);
   // It shows its habit (a hop, a nap, a tilt…), then gets poked.
-  const poke = HATCH.pop + HABIT_START + habitLength(genome.traits.mood) + 0.3;
+  const poke = HATCH.open + HABIT_START + habitLength(genome.traits.mood) + 0.3;
   stage.poke(poke);
   const times = [];
   for (let t = 0; t < HATCH.ready; t += 0.08) times.push(t);

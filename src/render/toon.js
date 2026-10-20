@@ -136,13 +136,18 @@ export function toon(base, { mark = null, belly = null, stars = 0, cls = CLASS.c
 }
 
 const FLAT_VERTEX = /* glsl */ `
+#include <clipping_planes_pars_vertex>
 void main() {
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+  gl_Position = projectionMatrix * mvPosition;
+  #include <clipping_planes_vertex>
 }`;
 const FLAT_FRAGMENT = /* glsl */ `
+#include <clipping_planes_pars_fragment>
 uniform vec3 uColor;
 uniform float uClass;
 void main() {
+  #include <clipping_planes_fragment>
   gl_FragColor = vec4(uColor, uClass / 255.0);
 }`;
 
@@ -152,5 +157,6 @@ export function flat(c, cls = CLASS.face) {
     uniforms: { uColor: { value: color(c).clone() }, uClass: { value: cls } },
     vertexShader: FLAT_VERTEX,
     fragmentShader: FLAT_FRAGMENT,
+    clipping: true,
   });
 }

@@ -93,7 +93,7 @@ export class Hatchery {
     const t = this.time;
     this.stage.frame(t, { look: this.lookAt() });
     this.renderer.render(this.stage, this.size.width, this.size.height);
-    if (!this.cried && t >= HATCH.pop) {
+    if (!this.cried && t >= HATCH.burst) {
       this.cried = true;
       this.onHatched(this.stage.genome);
     }

@@ -25,16 +25,17 @@ export function wakeAudio() {
   if (live.state === "suspended") live.resume();
 }
 
-/** The egg's sounds, from now: a crack at each of `cracks` seconds, then a pop at `pop`. */
-export function hatchSounds({ cracks, pop }) {
+/** The egg's sounds, from now: a crack at each of `cracks` seconds, a pop as the cap comes off at `open`, a crumble at `burst`. */
+export function hatchSounds({ cracks, open, burst }) {
   if (muted || live?.state !== "running") return;
   const now = live.currentTime + 0.02;
-  cracks.forEach((t, i) => burst(live, now + t, 0.035, 1800 + 500 * i, 0.5));
-  burst(live, now + pop, 0.12, 900, 0.9);
+  cracks.forEach((t, i) => noise(live, now + t, 0.035, 1800 + 500 * i, 0.5));
+  noise(live, now + open, 0.1, 1100, 0.8);
+  noise(live, now + burst, 0.16, 650, 0.9);
 }
 
 /** A short burst of filtered noise: a crack (short, high) or a pop (longer, lower). */
-function burst(ctx, at, length, freq, gain) {
+function noise(ctx, at, length, freq, gain) {
   const noise = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * length), ctx.sampleRate);
   const d = noise.getChannelData(0);
   for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) ** 2;

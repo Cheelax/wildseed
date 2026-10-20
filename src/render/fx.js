@@ -129,14 +129,16 @@ export class Fx {
     this.group.add(...this.zs, ...this.stars);
   }
 
-  /** Something happened at time t0 at a point: "hearts" when poked, "puff" when hatched. */
+  /** Something happened at time t0 at a point: "hearts" when poked, "sparkles" and "puff" as it hatches. */
   burst(kind, t0, at) {
     const parts = [];
     const n = kind === "puff" ? 12 : 6;
     for (let i = 0; i < n; i++) {
       const s = kind === "puff"
         ? sprite(i % 3 ? "puff" : "sparkle", i % 3 ? "#ffffff" : "#fff4b8", i % 3 ? 2 : 1)
-        : sprite(i % 2 ? "sparkle" : "heart", i % 2 ? "#fff4b8" : "#ff6f91", i % 2 ? 1 : 2);
+        : kind === "sparkles"
+          ? sprite(i % 2 ? "sparkle" : "star", i % 2 ? "#ffffff" : "#fff4b8")
+          : sprite(i % 2 ? "sparkle" : "heart", i % 2 ? "#fff4b8" : "#ff6f91", i % 2 ? 1 : 2);
       const a = (i / n) * Math.PI * 2 + 0.4;
       s.userData.dir = new THREE.Vector3(Math.cos(a), kind === "puff" ? 0.3 + (i % 3) * 0.35 : 1.2 + (i % 2) * 0.5, Math.sin(a));
       this.group.add(s);
@@ -161,7 +163,7 @@ export class Fx {
     });
     for (const e of this.events) {
       const age = t - e.t0;
-      const life = e.kind === "puff" ? 0.65 : 1.2;
+      const life = e.kind === "puff" ? 0.65 : e.kind === "sparkles" ? 0.55 : 1.2;
       e.parts.forEach((s, i) => {
         s.visible = age >= 0 && age < life;
         if (!s.visible) return;
