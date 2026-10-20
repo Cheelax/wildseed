@@ -10,8 +10,8 @@ import { cone, cylinder, ellipsoid, gem, hueGap, mesh } from "./parts.js";
 import { hash32, stream } from "../genome/genes.mjs";
 import { dispose } from "./dispose.js";
 
-/** The hatch, in seconds: the egg lands, shakes and cracks, pops; the creature is out and ready. */
-export const HATCH = { drop: 0.32, pop: 1.3, ready: 1.85 };
+/** The hatch, in seconds: the egg lands, cracks three times as it shakes, pops; the creature is out and ready. */
+export const HATCH = { drop: 0.32, cracks: [0.66, 0.9, 1.12], pop: 1.3, ready: 1.85 };
 
 /**
  * Puts a camera where it sees a sphere of `radius` around `center`, `margin` times over, from a little

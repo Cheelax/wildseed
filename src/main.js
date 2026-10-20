@@ -3,8 +3,8 @@ import "./hatchery.css";
 import { genomeOf, normalizeSeed, seedProblem } from "./genome.mjs";
 import { WORDS } from "./words.mjs";
 import { Hatchery } from "./render/hatchery.js";
-import { skyOf } from "./render/stage.js";
-import { cry, wakeAudio } from "./audio/cry.js";
+import { HATCH, skyOf } from "./render/stage.js";
+import { cry, hatchSounds, wakeAudio } from "./audio/cry.js";
 import { makeGif } from "./share/film.js";
 import { makeCard } from "./share/card.js";
 import { save } from "./share/save.js";
@@ -121,6 +121,7 @@ function hatch(seed, { push = true } = {}) {
   wild.creature = genome;
   error.hidden = true;
   view?.hatch(genome);
+  if (view) hatchSounds(HATCH);
   showCard(genome);
   remember(genome);
   const url = new URL(location.href);

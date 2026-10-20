@@ -94,7 +94,7 @@ export class Egg {
    * Poses the egg at `t` seconds into the hatch (see Stage.HATCH): it drops, wobbles harder as it
    * cracks, and at `pop` breaks open. Returns false once nothing of it is left to see.
    */
-  pose(t, { drop = 0.32, pop = 1.3 } = {}) {
+  pose(t, { drop, cracks, pop }) {
     const { root, wobble, top, bottom } = this;
     if (t < drop) {
       const s = t / drop;
@@ -110,7 +110,7 @@ export class Egg {
     const k = Math.max(0, (t - drop - 0.15) / (pop - drop - 0.15));
     wobble.rotation.z = shaking ? 0.2 * k * Math.sin((t - drop) * 26) : 0;
     wobble.rotation.x = shaking ? 0.08 * k * Math.sin((t - drop) * 19) : 0;
-    const cracked = Math.min(1, Math.floor(k * 4) / 3);
+    const cracked = cracks.filter((c) => t >= c).length / cracks.length;
     this.crack.visible = cracked > 0 && t < pop;
     this.crack.geometry.setDrawRange(0, Math.floor((cracked * this.crack.userData.count) / 6) * 6);
 

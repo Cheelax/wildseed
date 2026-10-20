@@ -62,9 +62,6 @@ export class Creature {
       if (!this.moving.has(key)) this.moving.set(key, { obj: w.obj, prop, base: w.obj[prop].clone() });
     }
     this.headBase = rig.head.rotation.clone();
-    this.root.traverse((o) => {
-      if (o.isMesh) o.userData.creature = this;
-    });
   }
 
   /**
