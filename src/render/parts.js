@@ -141,7 +141,8 @@ export function eye(style, r, colors) {
 export function eyes(head, traits, colors, { level = 0.12, scale = 1 } = {}) {
   const group = new THREE.Group();
   const r = Math.min(head[0], head[1]) * 0.29 * traits.eyeSize * scale;
-  const yaw = 0.42 * traits.eyeGap * Math.min(1.3, 0.56 / head[0]);
+  // Big eyes, set far enough apart that the two never touch.
+  const yaw = Math.max(0.42 * traits.eyeGap * Math.min(1.3, 0.56 / head[0]), Math.asin(Math.min(0.9, (1.25 * r) / head[0])));
   const open = [], happy = [], irises = [];
   for (const side of [-1, 1]) {
     const socket = onSurface(head, side * yaw, level, r * 0.08);
@@ -225,7 +226,8 @@ export function colorsOf(genome) {
   return {
     body, belly, accent, detail, ink,
     iris,
-    eyeDark: genome.traits.eyes === "gem" ? new THREE.Color(ink).lerp(new THREE.Color("#000000"), 0.3) : iris,
+    // Gem eyes show their color in the iris; other eyes stay dark, tinted by it.
+    eyeDark: genome.traits.eyes === "gem" ? new THREE.Color(ink).lerp(new THREE.Color("#000000"), 0.3) : iris.clone().lerp(new THREE.Color("#1a1420"), iris.getHSL({}).s > 0.4 ? 0.6 : 0),
     mouth: new THREE.Color(ink).lerp(new THREE.Color("#3a1020"), 0.4),
     tongue: "#ff6f8e",
     blush: blushBase,

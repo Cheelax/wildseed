@@ -37,7 +37,7 @@ export function drift(g, m) {
   body.add(head);
   head.add(bell(bellMaterial(g, c, h), R, h));
   const radii = [R * 1.02, h, R * 1.02];
-  const f = face(radii, t, c, { eyeLevel: 0.3, mouthLevel: 0.06, scale: 1.12 });
+  const f = face(radii, t, c, { eyeLevel: 0.3, mouthLevel: 0.06 });
   head.add(f.group);
 
   for (let i = 0; i < t.frills; i++) {
