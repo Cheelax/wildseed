@@ -141,6 +141,7 @@ function island(look, seed) {
     g.add(item);
   }
   for (let i = 0; i < 5; i++) g.add(cloud(r, i));
+  for (let i = 0; i < 3; i++) g.add(farIsland(r, i, look));
   g.traverse((o) => {
     if (o.isMesh && o !== top && o !== under) o.receiveShadow = true;
   });
@@ -177,6 +178,24 @@ function decor(kind, r, look) {
   } else if (kind === "cairn") {
     g.add(ellipsoid(mat("#b8b0a6"), [0.16, 0.07, 0.15], { at: [0, 0.06, 0] }), ellipsoid(mat("#a59d94"), [0.12, 0.06, 0.11], { at: [0, 0.18, 0] }), ellipsoid(mat("#c2bbb2"), [0.08, 0.05, 0.07], { at: [0, 0.28, 0] }));
   }
+  return g;
+}
+
+/** Another little island far off in the sky, hazy with distance: the world goes on out there. */
+function farIsland(r, i, look) {
+  const haze = (c) => toon(new THREE.Color(c).lerp(new THREE.Color(look.sky[2]), 0.5), { cls: CLASS.fx, bands: [0.42, 0.62, 1.2] });
+  const g = new THREE.Group();
+  const a = (i / 3) * Math.PI * 2 + 0.8 + r() * 1.2;
+  const d = 16 + r() * 5;
+  g.position.set(Math.sin(a) * d, -2.5 + r() * 4, Math.cos(a) * d);
+  g.scale.setScalar(0.7 + r() * 0.6);
+  g.add(mesh(new THREE.CylinderGeometry(1.6, 1.5, 0.3, 9, 1), [haze(look.dirt), haze(look.grass), haze(look.dirt)]));
+  g.add(mesh(new THREE.ConeGeometry(1.5, 1.4, 9, 1), haze(look.rock), { at: [0, -0.85, 0], rot: [Math.PI, 0, 0] }));
+  if (r() < 0.65) {
+    g.add(cylinder(haze(look.dirt), 0.12, 0.7, { at: [0.3, 0.1, 0] }));
+    g.add(cone(haze(new THREE.Color(look.grass).multiplyScalar(0.8)), 0.6, 1.3, { at: [0.3, 0.6, 0] }));
+  } else g.add(mesh(new THREE.DodecahedronGeometry(0.5, 0), haze(look.rock), { at: [-0.3, 0.3, 0.2] }));
+  g.traverse((o) => (o.castShadow = false));
   return g;
 }
 

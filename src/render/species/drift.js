@@ -74,7 +74,7 @@ export function drift(g, m) {
 
   return {
     body, head, wiggles, flaps, hover: 0.5,
-    face: { eyes: f.eyes, happy: f.happy, mouth: f.mouth },
+    face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
     charmAt: t.antenna === "none" ? { parent: head, at: [0, h - 0.03, 0], rot: [0, 0, 0] } : null,
     height: 0.95 + h + (t.antenna === "none" ? 0.1 : 0.3),
   };

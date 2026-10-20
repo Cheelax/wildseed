@@ -7,7 +7,7 @@ import { gem, mesh } from "./parts.js";
 const HEIGHT = 1.3;
 const TEETH = 7;
 
-/** Egg colors and patterns by affinity. */
+/** Egg patterns by affinity; the creature inside lends the egg its colors. */
 const LOOKS = {
   moss: { shell: "#f3efd6", mark: "#8fca72", pattern: { pattern: PATTERN.spots, scale: 3.2, cut: 0.3, offset: 5.1 } },
   stone: { shell: "#dcd6ce", mark: "#9c8fa8", pattern: { pattern: PATTERN.rings, scale: 5, cut: 0.22, offset: 0.06 } },
@@ -67,7 +67,8 @@ function crackLine(material) {
 
 export class Egg {
   constructor(genome) {
-    const look = genome.rare ? STARLIT : LOOKS[genome.affinity];
+    const [body, belly] = genome.palette;
+    const look = genome.rare ? STARLIT : { ...LOOKS[genome.affinity], shell: `#${new THREE.Color(LOOKS[genome.affinity].shell).lerp(new THREE.Color(belly), 0.5).getHexString()}`, mark: body };
     this.material = toon(look.shell, { mark: { color: look.mark, ...look.pattern }, cls: CLASS.egg, side: THREE.DoubleSide });
     this.root = new THREE.Group();
     this.wobble = new THREE.Group();

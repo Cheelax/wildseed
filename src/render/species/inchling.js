@@ -45,7 +45,7 @@ export function inchling(g, m) {
 
   return {
     body, head, wiggles, flaps,
-    face: { eyes: f.eyes, happy: f.happy, mouth: f.mouth },
+    face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
     charmAt: { parent: body, at: [0.1 * Math.sin(5 * 0.15), 0.6, -0.65], rot: [0, 0, 0] },
     height: head.position.y + 0.4 + 0.3 * A,
   };

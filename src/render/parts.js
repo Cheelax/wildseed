@@ -111,24 +111,29 @@ export function eyes(head, traits, colors, { level = 0.12, scale = 1 } = {}) {
   const yaw = 0.42 * traits.eyeGap * Math.min(1.3, 0.56 / head[0]);
   const dark = flat(colors.eyeDark);
   const white = flat("#ffffff");
-  const open = [], happy = [];
+  const open = [], happy = [], irises = [];
   const style = traits.eyes;
   for (const side of [-1, 1]) {
     const socket = onSurface(head, side * yaw, level, r * 0.08);
     const eye = new THREE.Group();
+    // The dark of the eye rolls toward what the creature looks at; its highlights stay where the light is.
+    const iris = new THREE.Group();
+    iris.userData.reach = r * 0.16;
+    eye.add(iris);
     if (style === "gem") {
-      eye.add(ellipsoid(dark, [r, r * 1.15, r * 0.42]));
-      eye.add(ellipsoid(flat(colors.iris), [r * 0.74, r * 0.88, r * 0.46], { at: [0, -r * 0.06, r * 0.04] }));
-      eye.add(ellipsoid(dark, [r * 0.4, r * 0.5, r * 0.5], { at: [0, -r * 0.06, r * 0.08] }));
+      iris.add(ellipsoid(dark, [r, r * 1.15, r * 0.42]));
+      iris.add(ellipsoid(flat(colors.iris), [r * 0.74, r * 0.88, r * 0.46], { at: [0, -r * 0.06, r * 0.04] }));
+      iris.add(ellipsoid(dark, [r * 0.4, r * 0.5, r * 0.5], { at: [0, -r * 0.06, r * 0.08] }));
     } else if (style === "tall") {
-      eye.add(ellipsoid(dark, [r * 0.72, r * 1.3, r * 0.42]));
+      iris.add(ellipsoid(dark, [r * 0.72, r * 1.3, r * 0.42]));
     } else if (style === "sleepy") {
-      eye.add(ellipsoid(dark, [r * 1.05, r * 0.62, r * 0.4], { at: [0, -r * 0.2, 0] }));
+      iris.add(ellipsoid(dark, [r * 1.05, r * 0.62, r * 0.4], { at: [0, -r * 0.2, 0] }));
     } else if (style === "button") {
-      eye.add(ellipsoid(dark, [r * 0.62, r * 0.66, r * 0.4]));
+      iris.add(ellipsoid(dark, [r * 0.62, r * 0.66, r * 0.4]));
     } else {
-      eye.add(ellipsoid(dark, [r, r * 1.08, r * 0.42]));
+      iris.add(ellipsoid(dark, [r, r * 1.08, r * 0.42]));
     }
+    irises.push(iris);
     // The light comes from the upper left: one big highlight there, a small one across.
     const big = style === "button" ? 0.3 : 0.36;
     eye.add(ellipsoid(white, [r * big, r * big, r * 0.3], { at: [-r * (style === "tall" ? 0.24 : 0.32), r * (style === "sleepy" ? 0.0 : 0.36), r * 0.32] }));
@@ -143,7 +148,7 @@ export function eyes(head, traits, colors, { level = 0.12, scale = 1 } = {}) {
     happy.push(closed);
   }
   group.traverse((o) => (o.castShadow = false));
-  return { group, open, happy, radius: r, yaw };
+  return { group, open, happy, irises, radius: r, yaw };
 }
 
 /** The mouth, at `level` radians on the front of the ellipsoid `on`: its idle shape and an open one. */
@@ -198,7 +203,7 @@ export function face(head, traits, colors, { eyeLevel = 0.12, mouthLevel = -0.2,
     m = mouth(head, traits, colors, { level: mouthLevel, size: e.radius * 0.62 });
     group.add(m.group);
   }
-  return { group, eyes: e.open, happy: e.happy, mouth: m, radius: e.radius };
+  return { group, eyes: e.open, happy: e.happy, irises: e.irises, mouth: m, radius: e.radius };
 }
 
 /** Hue distance in degrees between two colors. */

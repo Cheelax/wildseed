@@ -65,6 +65,36 @@ function showCard(g) {
   document.title = `${g.name} · Wildseed`;
 }
 
+/** The creatures hatched on this device, newest first: a row of chips that hatch them again. */
+const KEPT = "wildseed.hatched";
+function remember(genome) {
+  let seeds = [];
+  try {
+    seeds = JSON.parse(localStorage.getItem(KEPT) ?? "[]").filter((s) => typeof s === "string" && !seedProblem(s));
+  } catch {}
+  seeds = [genome.seed, ...seeds.filter((s) => s !== genome.seed)].slice(0, 12);
+  try {
+    localStorage.setItem(KEPT, JSON.stringify(seeds));
+  } catch {}
+  const chips = seeds.map((seed) => {
+    const g = genomeOf(seed);
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "chip";
+    chip.textContent = g.name;
+    chip.title = `“${seed}”: ${g.species}, ${g.affinity}`;
+    chip.style.setProperty("--chip", g.palette[0]);
+    chip.setAttribute("aria-current", String(seed === genome.seed));
+    chip.addEventListener("click", () => {
+      input.value = seed;
+      hatch(seed);
+    });
+    return chip;
+  });
+  document.querySelector(".recent").replaceChildren(...chips);
+  document.querySelector(".hatched").hidden = seeds.length < 2;
+}
+
 function showError(message) {
   error.textContent = message;
   error.hidden = false;
@@ -78,16 +108,24 @@ function hatch(seed, { push = true } = {}) {
   error.hidden = true;
   view.hatch(genome);
   showCard(genome);
+  remember(genome);
   const url = new URL(location.href);
   url.search = `?seed=${encodeURIComponent(genome.seed)}`;
   if (url.href !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);
 }
 
+/** Random deals the words from a shuffled deck: no word comes back before the deck runs out. */
+let deck = [];
 const randomWord = () => {
-  let word;
-  do word = WORDS[Math.floor(Math.random() * WORDS.length)];
-  while (word === wild.creature?.seed);
-  return word;
+  if (deck.length === 0) {
+    deck = [...WORDS];
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+  }
+  const word = deck.pop();
+  return word === wild.creature?.seed ? randomWord() : word;
 };
 
 document.querySelector("form.hatch").addEventListener("submit", (e) => {

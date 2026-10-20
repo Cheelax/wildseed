@@ -137,6 +137,7 @@ export class Creature {
       eye.scale.y *= blink || asleep ? 0.12 : 1;
     }
     for (const eye of rig.face.happy) eye.visible = reacting;
+    for (const iris of rig.face.irises) iris.position.set(lx * iris.userData.reach, ly * iris.userData.reach * 0.8, 0);
 
     const open = crying || reacting || (habit === "nap" && s > 0.35 && s < 0.6);
     const m = rig.face.mouth;

@@ -62,7 +62,7 @@ export function trundle(g, m) {
 
   return {
     body, head, wiggles, flaps,
-    face: { eyes: e.open, happy: e.happy, mouth: mo },
+    face: { eyes: e.open, happy: e.happy, irises: e.irises, mouth: mo },
     charmAt: { parent: body, at: [0, y + 0.42, -0.25], rot: [0, 0, 0] },
     height: y + 0.75,
   };
