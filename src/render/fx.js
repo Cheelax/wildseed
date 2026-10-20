@@ -4,6 +4,7 @@
 // Like the creature, every effect is a function of time.
 import * as THREE from "three";
 import { CLASS } from "./toon.js";
+import { dispose } from "./dispose.js";
 
 const SHAPES = {
   heart: [".##.##.", "#######", "#######", ".#####.", "..###..", "...#..."],
@@ -49,6 +50,7 @@ function texture(rows) {
 
 const textures = {};
 const POINT = new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute([0, 0, 0], 3));
+POINT.userData.shared = true;
 
 /** A sprite of a shape, `scale` art pixels per texel. */
 function sprite(shape, color, scale = 1) {
@@ -97,6 +99,7 @@ export class Fx {
 
   /** Rebuilds the steady effects for a creature: motes in its affinity's color, stars if it is rare. */
   setup(genome, height, radius) {
+    dispose(this.group);
     this.group.clear();
     this.events = [];
     this.height = height;

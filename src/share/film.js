@@ -44,6 +44,7 @@ export async function makeGif(renderer, genome) {
   const hatchFrames = times.length;
   for (let t = HATCH.ready; t < poke + 1.4; t += 0.1) times.push(t);
   const frames = await film(renderer, stage, times, W, H);
+  stage.dispose();
   const banner = nameBanner(genome, W);
   for (const f of frames) stamp(f, W, banner);
   const delays = times.map((_, i) => (i < hatchFrames ? 8 : 10));

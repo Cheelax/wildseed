@@ -3,6 +3,7 @@ import "./hatchery.css";
 import { genomeOf, normalizeSeed, seedProblem } from "./genome.mjs";
 import { WORDS } from "./words.mjs";
 import { Hatchery } from "./render/hatchery.js";
+import { skyOf } from "./render/stage.js";
 import { cry, wakeAudio } from "./audio/cry.js";
 import { makeGif } from "./share/film.js";
 import { makeCard } from "./share/card.js";
@@ -16,15 +17,28 @@ const error = $("seed-error");
 /** What the page shows, kept up to date: ARCHITECTURE.md, "window.__wild". */
 const wild = (window.__wild = { ready: false, renderer: null, pixel: null, creature: null });
 
-const view = new Hatchery($("scene"), {
-  onHatched: (genome) => cry(genome),
-  onPoke: (genome) => cry(genome),
-  onReady: (genome) => {
-    if (wild.creature === genome) wild.ready = true;
-  },
-  onResize: ({ pixel }) => (wild.pixel = pixel),
-});
-wild.renderer = view.kind;
+/** The live scene, or null where the browser offers no WebGL 2: the page then says so and still names the creature. */
+const view = (() => {
+  try {
+    return new Hatchery($("scene"), {
+      onHatched: (genome) => cry(genome),
+      onPoke: (genome) => cry(genome),
+      onReady: (genome) => {
+        if (wild.creature === genome) wild.ready = true;
+      },
+      onResize: ({ pixel }) => (wild.pixel = pixel),
+    });
+  } catch (e) {
+    const note = document.createElement("p");
+    note.className = "no-webgl";
+    note.textContent = "This browser cannot draw the hatchery: it needs WebGL 2.";
+    document.querySelector(".stage").append(note);
+    for (const id of ["save-gif", "save-card"]) $(id).disabled = true;
+    console.error(e);
+    return null;
+  }
+})();
+wild.renderer = view?.kind ?? null;
 
 const MOODS = {
   bouncy: "Can't sit still for long.",
@@ -59,7 +73,7 @@ function showCard(g) {
     }),
   );
   const [body, belly, accent, detail, , ink] = g.palette;
-  const sky = view.stage.colors.sky;
+  const sky = skyOf(g.affinity);
   const root = document.documentElement.style;
   Object.entries({ body, belly, accent, detail, ink, sky0: sky[0], sky1: sky[1], sky2: sky[2], sky3: sky[3] }).forEach(([k, v]) => root.setProperty(`--${k}`, v));
   document.title = `${g.name} · Wildseed`;
@@ -106,7 +120,7 @@ function hatch(seed, { push = true } = {}) {
   wild.ready = false;
   wild.creature = genome;
   error.hidden = true;
-  view.hatch(genome);
+  view?.hatch(genome);
   showCard(genome);
   remember(genome);
   const url = new URL(location.href);
@@ -149,7 +163,7 @@ addEventListener("keydown", wakeAudio);
 
 /** Runs a slow export with its button showing that it works. */
 async function exporting(button, busyText, make, filename) {
-  if (button.disabled) return;
+  if (button.disabled || !view) return;
   const genome = wild.creature;
   const text = button.textContent;
   button.disabled = true;

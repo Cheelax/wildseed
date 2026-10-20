@@ -46,6 +46,7 @@ export async function makeCard(renderer, genome) {
   const artW = W - 18, artH = 108;
   const stage = studio(renderer, genome, artW, artH, { zoom: 0.95 });
   const [picture] = await film(renderer, stage, [HATCH.ready + 0.35], artW, artH);
+  stage.dispose();
 
   const c = document.createElement("canvas");
   c.width = W;

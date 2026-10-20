@@ -8,6 +8,7 @@ import { Fx } from "./fx.js";
 import { CLASS, PATTERN, tick, toon } from "./toon.js";
 import { cone, cylinder, ellipsoid, gem, hueGap, mesh } from "./parts.js";
 import { hash32, stream } from "../genome/genes.mjs";
+import { dispose } from "./dispose.js";
 
 /** The hatch, in seconds: the egg lands, shakes and cracks, pops; the creature is out and ready. */
 export const HATCH = { drop: 0.32, pop: 1.3, ready: 1.85 };
@@ -24,6 +25,9 @@ export function aim(camera, center, radius, margin, { azimuth = 0.4, elevation =
   camera.lookAt(center);
   return d;
 }
+
+/** The four bands of an affinity's sky, top first. */
+export const skyOf = (affinity) => WORLDS[affinity].sky;
 
 /** Each affinity's ground, sky (top band first) and outline inks. */
 const WORLDS = {
@@ -53,6 +57,7 @@ export class Stage {
   /** Builds the island, the egg and the creature of a genome, ready to hatch from t = 0. */
   set(genome) {
     this.genome = genome;
+    dispose(this.world);
     this.world.clear();
     const look = { ...WORLDS[genome.affinity], grass: groundFor(WORLDS[genome.affinity].grass, genome.palette[0]) };
     this.world.add(island(look, genome.seed));
@@ -72,6 +77,13 @@ export class Stage {
       ink: { ground: look.ink, decor: look.ink, creature: genome.palette[5], egg: genome.rare ? "#14122e" : "#3b3328" },
     };
     this.pokes = [];
+  }
+
+  /** Frees everything this stage holds on the GPU. */
+  dispose() {
+    dispose(this.world);
+    dispose(this.fx.group);
+    this.sun.shadow.dispose();
   }
 
   /** Remembers that the creature was poked at time t: it jumps, laughs and hearts float up. */
@@ -110,8 +122,11 @@ function groundFor(ground, body) {
   const b = new THREE.Color(body).getHSL({});
   const g = c.getHSL({});
   if (b.s > 0.25 && hueGap(ground, body) < 40) {
+    // Away from the body, but staying a color grass can be (yellow-green to teal) when it can.
     const away = ((b.h - g.h + 1.5) % 1) - 0.5 > 0 ? -1 : 1;
-    c.offsetHSL((away * 42) / 360, -0.05, 0);
+    const grassy = (h) => h >= 60 / 360 && h <= 170 / 360;
+    const turn = grassy(g.h + (away * 42) / 360) || !grassy(g.h - (away * 42) / 360) ? away : -away;
+    c.offsetHSL((turn * 42) / 360, -0.05, 0);
   }
   if (Math.abs(c.getHSL({}).l - b.l) < 0.08) c.offsetHSL(0, 0, g.l > b.l ? 0.08 : -0.08);
   return `#${c.getHexString()}`;

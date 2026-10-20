@@ -156,6 +156,17 @@ body {
   box-shadow: 0 5px 0 var(--line);
 }
 
+.no-webgl {
+  position: absolute;
+  inset: auto 16px 16px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  font-weight: 700;
+}
+
 .stage canvas {
   position: absolute;
   display: block;

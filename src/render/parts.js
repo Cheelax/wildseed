@@ -10,6 +10,7 @@ const CYLINDER = new THREE.CylinderGeometry(1, 1, 1, 14, 1);
 const OCTAHEDRON = new THREE.OctahedronGeometry(1, 0);
 CONE.translate(0, 0.5, 0); // cones grow up from their base
 CYLINDER.translate(0, 0.5, 0);
+for (const g of [SPHERE, HEMISPHERE, CONE, CYLINDER, OCTAHEDRON]) g.userData.shared = true;
 
 /** A mesh that casts a shadow, placed with optional position, rotation (Euler XYZ) and scale. */
 export function mesh(geometry, material, { at, rot, scale } = {}) {
