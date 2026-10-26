@@ -144,9 +144,23 @@ function tell(text) {
   caption.hidden = !text;
 }
 
+/** The card while two parents meet: their egg, the child unknown. */
+let reveal = null;
+function showEgg(g, [a, b]) {
+  card.classList.remove("fresh");
+  card.classList.add("egg");
+  card.querySelector(".name").textContent = g.clutch > 1 ? `Egg #${g.clutch}` : "An egg";
+  card.querySelector(".about").textContent = `${a.name} and ${b.name}'s egg. What will hatch?`;
+  card.querySelector(".rare").hidden = true;
+  card.querySelector(".seed").textContent = `lineage “${g.seed}”`;
+  $("family-tree").hidden = true;
+  document.querySelector(".cross").hidden = true;
+}
+
 /** What the line says at each moment of a crossing (Stage's cues), about the creature on screen. */
 function cueText(cue) {
   const g = wild.creature;
+  if (cue === "out") reveal?.();
   if (!cue || !g?.parents) return null;
   const [a, b] = g.parents.map((p) => genomeOf(p));
   if (cue === "meet") return `${a.name} meets ${b.name}…`;
@@ -169,16 +183,22 @@ function hatch(seed, { push = true, meet = false, quick = false } = {}) {
   tell(null);
   const parents = meet && genome.parents ? genome.parents.map((p) => genomeOf(p)) : null;
   if (view) hatchSounds(view.hatch(genome, { parents, quick }), { parents, meet: MEET.arrive, lay: MEET.lay });
-  showCard(genome);
-  card.classList.remove("fresh");
-  void card.offsetWidth; // restart the card's little hop
-  card.classList.add("fresh");
-  drawFamily($("family-tree"), genome, (ancestor) => {
-    input.value = ancestor;
-    hatch(ancestor);
-  }, paint);
-  showCrossing(genome);
-  remember(genome);
+  // While its parents meet, the card holds their egg: the child shows itself when it is out.
+  reveal = () => {
+    reveal = null;
+    showCard(genome);
+    card.classList.remove("fresh", "egg");
+    void card.offsetWidth; // restart the card's little hop
+    card.classList.add("fresh");
+    drawFamily($("family-tree"), genome, (ancestor) => {
+      input.value = ancestor;
+      hatch(ancestor);
+    }, paint);
+    showCrossing(genome);
+    remember(genome);
+  };
+  if (parents && view) showEgg(genome, parents);
+  else reveal();
   const url = new URL(location.href);
   url.search = `?seed=${encodeURIComponent(genome.seed)}`;
   url.hash = "";
@@ -218,6 +238,7 @@ function paintNext() {
 
 /** The crossing box: the creature on screen, who to cross it with, and a child's parents' next egg. */
 function showCrossing(g) {
+  document.querySelector(".cross").hidden = false;
   const mate = document.querySelector(".cross .mate");
   mate.textContent = g.name;
   mate.style.setProperty("--chip", g.palette[0]);

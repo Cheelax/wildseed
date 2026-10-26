@@ -45,7 +45,7 @@ src/cross.mjs           cross(a, b, clutch): the child of two genomes
 src/genome/             genes (one stream per gene), a word's genome, heredity, names, palettes, species
 bin/hatch.mjs           the command
 src/render/             the scene: pixel renderer, toon materials, stage, egg, creature, species, parts
-                        from another species (grafts.js), the parents' meeting, shadows, effects
+                        from another species (grafts.js), the parents' meeting, shadows, effects, portraits
 src/share/              the GIF encoder, the card, the pixel font
 src/audio/cry.js        each creature's cry, through Web Audio
 src/family.js           the family tree on the page
@@ -162,10 +162,19 @@ so the GIF shows the same creature as the page.
   of the island, call out to each other, meet nose to nose under hearts, an egg pops out between them, they
   step back to watch it crack, and they cheer when their child is out, and stay with it, a family. Both
   parents can be poked too.
+- **What hatched.** A line over the scene tells the crossing as it happens (they meet, they lay an egg, it
+  hatches), then names the child, a rare one ("★ A rare child"), or its mutation ("✦ with a mutation: its
+  horns"). Until it is out, the card holds the couple's egg ("What will hatch?"): the child, its card and
+  its family tree show themselves as it hatches. A mutated child comes out in a second burst of sparkles and
+  ends its cry in a shimmer.
 - **A link to a child** opens it at once, out of its egg (a page that opens should smile right away); "Watch
-  them meet" plays its parents' meeting and its hatch. "Their egg #n" lays the couple's next egg.
+  them meet" plays its parents' meeting and its hatch. "Their egg #n" lays the couple's next egg, "With
+  anyone" crosses the creature with a word from the list, and "Send link" sends its address through the
+  device's share sheet, or copies it.
 - **The family tree** sits under the card: the grandparents, the parents and the child, each by name and
-  joined by brackets, each a button that opens it, then what the child took from whom, in sentences.
+  joined by brackets, each a button that opens it, then what the child took from whom, in sentences. Once
+  the scene has settled, each one's portrait is painted in its place, off screen by the same renderer; a
+  machine that draws its frames in software keeps the colored dots instead, and its pace.
 - **The card** of a child shows its parents' pictures with their names, and its lineage as it is written,
   on as many lines as it takes, in the pixel font, which now has small letters (round 1 printed `OLEG`).
 - **The GIF** of a child starts with its parents meeting, their names along the bottom, then the hatch and

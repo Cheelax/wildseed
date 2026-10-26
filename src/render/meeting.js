@@ -10,6 +10,18 @@ export const MEET = { arrive: 1.0, lay: 1.35, lead: 1.75 };
 const FROM = 2.05, GAP = 0.12; // how far out they start, and the gap between their noses when they meet
 const WATCH = { gap: 0.2, most: 2.2, z: -0.95, turn: 0.75 }; // where they watch from, beside their child, turned toward it
 
+/**
+ * How each mood comes to the meeting: how many hops and how high, a pause on the way (a shy one), and how it
+ * laughs when they meet (a hop, a spin or a wiggle: the `pokes` of Creature.pose).
+ */
+const MANNER = {
+  bouncy: { hops: 4, height: 0.32, pause: 0, laugh: 1 },
+  curious: { hops: 3, height: 0.22, pause: 0, laugh: 0 },
+  proud: { hops: 2, height: 0.14, pause: 0, laugh: 0 },
+  shy: { hops: 3, height: 0.14, pause: 0.35, laugh: 2 },
+  sleepy: { hops: 2, height: 0.07, pause: 0, laugh: 0 },
+};
+
 const ease = (k) => 1 - (1 - k) ** 2;
 const clamp01 = (k) => Math.min(1, Math.max(0, k));
 
@@ -41,11 +53,15 @@ export class Meeting {
       const side = i ? 1 : -1;
       const meet = (GAP / 2 + this.reach[i]) * side;
       let x, z = 0, y = 0, turn = -side * (Math.PI / 2);
+      const manner = MANNER[p.genome.traits.mood];
       if (t < MEET.arrive) {
-        // Three hops in from the edge of the island.
-        const k = t / MEET.arrive;
+        // Hops in from the edge of the island, in the manner of its mood: a shy one stops halfway.
+        let k = t / MEET.arrive;
+        const stop = 1 / manner.hops; // where the first hop lands
+        const paused = manner.pause && k >= stop && k < stop + manner.pause;
+        if (manner.pause && k >= stop) k = paused ? stop : stop + ((1 - stop) * (k - stop - manner.pause)) / (1 - stop - manner.pause);
         x = side * FROM + (meet - side * FROM) * ease(k);
-        y = 0.24 * Math.abs(Math.sin(k * Math.PI * 3));
+        y = paused ? 0 : manner.height * Math.abs(Math.sin(k * Math.PI * manner.hops));
       } else if (t < MEET.lay) {
         // Nose to nose: they lean in.
         x = meet - 0.06 * side * Math.sin(((t - MEET.arrive) / (MEET.lay - MEET.arrive)) * Math.PI);
@@ -64,7 +80,7 @@ export class Meeting {
       const events = [MEET.arrive, burst, ...this.pokes[i]].filter((at) => at <= t);
       const react = events.length ? t - Math.max(...events) : Infinity;
       const look = t >= MEET.lay ? { x: -side * 0.45, y: -0.35 } : { x: 0, y: 0 };
-      p.pose(t + 3 * i, { look, react, pokes: 0 });
+      p.pose(t + 3 * i, { look, react, pokes: manner.laugh });
     });
   }
 }

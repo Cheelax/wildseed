@@ -103,18 +103,25 @@ export class PixelRenderer {
     sky.forEach((c, i) => this.post.uniforms.uSky.value[i].set(c));
   }
 
-  target(width, height) {
-    const key = `${width}x${height}`;
-    let t = this.targets.get(key);
-    if (!t) {
-      t = new THREE.WebGLRenderTarget(width, height, {
-        minFilter: THREE.NearestFilter,
-        magFilter: THREE.NearestFilter,
-        depthTexture: new THREE.DepthTexture(width, height),
-      });
-      this.targets.set(key, t);
+  /** A render target of a size, kept for the next frame of that size; the least used go when there are many. */
+  keep(key, make) {
+    const t = this.targets.get(key) ?? make();
+    this.targets.delete(key);
+    this.targets.set(key, t);
+    for (const [k, old] of this.targets) {
+      if (this.targets.size <= 16) break;
+      old.dispose();
+      this.targets.delete(k);
     }
     return t;
+  }
+
+  target(width, height) {
+    return this.keep(`${width}x${height}`, () => new THREE.WebGLRenderTarget(width, height, {
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      depthTexture: new THREE.DepthTexture(width, height),
+    }));
   }
 
   /**
@@ -169,9 +176,7 @@ export class PixelRenderer {
 
   /** Renders a stage off screen and returns the RGBA pixels, top row first. */
   capture(stage, width, height) {
-    const out = (this.captureTarget?.width === width && this.captureTarget?.height === height)
-      ? this.captureTarget
-      : (this.captureTarget = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false }));
+    const out = this.keep(`out ${width}x${height}`, () => new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false }));
     this.render(stage, width, height, out);
     const raw = new Uint8Array(width * height * 4);
     this.gl.readRenderTargetPixels(out, 0, 0, width, height, raw);

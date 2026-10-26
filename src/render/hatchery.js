@@ -107,7 +107,8 @@ export class Hatchery {
   loop(now) {
     requestAnimationFrame(this.loop);
     if (this.waiting) {
-      if (!this.renderer.drawn()) return;
+      // (A GPU that never answers, a broken one, is not waited for more than ten seconds a frame.)
+      if (!this.renderer.drawn() && now - this.drawnAt < 10000) return;
       const took = Math.min(1500, now - this.drawnAt);
       this.cost = this.cost ? 0.7 * this.cost + 0.3 * took : took;
       this.restUntil = this.cost > 100 ? now + Math.min(800, 0.6 * this.cost) : 0;

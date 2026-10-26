@@ -117,6 +117,7 @@ export class Stage {
       this.bounds.radius = Math.max(this.bounds.radius, 2.4);
       this.bounds.center.y = Math.max(this.bounds.center.y, 0.95);
       this.fx.burst("hearts", MEET.arrive + 0.05, new THREE.Vector3(0, 1.3, 0));
+      this.fx.burst("sparkles", MEET.lay + 0.05, new THREE.Vector3(0, 0.7, 0));
     }
     this.center.set(0, this.bounds.center.y, 0);
     if (this.timing.open !== null) this.fx.burst("sparkles", this.timing.open, new THREE.Vector3(0, RIM + 0.3, 0));

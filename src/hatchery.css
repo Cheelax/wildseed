@@ -210,6 +210,12 @@ body {
   animation: hop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 1.3s both;
 }
 
+/* The card of an egg about to hatch: no kind and no stats yet. */
+.card.egg .kind,
+.card.egg .stats {
+  visibility: hidden;
+}
+
 @keyframes hop {
   from {
     transform: translateY(0) scale(1);
@@ -560,6 +566,7 @@ body {
   white-space: normal;
 }
 
+.cross[hidden],
 .cross .next-egg[hidden],
 .cross .again[hidden],
 .family[hidden] {
