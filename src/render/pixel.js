@@ -66,6 +66,7 @@ export class PixelRenderer {
     this.gl.setPixelRatio(1);
     this.gl.shadowMap.enabled = true;
     this.gl.shadowMap.type = THREE.BasicShadowMap;
+    this.gl.shadowMap.autoUpdate = false; // render() says when the shadows are drawn again
     this.gl.localClippingEnabled = true; // a hatching creature shows only what is out of its shell
     this.gl.setClearColor(0x000000, 0);
     this.kind = "webgl2"; // three.js renders through WebGL 2 only
@@ -119,8 +120,12 @@ export class PixelRenderer {
     return t;
   }
 
-  /** Draws a stage at width × height art pixels into `out` (a render target) or, without one, the canvas. */
-  render({ scene, camera, colors }, width, height, out = null) {
+  /**
+   * Draws a stage at width × height art pixels into `out` (a render target) or, without one, the canvas. The
+   * shadows are drawn again unless `shadows` is false (the live view redraws them every other frame).
+   */
+  render({ scene, camera, colors }, width, height, out = null, { shadows = true } = {}) {
+    this.gl.shadowMap.needsUpdate = shadows;
     this.setColors(colors);
     const t = this.target(width, height);
     this.gl.setRenderTarget(t);

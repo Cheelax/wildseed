@@ -100,7 +100,9 @@ export class Hatchery {
     this.controls.update();
     const t = this.time;
     this.stage.frame(t, { look: this.lookAt() });
-    this.renderer.render(this.stage, this.size.width, this.size.height);
+    // On a software renderer, the shadow pass is a good part of a frame: half the frames reuse the last one.
+    this.frames = (this.frames ?? 0) + 1;
+    this.renderer.render(this.stage, this.size.width, this.size.height, null, { shadows: this.frames % 2 === 1 });
     if (!this.cried && t >= this.stage.burstAt) {
       this.cried = true;
       this.onHatched(this.stage.genome);

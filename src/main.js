@@ -27,7 +27,11 @@ const wild = (window.__wild = { ready: false, renderer: null, pixel: null, creat
 const view = (() => {
   try {
     return new Hatchery($("scene"), {
-      onHatched: (genome) => cry(genome),
+      onHatched: (genome) => {
+        cry(genome);
+        // Its parents call out to it, one after the other.
+        genome.parents?.forEach((p, i) => setTimeout(() => wild.creature === genome && cry(genomeOf(p)), 450 + 300 * i));
+      },
       onPoke: (genome) => cry(genome),
       onReady: (genome) => {
         if (wild.creature === genome) wild.ready = true;

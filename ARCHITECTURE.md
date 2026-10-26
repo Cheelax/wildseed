@@ -128,7 +128,8 @@ that lineage writes them, so `cross(a, b, n)` and `cross(b, a, n)` give the same
   species' traits, which the child carries under the same names (`src/genome/heirlooms.mjs`). A child keeps
   every heirloom of its parents of its own species, so a part goes down a family line.
 - The name sounds like both parents': the first syllable of one parent's name, then what follows the first
-  syllable of the other's (`Thombit` and `Noetik` make `Thomik` or `Noetbit`).
+  syllable of the other's (`Thombit` and `Noetik` make `Thomik` or `Noetbit`), and not a parent's own name
+  when the other way round avoids it.
 - The stats: a total between the parents' (25 more when rare), shared by weights between theirs.
 - The colors: its body a blend of its parents' bodies, each other color one parent's or halfway between.
 
