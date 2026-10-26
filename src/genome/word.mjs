@@ -9,7 +9,7 @@ import { paletteOf } from "./palette.mjs";
 import { SPECIES } from "./species.mjs";
 
 /** Each affinity leans one stat: moss is hardy, stone is tough, spark is quick. */
-export const LEAN = { moss: "hp", stone: "defense", spark: "speed" };
+const LEAN = { moss: "hp", stone: "defense", spark: "speed" };
 
 /** What an affinity can wear on its head or back. */
 export const CHARMS = {

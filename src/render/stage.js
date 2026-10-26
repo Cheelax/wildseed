@@ -106,6 +106,7 @@ export class Stage {
     const box = new THREE.Box3().setFromObject(this.creature.root);
     // While it peeks out of the egg it is small enough to fit in the shell, its head above the rim.
     const size = box.getSize(new THREE.Vector3());
+    if (this.meeting) this.meeting.childHalf = Math.max(box.max.x, -box.min.x);
     const small = THREE.MathUtils.clamp(0.95 / Math.max(size.x, size.z), 0.35, 0.7);
     this.emerge = { small, low: RIM - 0.9 * box.max.y * small, high: RIM - 0.55 * box.max.y * small };
     box.union(new THREE.Box3(new THREE.Vector3(-0.6, 0, -0.6), new THREE.Vector3(0.6, 1.3, 0.6)));

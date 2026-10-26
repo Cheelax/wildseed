@@ -8,7 +8,7 @@ import { Creature } from "./creature.js";
 export const MEET = { arrive: 1.0, lay: 1.35, lead: 1.75 };
 
 const FROM = 2.05, GAP = 0.12; // how far out they start, and the gap between their noses when they meet
-const WATCH = { x: 1.9, z: -0.95, turn: 0.75 }; // where they watch from, turned toward the egg
+const WATCH = { gap: 0.2, most: 2.2, z: -0.95, turn: 0.75 }; // where they watch from, beside their child, turned toward it
 
 const ease = (k) => 1 - (1 - k) ** 2;
 const clamp01 = (k) => Math.min(1, Math.max(0, k));
@@ -19,11 +19,15 @@ export class Meeting {
     this.pokes = parents.map(() => []);
     this.root = new THREE.Group();
     for (const p of this.parents) this.root.add(p.root);
-    // They meet nose to nose: each stands as far from the middle as its nose is in front of it.
-    this.reach = this.parents.map((p) => {
+    // They meet nose to nose: each stands as far from the middle as its nose is in front of it. They watch
+    // their child from beside it, as far out as they are wide.
+    const boxes = this.parents.map((p) => {
       p.pose(0);
-      return THREE.MathUtils.clamp(new THREE.Box3().setFromObject(p.root).max.z, 0.3, 0.9);
+      return new THREE.Box3().setFromObject(p.root);
     });
+    this.reach = boxes.map((b) => THREE.MathUtils.clamp(b.max.z, 0.3, 0.9));
+    this.half = boxes.map((b) => Math.max(b.max.x, -b.min.x));
+    this.childHalf = 0.7;
   }
 
   /** Remembers that parent `i` was poked at stage time t. */
@@ -48,7 +52,8 @@ export class Meeting {
       } else {
         // A hop back each, turning to watch the egg.
         const k = ease(clamp01((t - MEET.lay) / (MEET.lead - MEET.lay)));
-        x = meet + (side * WATCH.x - meet) * k;
+        const watch = side * Math.min(WATCH.most, this.childHalf + this.half[i] + WATCH.gap);
+        x = meet + (watch - meet) * k;
         z = WATCH.z * k;
         y = t < MEET.lead ? 0.18 * Math.sin(k * Math.PI) : 0;
         turn = -side * (Math.PI / 2 + (WATCH.turn - Math.PI / 2) * k);

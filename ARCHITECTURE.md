@@ -156,6 +156,11 @@ A child inherits this way:
   grandparents, each by its creature's name, with where each trait came from: which parent, or a mutation.
 - Save GIF and Save card work for children, with the lineage on the card.
 
+This entry's page also has, for later rounds to build on: `cross-input` and `cross` (cross the creature on
+screen with what is typed: its parents meet and lay the egg), `random-mate` (with a word from the list),
+`next-egg` and `replay` (for a child: its parents' next egg, and their meeting again), `send-link`, and
+chips under "Hatched here" whose × crosses that creature with the one on screen.
+
 ## The page
 
 `npm run build` writes a static site to `dist/`. It works from any path (`/`, or `/some/sub/path/`), so

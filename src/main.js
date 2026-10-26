@@ -350,6 +350,21 @@ async function exporting(button, busyText, make, filename) {
     button.textContent = text;
   }
 }
+/** Sends the creature's link: through the device's share sheet where there is one, else to the clipboard. */
+$("send-link").addEventListener("click", async () => {
+  const button = $("send-link");
+  const g = wild.creature;
+  const text = g.parents ? `${g.name}, the child of ${g.parents.map((p) => genomeOf(p).name).join(" and ")}, hatched on Wildseed` : `${g.name}, hatched from “${g.seed}” on Wildseed`;
+  try {
+    if (navigator.share) await navigator.share({ title: `${g.name} · Wildseed`, text, url: location.href });
+    else {
+      await navigator.clipboard.writeText(location.href);
+      button.textContent = "Link copied";
+      setTimeout(() => (button.textContent = "Send link"), 1600);
+    }
+  } catch {}
+});
+
 const fileName = (g) => `${g.name.toLowerCase()}-${g.seed.replace(/[^\p{L}\p{M}\p{N}]+/gu, "-").replace(/^-|-$/g, "")}`;
 $("save-gif").addEventListener("click", () => exporting($("save-gif"), "Filming…", makeGif, (g) => `${fileName(g)}.gif`));
 $("save-card").addEventListener("click", () => exporting($("save-card"), "Drawing…", makeCard, (g) => `${fileName(g)}-card.png`));
