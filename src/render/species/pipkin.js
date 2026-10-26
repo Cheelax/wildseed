@@ -55,6 +55,12 @@ export function pipkin(g, m) {
   return {
     body, head, wiggles, flaps,
     face: { eyes: e.open, happy: e.happy, irises: e.irises, mouth: { idle: null, open: null, jaw: lower } },
+    anchors: {
+      top: { parent: head, at: [0, ball[1] - 0.05, -0.06] },
+      back: { parent: head, at: [0, ball[1] * 0.55, -R * 0.72], rot: [-0.9, 0, 0] },
+      rear: { parent: body, at: [0, 0.6, -R * 0.84] },
+      neck: { parent: head, at: [0, -0.42, 0], r: R * 0.84 },
+    },
     charmAt: t.crest > 1 ? null : { parent: head, at: [0.18, ball[1] - 0.07, 0.05], rot: [0, 0, -0.35] },
     height: 0.9 + ball[1] + 0.2 * t.crestLength,
   };

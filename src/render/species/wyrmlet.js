@@ -3,7 +3,7 @@
 import { cone, ellipsoid, eyes, cheeks, joint, mouth, onSurface, plate, tube } from "../parts.js";
 
 const WING = [[0, 0], [0.18, 0.2], [0.42, 0.3], [0.62, 0.12], [0.5, 0.04], [0.42, -0.08], [0.3, 0.0], [0.2, -0.1], [0.08, -0.04]];
-const SPADE = [[0, -0.02], [0.12, 0.06], [0.1, 0.18], [0, 0.3], [-0.1, 0.18], [-0.12, 0.06]];
+export const SPADE = [[0, -0.02], [0.12, 0.06], [0.1, 0.18], [0, 0.3], [-0.1, 0.18], [-0.12, 0.06]];
 
 export function wyrmlet(g, m) {
   const t = g.traits;
@@ -95,6 +95,12 @@ export function wyrmlet(g, m) {
   return {
     body, head, wiggles, flaps,
     face: { eyes: e.open, happy: e.happy, irises: e.irises, mouth: mo },
+    anchors: {
+      top: { parent: head, at: [0, 0.44, 0] },
+      back: { parent: body, at: [0, 1.0, -0.32], rot: [-0.4, 0, 0] },
+      rear: { parent: body, at: [0, 0.26, -0.4] },
+      neck: { parent: head, at: [0, -0.4, -0.06], r: 0.44 },
+    },
     charmAt: { parent: head, at: [0, 0.42, 0.06], rot: [0.15, 0, 0] },
     height: 1.26 + 0.45 + 0.2 * H,
   };

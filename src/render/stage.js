@@ -1,10 +1,12 @@
 // The stage: a floating island in an affinity's sky, a sun that casts pixel shadows, the egg, the
-// creature and their effects. frame(t) poses all of it at t seconds after the hatch began: the page
-// calls it every frame, the GIF calls it at the times it records.
+// creature and their effects, and for a child its parents, who meet and lay its egg first. frame(t) poses
+// all of it at t seconds after the scene began: the page calls it every frame, the GIF calls it at the
+// times it records.
 import * as THREE from "three";
 import { Creature } from "./creature.js";
 import { Egg, RIM } from "./egg.js";
 import { Fx } from "./fx.js";
+import { MEET, Parents } from "./meeting.js";
 import { CLASS, PATTERN, tick, toon } from "./toon.js";
 import { cone, cylinder, ellipsoid, gem, hueGap, mesh } from "./parts.js";
 import { hash32, stream } from "../genome/genes.mjs";
@@ -57,16 +59,22 @@ export class Stage {
     this.center = new THREE.Vector3(0, 1, 0);
   }
 
-  /** Builds the island, the egg and the creature of a genome, ready to hatch from t = 0. */
-  set(genome) {
+  /**
+   * Builds the island, the egg and the creature of a genome, ready to hatch from t = 0. With the genomes of its
+   * `parents`, they meet and lay the egg first, and its hatch starts at `this.meet`.
+   */
+  set(genome, { parents = null } = {}) {
     this.genome = genome;
     dispose(this.world);
     this.world.clear();
     const look = { ...WORLDS[genome.affinity], grass: groundFor(WORLDS[genome.affinity].grass, genome.palette[0]) };
-    this.world.add(island(look, genome.seed));
+    this.world.add(island(look, genome.seed, { family: !!parents }));
     this.egg = new Egg(genome);
     this.creature = new Creature(genome);
     this.world.add(this.egg.root, this.creature.root);
+    this.parents = parents ? new Parents(parents) : null;
+    this.meet = parents ? MEET.laid : 0;
+    if (this.parents) this.world.add(this.parents.root);
     // What of the creature is still in its shell is not drawn: everything below this plane.
     this.shell = new THREE.Plane(new THREE.Vector3(0, 1, 0), 10);
     this.creature.root.traverse((o) => {
@@ -80,11 +88,22 @@ export class Stage {
     const small = THREE.MathUtils.clamp(0.95 / Math.max(size.x, size.z), 0.35, 0.7);
     this.emerge = { small, low: RIM - 0.9 * box.max.y * small, high: RIM - 0.55 * box.max.y * small };
     box.union(new THREE.Box3(new THREE.Vector3(-0.6, 0, -0.6), new THREE.Vector3(0.6, 1.3, 0.6)));
+    this.alone = box.getBoundingSphere(new THREE.Sphere());
+    if (this.parents) {
+      // The camera keeps the whole family in view: the parents where they stand to watch.
+      this.parents.pose(this.readyAt, this.burstAt);
+      box.union(new THREE.Box3().setFromObject(this.parents.root));
+    }
     this.bounds = box.getBoundingSphere(new THREE.Sphere());
     this.center.set(0, this.bounds.center.y, 0);
-    this.fx.setup(genome, this.creature.height, this.bounds.radius);
-    this.fx.burst("sparkles", HATCH.open, new THREE.Vector3(0, RIM + 0.3, 0));
-    this.fx.burst("puff", HATCH.burst, new THREE.Vector3(0, RIM * 0.7, 0));
+    this.fx.setup(genome, this.creature.height, this.alone.radius);
+    const m = this.meet;
+    if (this.parents) {
+      this.fx.burst("hearts", MEET.greet[1] + 0.05, new THREE.Vector3(0, 0.85, -0.35));
+      this.fx.burst("sparkles", m, new THREE.Vector3(0, 0.5, 0));
+    }
+    this.fx.burst("sparkles", m + HATCH.open, new THREE.Vector3(0, RIM + 0.3, 0));
+    this.fx.burst("puff", m + HATCH.burst, new THREE.Vector3(0, RIM * 0.7, 0));
     this.colors = {
       sky: look.sky,
       ink: { ground: look.ink, decor: look.ink, creature: genome.palette[5], egg: genome.rare ? "#14122e" : "#3b3328" },
@@ -99,33 +118,52 @@ export class Stage {
     this.sun.shadow.dispose();
   }
 
+  /** When the egg cracks open, the creature bursts out and it is ready, in seconds of the scene. */
+  get openAt() {
+    return this.meet + HATCH.open;
+  }
+  get burstAt() {
+    return this.meet + HATCH.burst;
+  }
+  get readyAt() {
+    return this.meet + HATCH.ready;
+  }
+
   /** Remembers that the creature was poked at time t: it jumps, laughs and hearts float up. */
   poke(t) {
     this.pokes.push(t);
     this.fx.burst("hearts", t, new THREE.Vector3(0, this.creature.height * 0.9, 0.3));
   }
 
-  /** Poses everything at t seconds after the hatch began. `look` steers the creature's eyes. */
+  /** Remembers that parent `i` was poked at time t. */
+  pokeParent(i, t) {
+    this.parents.poke(i, t);
+    const at = this.parents.members[i].creature.root.position;
+    this.fx.burst("hearts", t, new THREE.Vector3(at.x, 0.8, at.z + 0.2));
+  }
+
+  /** Poses everything at t seconds after the scene began. `look` steers the creature's eyes. */
   frame(t, { look = null, crying = false } = {}) {
     tick(t);
+    this.parents?.pose(t, this.burstAt);
     const { egg, creature } = this;
-    const eggVisible = egg.pose(t, HATCH);
-    egg.root.visible = eggVisible;
+    const h = t - this.meet; // into the egg's own hatch
+    egg.root.visible = h >= 0 && egg.pose(h, HATCH, { laid: !!this.parents });
     const { open, burst, ready } = HATCH;
-    creature.root.visible = t >= open;
-    if (t >= open) {
+    creature.root.visible = h >= open;
+    if (h >= open) {
       const { small, low, high } = this.emerge;
       let scale = 1, y = 0, cries = false, shellAt = -10;
-      if (t < burst) {
+      if (h < burst) {
         // The cap is off: only its head is out, pushing up, wriggling, looking around.
-        const s = (t - open) / (burst - open);
+        const s = (h - open) / (burst - open);
         scale = small;
-        y = low + (high - low) * (1 - (1 - s) ** 3) + 0.015 * Math.sin(t * 38) * (1 - s);
+        y = low + (high - low) * (1 - (1 - s) ** 3) + 0.015 * Math.sin(h * 38) * (1 - s);
         shellAt = RIM - 0.1;
-      } else if (t < ready) {
+      } else if (h < ready) {
         // The shell falls open: the body shows from the top down as the pieces fall away, and the
         // creature grows to its full size and hops out.
-        const s = (t - burst) / (ready - burst);
+        const s = (h - burst) / (ready - burst);
         const g = s * s * (3 - 2 * s);
         scale = small + (1 - small) * g + 0.07 * Math.sin(Math.PI * s);
         y = high * (1 - g) + 0.3 * Math.sin(Math.PI * s);
@@ -137,7 +175,7 @@ export class Stage {
       creature.root.position.y = y;
       const past = this.pokes.filter((p) => p <= t);
       const react = past.length ? t - past.at(-1) : Infinity;
-      this.doing = creature.pose(t - open, { look, react, pokes: past.length - 1, crying: crying || cries });
+      this.doing = creature.pose(h - open, { look, react, pokes: past.length - 1, crying: crying || cries });
     } else this.doing = { habit: null, s: 0 };
     this.fx.pose(t, this.center, this.doing);
   }
@@ -162,8 +200,11 @@ function groundFor(ground, body) {
   return `#${c.getHexString()}`;
 }
 
-/** The floating island: a faceted disc of ground over a cone of rock, with decor seeded by the word. */
-function island(look, seed) {
+/**
+ * The floating island: a faceted disc of ground over a cone of rock, with decor seeded by the word. A family
+ * keeps the island's sides clear, where the parents stand.
+ */
+function island(look, seed, { family = false } = {}) {
   const g = new THREE.Group();
   const grass = toon(look.grass, { cls: CLASS.ground, bands: [0.42, 0.6, 1.2] });
   const dirt = toon(look.dirt, { cls: CLASS.ground, mark: { color: look.rock, pattern: PATTERN.rings, scale: 6, cut: 0.25, offset: 0.1 } });
@@ -180,6 +221,7 @@ function island(look, seed) {
     const a = (i / 9) * Math.PI * 2 + r() * 0.5 + 0.35;
     const d = 1.45 + r() * 0.6;
     if (Math.cos(a) > 0.82) continue; // keep the front clear
+    if (family && Math.abs(Math.sin(a) * d) > 0.9 && Math.abs(Math.cos(a) * d) < 1) continue;
     const item = decor(kinds[i % kinds.length], r, look);
     item.position.set(Math.sin(a) * d, 0, Math.cos(a) * d);
     item.rotation.y = r() * Math.PI * 2;

@@ -85,3 +85,36 @@ export function paletteOf(affinity, rare, d) {
   const ink = { h: body.h + 10, s: d.int(30, 45), l: d.int(9, 13) };
   return [body, belly, accent, detail, eye, ink].map(css);
 }
+
+/** { h, s, l } of a "#rrggbb" color, h in degrees, s and l in %. */
+export function hslOf(color) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return { h: 0, s: 0, l: l * 100 };
+  const d = max - min;
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: h * 60, s: s * 100, l: l * 100 };
+}
+
+/** The color a fraction `w` of the way from `a` to `b`, turning the hue the short way round. */
+export function mix(a, b, w) {
+  const p = hslOf(a), q = hslOf(b);
+  // A grey has no hue of its own: it takes the other color's.
+  if (p.s < 4) p.h = q.h;
+  if (q.s < 4) q.h = p.h;
+  const turn = ((q.h - p.h + 540) % 360) - 180;
+  return hex(p.h + turn * w, p.s + (q.s - p.s) * w, p.l + (q.l - p.l) * w);
+}
+
+/**
+ * A child's six colors from its parents' `x` and `y`: its body a blend of theirs, each other color one
+ * parent's or halfway between. A rare child is starlit, whoever its parents are.
+ */
+export function childPalette(x, y, affinity, rare, d) {
+  if (rare) return paletteOf(affinity, true, d);
+  const body = mix(x[0], y[0], d.num(0.3, 0.7));
+  const rest = x.slice(1, 6).map((c, i) => mix(c, y[i + 1], d.pick([0, 0.5, 1])));
+  return [body, ...rest];
+}

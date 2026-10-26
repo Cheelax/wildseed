@@ -1,16 +1,17 @@
 // Films a creature off screen, on a stage of its own: the same hatch and the same life as the page,
-// frame by frame at chosen times, in art pixels. The GIF and the card are made from these frames.
-import { HATCH, Stage, aim } from "../render/stage.js";
+// frame by frame at chosen times, in art pixels. The GIF, the card and the family tree's portraits are made
+// from these frames.
+import { Stage, aim } from "../render/stage.js";
 import { HABIT_START, habitLength } from "../render/creature.js";
 import { encodeGif } from "./gif.js";
 import { pixelText, measure } from "./font.js";
 
 const pause = () => new Promise((r) => setTimeout(r, 0));
 
-/** A stage for `genome` with its camera framing the creature in a w × h picture. */
-export function studio(renderer, genome, w, h, { zoom = 1 } = {}) {
+/** A stage for `genome` (a child with its `parents`, when given) with its camera framing it in a w × h picture. */
+export function studio(renderer, genome, w, h, { zoom = 1, parents = null } = {}) {
   const stage = new Stage();
-  stage.set(genome);
+  stage.set(genome, { parents });
   const cam = stage.camera;
   cam.aspect = w / h;
   cam.updateProjectionMatrix();
@@ -29,20 +30,29 @@ export async function film(renderer, stage, times, w, h) {
   return frames;
 }
 
+/** A still of a creature out of its egg, alive, as RGBA rows of w × h. */
+export async function portrait(renderer, genome, w, h = w) {
+  const stage = studio(renderer, genome, w, h, { zoom: 0.95 });
+  const [picture] = await film(renderer, stage, [stage.readyAt + 0.35], w, h);
+  stage.dispose();
+  return picture;
+}
+
 /**
  * The GIF: the egg drops, cracks and hatches, then the creature lives for a few seconds: it looks
- * around, blinks, and laughs when poked. Its name runs along the bottom.
+ * around, blinks, and laughs when poked. A child's GIF starts with its `parents` meeting and laying its egg,
+ * wider to hold the family. Its name runs along the bottom.
  */
-export async function makeGif(renderer, genome) {
-  const W = 120, H = 120, scale = 4;
-  const stage = studio(renderer, genome, W, H);
+export async function makeGif(renderer, genome, { parents = null } = {}) {
+  const W = parents ? 168 : 120, H = 120, scale = 4;
+  const stage = studio(renderer, genome, W, H, { parents });
   // It shows its habit (a hop, a nap, a tilt…), then gets poked.
-  const poke = HATCH.open + HABIT_START + habitLength(genome.traits.mood) + 0.3;
+  const poke = stage.openAt + HABIT_START + habitLength(genome.traits.mood) + 0.3;
   stage.poke(poke);
   const times = [];
-  for (let t = 0; t < HATCH.ready; t += 0.08) times.push(t);
+  for (let t = 0; t < stage.readyAt; t += 0.08) times.push(t);
   const hatchFrames = times.length;
-  for (let t = HATCH.ready; t < poke + 1.4; t += 0.1) times.push(t);
+  for (let t = stage.readyAt; t < poke + 1.4; t += 0.1) times.push(t);
   const frames = await film(renderer, stage, times, W, H);
   stage.dispose();
   const banner = nameBanner(genome, W);

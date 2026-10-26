@@ -20,7 +20,14 @@ test("case, spaces and composed or decomposed accents do not change the creature
 test("seeds are refused with a reason: empty, too long, or with * ( ) # or emoji", () => {
   for (const bad of ["", "   ", "a".repeat(25), "a*b", "(a)", "x#2", "🐸"]) assert.ok(seedProblem(normalizeSeed(bad)), bad);
   for (const good of ["東京", "кот", "o'brien", "x-1", "a", "a".repeat(24)]) assert.equal(seedProblem(normalizeSeed(good)), null, good);
-  assert.throws(() => genomeOf("a*b"), /cannot be part of a seed/);
+  assert.throws(() => genomeOf("🐸"), /cannot be part of a seed/);
+});
+
+test("a*b is no seed, but a lineage: the child of a and b", () => {
+  const child = genomeOf("a*b");
+  assert.equal(child.seed, "a*b");
+  assert.deepEqual(child.parents, ["a", "b"]);
+  assert.throws(() => genomeOf("a**b"), /a parent is missing/);
 });
 
 test("stats are integers from 10 to 100 that add up to 160 to 280", () => {

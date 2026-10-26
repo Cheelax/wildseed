@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { PIXEL_MIN } from "../rules.mjs";
 import { PixelRenderer } from "./pixel.js";
-import { HATCH, Stage, aim } from "./stage.js";
+import { Stage, aim } from "./stage.js";
 
 /** The art pixel's size in CSS pixels for a scene of w × h: about 160 art pixels tall, 3 or more. */
 export function pixelSize(w, h) {
@@ -71,18 +71,25 @@ export class Hatchery {
     this.controls.update();
   }
 
-  /** Starts hatching a genome. Resolves when the creature is out and alive. */
-  hatch(genome) {
-    this.stage.set(genome);
+  /**
+   * Starts hatching a genome, a child after its `parents` meet. The scene plays `tempo` times faster until
+   * the creature is out (a page opened from a link hatches briskly). Resolves when the creature is out and alive.
+   */
+  hatch(genome, { parents = null, tempo = 1 } = {}) {
+    this.stage.set(genome, { parents });
     this.started = performance.now();
+    this.tempo = tempo;
     this.cried = false;
     this.resize();
     this.reframe();
     return new Promise((resolve) => (this.whenReady = resolve));
   }
 
+  /** Seconds into the scene. */
   get time() {
-    return (performance.now() - this.started) / 1000;
+    const real = (performance.now() - this.started) / 1000;
+    const brisk = this.stage.readyAt / this.tempo;
+    return real < brisk ? real * this.tempo : this.stage.readyAt + real - brisk;
   }
 
   loop() {
@@ -93,11 +100,11 @@ export class Hatchery {
     const t = this.time;
     this.stage.frame(t, { look: this.lookAt() });
     this.renderer.render(this.stage, this.size.width, this.size.height);
-    if (!this.cried && t >= HATCH.burst) {
+    if (!this.cried && t >= this.stage.burstAt) {
       this.cried = true;
       this.onHatched(this.stage.genome);
     }
-    if (this.whenReady && t >= HATCH.ready) {
+    if (this.whenReady && t >= this.stage.readyAt) {
       this.whenReady();
       this.whenReady = null;
       this.onReady(this.stage.genome);
@@ -108,12 +115,10 @@ export class Hatchery {
   lookAt() {
     if (!this.pointer) return null;
     const { camera, creature } = this.stage;
-    const head = new THREE.Vector3();
-    creature.rig.head.getWorldPosition(head);
-    const ray = new THREE.Raycaster();
+    const head = creature.rig.head.getWorldPosition(scratch.head);
     ray.setFromCamera(this.pointer, camera);
-    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()).negate(), head);
-    const at = ray.ray.intersectPlane(plane, new THREE.Vector3());
+    scratch.plane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(scratch.dir).negate(), head);
+    const at = ray.ray.intersectPlane(scratch.plane, scratch.at);
     if (!at) return null;
     const v = at.sub(head);
     const yaw = Math.atan2(v.x, v.z);
@@ -141,15 +146,29 @@ export class Hatchery {
     });
   }
 
-  /** A tap or click: if it lands on the creature, the creature reacts. */
+  /**
+   * A tap or click: if it lands on the creature or one of its parents, that one reacts. Anywhere inside a
+   * creature's box counts, so a tap among a drift's tentacles or between a moth's wings is a poke too.
+   */
   tap(point) {
-    const { camera, creature } = this.stage;
-    if (!creature?.root.visible || this.time < HATCH.ready) return;
-    const ray = new THREE.Raycaster();
+    const { camera, creature, parents } = this.stage;
+    const t = this.time;
+    if (!creature?.root.visible || t < this.stage.readyAt) return;
     ray.setFromCamera(point, camera);
-    if (ray.intersectObject(creature.root, true).length) {
-      this.stage.poke(this.time);
-      this.onPoke(this.stage.genome);
-    }
+    const targets = [{ root: creature.root, poke: () => (this.stage.poke(t), this.onPoke(this.stage.genome)) }];
+    parents?.members.forEach((p, i) => targets.push({ root: p.creature.root, poke: () => (this.stage.pokeParent(i, t), this.onPoke(p.genome)) }));
+    const hit = targets.map((x) => ({ ...x, at: distanceTo(x.root) })).filter((x) => x.at < Infinity).sort((a, b) => a.at - b.at)[0];
+    hit?.poke();
   }
+}
+
+const ray = new THREE.Raycaster();
+const scratch = { head: new THREE.Vector3(), dir: new THREE.Vector3(), at: new THREE.Vector3(), plane: new THREE.Plane(), box: new THREE.Box3() };
+
+/** How far along the ray a creature is: its nearest part, or its box when the ray passes between its parts. */
+function distanceTo(root) {
+  const parts = ray.intersectObject(root, true);
+  if (parts.length) return parts[0].distance;
+  const at = ray.ray.intersectBox(scratch.box.setFromObject(root), scratch.at);
+  return at ? at.distanceTo(ray.ray.origin) : Infinity;
 }

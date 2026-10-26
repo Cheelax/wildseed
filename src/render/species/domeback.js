@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { cone, dome, ellipsoid, face, joint, mesh, tube } from "../parts.js";
 import { PATTERN, toon } from "../toon.js";
 
-const SHELL_PATTERN = {
+export const SHELL_PATTERN = {
   plates: { pattern: PATTERN.plates, scale: 3.2, cut: 0.5, offset: 0.4 },
   rings: { pattern: PATTERN.rings, scale: 4.5, cut: 0.28, offset: 0.1 },
   spots: { pattern: PATTERN.spots, scale: 3.4, cut: 0.32, offset: 2.1 },
@@ -41,6 +41,12 @@ export function domeback(g, m) {
   return {
     body, head, wiggles, flaps,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
+    anchors: {
+      top: { parent: head, at: [0, radii[1] * 0.92, -0.02] },
+      back: { parent: body, at: [0, shellAt[1] + S - 0.04, shellAt[2]] },
+      rear: { parent: body, at: [0, 0.3, -0.96] },
+      neck: { parent: head, at: [0, -radii[1] * 0.72, -0.1], r: hs * 0.9 },
+    },
     charmAt: { parent: body, at: [0, shellAt[1] + S - 0.02, shellAt[2]], rot: [0, 0, 0] },
     height: Math.max(shellAt[1] + S + 0.3, headAt[1] + hs),
   };

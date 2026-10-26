@@ -40,3 +40,19 @@ export function nameOf(seed, affinity, d) {
   const name = (stem.endsWith(ending[0]) ? stem.slice(0, -1) : stem) + ending;
   return name[0].toUpperCase() + name.slice(1, 12);
 }
+
+/**
+ * A child's name sounds like both parents': the first syllable of one parent's name, then what follows the
+ * first syllable of the other's ("Thombun" and "Aurizap" make "Thomizap" or "Aurbun").
+ */
+export function childName(first, second, d) {
+  const [front, back] = d.chance(0.5) ? [first, second] : [second, first];
+  const lower = (name) => name.toLowerCase();
+  const stem = stemOf(lower(front)) || lower(front).slice(0, 3);
+  const otherStem = stemOf(lower(back));
+  let tail = lower(back).slice(otherStem.length) || lower(back).slice(-3);
+  if (stem.at(-1) === tail[0] && stem.at(-2) === tail[0]) tail = tail.slice(1); // never three of a letter
+  let name = (stem + tail).slice(0, 12);
+  if (name.length < 3) name = (name + lower(back)).slice(0, 3);
+  return name[0].toUpperCase() + name.slice(1);
+}
