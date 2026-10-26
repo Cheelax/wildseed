@@ -125,10 +125,11 @@ function hatch(seed, { push = true, parents = null } = {}) {
   wild.creature = genome;
   error.hidden = true;
   view?.hatch(genome, parents);
-  if (view) hatchSounds(HATCH, parents ? 0.9 : 0);
-  card.hidden = true;
-  $("family-tree").hidden = true;
-  $("next-egg").hidden = true;
+  if (view) hatchSounds(HATCH, parents ? view.meetingDuration : 0);
+  card.style.minHeight = `${card.offsetHeight}px`;
+  card.setAttribute('aria-busy', 'true');
+  card.classList.remove('fresh');
+  $("next-egg").disabled = true;
   if (!view) reveal(genome);
   const url = new URL(location.href);
   url.search = `?seed=${encodeURIComponent(genome.seed)}`;
@@ -137,7 +138,8 @@ function hatch(seed, { push = true, parents = null } = {}) {
 
 /** Reveal the card and ancestors together once the child has left its shell. */
 function reveal(genome) {
-  card.hidden = false;
+  card.removeAttribute('aria-busy');
+  $("next-egg").disabled = false;
   showCard(genome);
   showFamily($("family-tree"), genome);
   $("next-egg").hidden = !genome.parents || genome.clutch >= 99;
@@ -245,10 +247,12 @@ document.querySelector('.crossing').addEventListener('submit', e => {
 $("next-egg").addEventListener('click', () => {
   const g = wild.creature;
   if (!g.parents || g.clutch >= 99) return;
-  const parents = g.parents.map(genomeOf);
-  const child = cross(...parents, g.clutch + 1);
-  input.value = child.seed;
-  hatch(child.seed, { parents });
+  try {
+    const parents = g.parents.map(genomeOf);
+    const child = cross(...parents, g.clutch + 1);
+    input.value = child.seed;
+    hatch(child.seed, { parents });
+  } catch (e) { showError(e.message); }
 });
 $("use-child").addEventListener('click', () => {
   parentA.value = wild.creature.seed;

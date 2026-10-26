@@ -1,4 +1,5 @@
 // Species traits share one generator for words and fresh mutations.
+import { SPECIES } from "./species.mjs";
 /** What an affinity can wear on its head or back. */
 const CHARMS = {
   moss: { none: 2, sprout: 1, leaf: 1, flower: 1, mushroom: 1 },
@@ -29,3 +30,14 @@ export function traitsOf(species, affinity, gene) {
     ...species.knobs(gene),
   };
 }
+
+/** Domains come from the same knob declarations as the original word generator. */
+const domainDie = {
+  pick: choices => value => (Array.isArray(choices) ? choices : Object.keys(choices)).includes(value),
+  num: (min, max) => value => typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max,
+  int: (min, max) => value => Number.isInteger(value) && value >= min && value <= max,
+  chance: () => value => typeof value === 'boolean',
+};
+export const SPECIES_DOMAINS = Object.fromEntries(
+  Object.entries(SPECIES).map(([id, species]) => [id, species.knobs(() => domainDie)]),
+);

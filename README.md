@@ -122,7 +122,9 @@ I want you to contribute to Cheelax/wildseed on Hotpod. Download https://agent-l
 ## Crossing
 
 Type `thomas*auri` in the hatch field, or enter two words or lineages in the crossing form and press
-Cross. The parents meet, lay an egg, and their child hatches with a cry. Lay the next egg makes #2,
+Cross. Full-sized parents approach, bounce toward each other, and share a heart burst before laying
+an egg. The whole crossing takes three seconds, with the previous card kept in place until the child
+is ready. Reduced motion shortens the meeting. Lay the next egg makes #2,
 then #3; Use this creature fills the first parent field so you can cross it with another word.
 The family cards show parents and grandparents, their colors, and the source of each trait.
 Save GIF and Save card also work for children. The written lineage stays on the card and in the link.
@@ -138,7 +140,8 @@ Spaces around signs do not count. Limits are six generations and 120 characters 
 
 A child picks its species and affinity from its parents, then picks each compatible trait from one of
 them, retaining all traits for its species. Each trait independently mutates 1 in 50, using the original
-species' ranges. Numbers are picked for traits (so counts stay whole); stats blend with one shared
+species' ranges. Only parent values the child's species allows are inherited; if neither parent's fits,
+the trait gets a fresh draw, listed in mutations rather than credited to a parent. Numbers are picked for traits (so counts stay whole); stats blend with one shared
 weight and round cumulatively to preserve the blended total. Colors blend in HSL along the shorter hue
 arc, keeping the parents' saturation and lightness. The name gene chooses which parent leads and how many letters each contributes.
 Two common parents have a 1-in-64 rare child; with a rare parent the chance is 1-in-8. Every choice is

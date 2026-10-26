@@ -2,6 +2,7 @@
 // creature and their effects. frame(t) poses all of it at t seconds after the hatch began: the page
 // calls it every frame, the GIF calls it at the times it records.
 import * as THREE from "three";
+import { Courtship, CROSSING } from "./courtship.js";
 import { Creature } from "./creature.js";
 import { Egg, RIM } from "./egg.js";
 import { Fx } from "./fx.js";
@@ -15,6 +16,7 @@ import { dispose } from "./dispose.js";
  * peeks out (open), the shell falls apart as the creature climbs out (burst), and it is ready.
  */
 export const HATCH = { drop: 0.16, cracks: [0.28, 0.40, 0.52], open: 0.62, burst: 0.88, ready: 1.25 };
+const LAID_HATCH = { ...HATCH, drop: 0 };
 
 /**
  * Puts a camera where it sees a sphere of `radius` around `center`, `margin` times over, from a little
@@ -57,19 +59,23 @@ export class Stage {
     this.center = new THREE.Vector3(0, 1, 0);
   }
 
-  meet(parents) {
-    this.couple = parents.map(g => new Creature(g));
-    this.couple.forEach(c => { c.root.scale.setScalar(0.55); this.world.add(c.root); });
+  meet(parents, reduced = false) {
+    this.courtship = new Courtship(parents, this.world, this.fx, reduced);
+    this.childRadius = this.bounds.radius;
+    this.courtship.bounds.union(new THREE.Box3().setFromObject(this.creature.root));
+    this.courtship.bounds.getBoundingSphere(this.bounds);
+    this.crossed = true;
   }
 
   clearCouple() {
-    this.couple?.forEach(c => { this.world.remove(c.root); dispose(c.root); });
-    this.couple = null;
+    this.courtship?.dispose();
+    this.courtship = null;
   }
 
   /** Builds the island, the egg and the creature of a genome, ready to hatch from t = 0. */
   set(genome) {
     this.clearCouple();
+    this.crossed = false;
     this.genome = genome;
     dispose(this.world);
     this.world.clear();
@@ -118,19 +124,20 @@ export class Stage {
 
   /** Poses everything at t seconds after the hatch began. `look` steers the creature's eyes. */
   frame(t, { look = null, crying = false } = {}) {
-    if (t < 0 && this.couple) {
-      this.egg.root.visible = this.creature.root.visible = false;
-      this.couple.forEach((c, i) => {
-        c.pose(t + 1);
-        c.root.position.set((i ? 1 : -1) * (0.42 - t * 1.5), 0, 0);
-        c.root.rotation.y = (i ? -1 : 1) * 0.6;
-      });
-      return;
+    if (this.courtship) {
+      const laid = this.courtship.pose(t);
+      if (t < 0) {
+        this.creature.root.visible = false;
+        this.egg.pose(HATCH.drop, HATCH);
+        this.egg.root.visible = laid;
+        this.fx.pose(t, this.center);
+        return;
+      }
+      if (t >= CROSSING.leave) this.clearCouple();
     }
-    if (this.couple) this.clearCouple();
     tick(t);
     const { egg, creature } = this;
-    const eggVisible = egg.pose(t, HATCH);
+    const eggVisible = egg.pose(t, this.crossed ? LAID_HATCH : HATCH);
     egg.root.visible = eggVisible;
     const { open, burst, ready } = HATCH;
     creature.root.visible = t >= open;

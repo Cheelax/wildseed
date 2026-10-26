@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { PIXEL_MIN } from "../rules.mjs";
 import { PixelRenderer } from "./pixel.js";
+import { CROSSING } from "./courtship.js";
 import { HATCH, Stage, aim } from "./stage.js";
 
 /** The art pixel's size in CSS pixels for a scene of w × h: about 160 art pixels tall, 3 or more. */
@@ -25,6 +26,8 @@ export class Hatchery {
     this.at = new THREE.Vector3();
     this.plane = new THREE.Plane();
     this.hitBox = new THREE.Box3();
+    this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.meetingDuration = this.reducedMotion ? 0.2 : CROSSING.hatch;
     this.pointer = null;
     this.size = { width: 0, height: 0, pixel: 3 };
     this.listen();
@@ -80,9 +83,12 @@ export class Hatchery {
 
   /** Starts hatching a genome. Resolves when the creature is out and alive. */
   hatch(genome, parents = null) {
+    this.stage.camera.zoom = 1;
+    this.stage.camera.updateProjectionMatrix();
     this.stage.set(genome);
-    if (parents) this.stage.meet(parents);
-    this.started = performance.now() + (parents ? 900 : 0);
+    if (parents) this.stage.meet(parents, this.reducedMotion);
+    this.crossZoom = parents ? this.stage.bounds.radius / this.stage.childRadius : 1;
+    this.started = performance.now() + (parents ? this.meetingDuration * 1000 : 0);
     this.cried = false;
     this.resize();
     this.reframe();
@@ -99,6 +105,11 @@ export class Hatchery {
     this.controls.update();
     const t = this.time;
     this.stage.frame(t, { look: this.lookAt() });
+    const zoom = 1 + (this.crossZoom - 1) * THREE.MathUtils.smoothstep(t, 0, HATCH.open);
+    if (this.stage.camera.zoom !== zoom) {
+      this.stage.camera.zoom = zoom;
+      this.stage.camera.updateProjectionMatrix();
+    }
     this.renderer.render(this.stage, this.size.width, this.size.height);
     if (!this.cried && t >= HATCH.burst) {
       this.cried = true;

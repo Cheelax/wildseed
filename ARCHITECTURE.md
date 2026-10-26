@@ -169,7 +169,9 @@ all choices draw from genes keyed by the child's written seed. Children add `par
 without outer parentheses, in seed order), `clutch`, `mutations` (distinct dotted trait paths) and
 `inherited` (trait path to `a`, `b` or `mutation`). Species and affinity come from a parent. The child
 keeps its species' trait keys; each trait is picked from a compatible parent value, except a 1-in-50
-mutation drawn with the original species' trait generator. Stats blend, palettes blend HSL on the short
+mutation drawn with the original species' trait generator. Species domains come from the same knob
+declarations: only parent values inside the child's species domain are candidates, and when neither
+parent's value fits, the fresh draw is used and listed as a mutation. Stats blend, palettes blend HSL on the short
 hue arc, and names combine a gene-selected opening and ending of the parents' names. Two common parents
 have a 1-in-64 rare child; a rare parent raises this to 1-in-8.
 

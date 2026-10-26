@@ -1,7 +1,7 @@
 // Crossing is data only: all choices are genes of the canonical child's seed.
 import { genesOf } from './genome/genes.mjs';
 import { SPECIES } from './genome/species.mjs';
-import { traitsOf } from './genome/traits.mjs';
+import { traitsOf, SPECIES_DOMAINS } from './genome/traits.mjs';
 import { blendPalette } from './genome/palette.mjs';
 import { parseLineage, writtenForm } from './lineage.mjs';
 import { CLUTCH_MIN, CLUTCH_MAX, MUTATION_ONE_IN, CHILD_RARE_ONE_IN, STATS } from './rules.mjs';
@@ -16,7 +16,7 @@ export function cross(a, b, clutch = CLUTCH_MIN) {
   const affinity = gene('affinity').pick([a.affinity, b.affinity]);
   const mutations = [], inherited = {};
   const fresh = traitsOf(SPECIES[species], affinity, gene);
-  const traits = inherit(fresh, a.traits, b.traits, gene, mutations, inherited);
+  const traits = inherit(fresh, a.traits, b.traits, gene, mutations, inherited, SPECIES_DOMAINS[species]);
   const mix = gene('stats').num(0.2, 0.8);
   // Cumulative rounding keeps the rounded blended total instead of losing points per stat.
   let total = 0, rounded = 0;
@@ -37,16 +37,23 @@ export function cross(a, b, clutch = CLUTCH_MIN) {
   };
 }
 
-function inherit(fresh, a, b, gene, mutations, inherited, prefix = '') {
+function inherit(fresh, a, b, gene, mutations, inherited, domains, prefix = '') {
   return Object.fromEntries(Object.entries(fresh).map(([key, value]) => {
     const path = prefix ? `${prefix}.${key}` : key;
-    if (value && typeof value === 'object') return [key, inherit(value, a?.[key], b?.[key], gene, mutations, inherited, path)];
+    if (value && typeof value === 'object') return [key, inherit(value, a?.[key], b?.[key], gene, mutations, inherited, domains, path)];
     if (gene(`mutation.${path}`).chance(1 / MUTATION_ONE_IN)) {
       mutations.push(path);
       inherited[path] = 'mutation';
       return [key, value];
     }
-    const options = [['a', a?.[key]], ['b', b?.[key]]].filter(([, v]) => typeof v === typeof value);
+    // A parent's value is inherited only if the child's species allows it; with none allowed, the fresh draw is a mutation.
+    const allowed = domains[path] ?? (v => typeof v === typeof value);
+    const options = [['a', a?.[key]], ['b', b?.[key]]].filter(([, v]) => typeof v === typeof value && allowed(v));
+    if (!options.length) {
+      mutations.push(path);
+      inherited[path] = 'mutation';
+      return [key, value];
+    }
     const [from, picked] = gene(`inherit.${path}`).pick(options);
     inherited[path] = from;
     return [key, picked];
