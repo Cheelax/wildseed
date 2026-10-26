@@ -86,7 +86,7 @@ try {
 
       await step("bad", async () => {
         const before = (await wild(page))?.creature?.seed ?? null;
-        await page.fill(id("seed-input"), "a*b");
+        await page.fill(id("seed-input"), "a**b");
         await page.press(id("seed-input"), "Enter");
         await page.locator(id("seed-error")).waitFor({ state: "visible", timeout: 15_000 });
         await page.waitForTimeout(1000);

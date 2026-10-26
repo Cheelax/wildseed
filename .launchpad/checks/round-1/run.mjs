@@ -159,7 +159,7 @@ await test("seeds in any script, with digits, spaces, hyphens and apostrophes, h
 
 await test("a bad seed exits 2 with a reason on stderr and nothing on stdout", async () => {
   const cases = [[[], "no seed"], [[""], "an empty seed"], [["   "], "a seed of spaces"], [["abcdefghijklmnopqrstuvwxy"], "a 25-character seed"],
-    [["a*b"], "a seed with *"], [["(a)"], "a seed with parentheses"], [["x#2"], "a seed with #"], [["🐸"], "an emoji"], [["moss", "a*b"], "a good seed then a bad one"]];
+    [["a**b"], "two * in a row"], [["(a"], "an unclosed parenthesis"], [["#2"], "a # with nothing before it"], [["🐸"], "an emoji"], [["moss", "a**b"], "a good seed then a bad one"]];
   for (const [args, what] of cases) {
     const r = await refuses(hatch, args, what);
     check(r.code === 2, `${what}: exited with ${r.code ?? r.signal}, expected 2`);
@@ -276,7 +276,7 @@ try {
   await test("a bad seed typed in the page shows a reason and keeps the creature", async () => {
     const st = await stepOf("bad");
     check(st.message.length > 0, "the element with test id seed-error is empty");
-    check(st.after === st.before, `the creature changed from ${show(st.before)} to ${show(st.after)} after typing "a*b"`);
+    check(st.after === st.before, `the creature changed from ${show(st.before)} to ${show(st.after)} after typing "a**b"`);
   });
 
   await test("Random hatches another seed's creature, exactly the genome the command prints", async () => {

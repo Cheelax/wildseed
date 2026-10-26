@@ -1,0 +1,23 @@
+{
+  "name": "round 2: cross",
+  "run": "node .launchpad/checks/round-2/run.mjs",
+  "timeoutSeconds": 600,
+  "tests": [
+    "a child's genome is the same in two runs, and the same whichever order its parents are written in",
+    "cross(a, b, clutch) in src/cross.mjs is pure and symmetric, and returns the command's child",
+    "lineages have one written form: case, spaces, ×, #1 and the parents' order do not change the child",
+    "every child has round 1's fields inside the rules' ranges, plus its parents, its clutch and its mutations",
+    "over 11,300 children: species, affinity and every trait come from a parent, or are listed as mutations",
+    "over 10,000 children: about one trait in 50 mutates, and about one child of two common parents in 64 is rare",
+    "children take after both parents: traits from each side, colors near their parents', and siblings that differ",
+    "lineages of 6 generations and 120 characters hatch, and so does a word crossed with itself",
+    "a bad lineage exits 2 with a reason on stderr and nothing on stdout",
+    "plain seeds keep their creature: the round 1 winner's 466 recorded genomes are unchanged",
+    "?seed= opens a child, exactly the genome the command prints, and its family tree names its parents and grandparents",
+    "typing a cross and pressing Enter hatches the child, and the address it writes opens that child again",
+    "a bad lineage typed in the page shows a reason and keeps the creature",
+    "the card shows a child's name, species, affinity, stats and the words of its lineage",
+    "Save GIF downloads a child's animated GIF",
+    "Save card downloads a child's PNG card"
+  ]
+}
