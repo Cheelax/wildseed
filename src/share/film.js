@@ -2,15 +2,16 @@
 // frame by frame at chosen times, in art pixels. The GIF and the card are made from these frames.
 import { HATCH, Stage, aim } from "../render/stage.js";
 import { HABIT_START, habitLength } from "../render/creature.js";
+import { genomeOf } from "../genome.mjs";
 import { encodeGif } from "./gif.js";
 import { pixelText, measure } from "./font.js";
 
 const pause = () => new Promise((r) => setTimeout(r, 0));
 
-/** A stage for `genome` with its camera framing the creature in a w × h picture. */
-export function studio(renderer, genome, w, h, { zoom = 1 } = {}) {
+/** A stage for `genome` with its camera framing the creature (and its `parents`, when they meet) in a w × h picture. */
+export function studio(renderer, genome, w, h, { zoom = 1, parents = null } = {}) {
   const stage = new Stage();
-  stage.set(genome);
+  stage.set(genome, { parents });
   const cam = stage.camera;
   cam.aspect = w / h;
   cam.updateProjectionMatrix();
@@ -31,36 +32,40 @@ export async function film(renderer, stage, times, w, h) {
 
 /**
  * The GIF: the egg drops, cracks and hatches, then the creature lives for a few seconds: it looks
- * around, blinks, and laughs when poked. Its name runs along the bottom.
+ * around, blinks, and laughs when poked. Its name runs along the bottom. A child's GIF starts with its
+ * parents meeting and laying the egg, their names along the bottom until their child is out.
  */
 export async function makeGif(renderer, genome) {
   const W = 120, H = 120, scale = 4;
-  const stage = studio(renderer, genome, W, H);
+  const parents = genome.parents ? genome.parents.map((p) => genomeOf(p)) : null;
+  const stage = studio(renderer, genome, W, H, { parents });
+  const { burst, ready } = stage.timing;
   // It shows its habit (a hop, a nap, a tilt…), then gets poked.
-  const poke = HATCH.open + HABIT_START + habitLength(genome.traits.mood) + 0.3;
+  const born = ready - (HATCH.ready - HATCH.open);
+  const poke = born + HABIT_START + habitLength(genome.traits.mood) + 0.3;
   stage.poke(poke);
   const times = [];
-  for (let t = 0; t < HATCH.ready; t += 0.08) times.push(t);
+  for (let t = 0; t < ready; t += 0.08) times.push(t);
   const hatchFrames = times.length;
-  for (let t = HATCH.ready; t < poke + 1.4; t += 0.1) times.push(t);
+  for (let t = ready; t < poke + 1.4; t += 0.1) times.push(t);
   const frames = await film(renderer, stage, times, W, H);
   stage.dispose();
-  const banner = nameBanner(genome, W);
-  for (const f of frames) stamp(f, W, banner);
+  const name = banner(genome.rare ? `★ ${genome.name} ★` : genome.name, genome.palette[5], genome.rare ? "#ffd66b" : "#ffffff", W);
+  const couple = parents && banner(`${parents[0].name} × ${parents[1].name}`, genome.palette[5], "#ffd0dc", W);
+  frames.forEach((f, i) => stamp(f, W, couple && times[i] < burst ? couple : name));
   const delays = times.map((_, i) => (i < hatchFrames ? 8 : 10));
   return new Blob([encodeGif(frames, W, H, { scale, delays })], { type: "image/gif" });
 }
 
-/** The name in the pixel font on a strip of ink, as RGBA rows to stamp at the bottom of each frame. */
-function nameBanner(genome, width) {
+/** A line in the pixel font on a strip of ink, as RGBA rows to stamp at the bottom of each frame. */
+function banner(text, ink, color, width) {
   const c = document.createElement("canvas");
   c.width = width;
   c.height = 11;
   const g = c.getContext("2d");
-  g.fillStyle = genome.palette[5];
+  g.fillStyle = ink;
   g.fillRect(0, 0, width, 11);
-  const text = genome.rare ? `★ ${genome.name} ★` : genome.name;
-  pixelText(g, text, Math.floor((width - measure(text)) / 2), 2, genome.rare ? "#ffd66b" : "#ffffff");
+  pixelText(g, text, Math.max(1, Math.floor((width - measure(text)) / 2)), 2, color);
   return g.getImageData(0, 0, width, 11).data;
 }
 

@@ -25,12 +25,18 @@ export function wakeAudio() {
   if (live.state === "suspended") live.resume();
 }
 
-/** The egg's sounds, from now: a crack at each of `cracks` seconds, a pop as the cap comes off at `open`, a crumble at `burst`. */
-export function hatchSounds({ cracks, open, burst }) {
+/**
+ * The egg's sounds, from now: a crack at each of `cracks` seconds, a pop as the cap comes off at `open` (null
+ * when it is already off), a crumble at `burst`. When `parents` meet first, each calls out to the other at
+ * `meet`, and the egg plops out at `lay`.
+ */
+export function hatchSounds({ cracks, open, burst }, { parents = null, meet = 0, lay = 0 } = {}) {
   if (muted || live?.state !== "running") return;
   const now = live.currentTime + 0.02;
+  parents?.forEach((g, i) => sing(live, g, now + meet + 0.45 * i));
+  if (parents) noise(live, now + lay, 0.12, 420, 0.9);
   cracks.forEach((t, i) => noise(live, now + t, 0.035, 1800 + 500 * i, 0.5));
-  noise(live, now + open, 0.1, 1100, 0.8);
+  if (open !== null) noise(live, now + open, 0.1, 1100, 0.8);
   noise(live, now + burst, 0.16, 650, 0.9);
 }
 

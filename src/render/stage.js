@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { Creature } from "./creature.js";
 import { Egg, RIM } from "./egg.js";
 import { Fx } from "./fx.js";
+import { MEET, Meeting } from "./meeting.js";
 import { CLASS, PATTERN, tick, toon } from "./toon.js";
 import { cone, cylinder, ellipsoid, gem, hueGap, mesh } from "./parts.js";
 import { hash32, stream } from "../genome/genes.mjs";
@@ -57,8 +58,11 @@ export class Stage {
     this.center = new THREE.Vector3(0, 1, 0);
   }
 
-  /** Builds the island, the egg and the creature of a genome, ready to hatch from t = 0. */
-  set(genome) {
+  /**
+   * Builds the island, the egg and the creature of a genome, ready to hatch from t = 0. With `parents`, they
+   * first meet and lay the egg (meeting.js); `quick` starts as the shell bursts, for a page that just opened.
+   */
+  set(genome, { parents = null, quick = false } = {}) {
     this.genome = genome;
     dispose(this.world);
     this.world.clear();
@@ -67,6 +71,21 @@ export class Stage {
     this.egg = new Egg(genome);
     this.creature = new Creature(genome);
     this.world.add(this.egg.root, this.creature.root);
+    this.meeting = parents ? new Meeting(parents) : null;
+    if (this.meeting) this.world.add(this.meeting.root);
+    // The hatch's own clock starts at `start` once `lead` seconds of meeting are over.
+    this.lead = this.meeting ? MEET.lead : 0;
+    this.start = this.meeting ? HATCH.drop + 0.2 : quick ? HATCH.burst - 0.3 : 0;
+    const at = (h) => this.lead + h - this.start;
+    this.timing = {
+      cracks: HATCH.cracks.filter((c) => c >= this.start).map(at),
+      open: HATCH.open >= this.start ? at(HATCH.open) : null,
+      burst: at(HATCH.burst),
+      ready: at(HATCH.ready),
+    };
+    this.cues = this.meeting
+      ? [[0, `${parents[0].name} meets ${parents[1].name}…`], [MEET.lay, "…and they lay an egg!"], [this.lead + 0.3, `Egg #${genome.clutch} is hatching…`], [this.timing.ready + 0.4, null]]
+      : [];
     // What of the creature is still in its shell is not drawn: everything below this plane.
     this.shell = new THREE.Plane(new THREE.Vector3(0, 1, 0), 10);
     this.creature.root.traverse((o) => {
@@ -81,10 +100,16 @@ export class Stage {
     this.emerge = { small, low: RIM - 0.9 * box.max.y * small, high: RIM - 0.55 * box.max.y * small };
     box.union(new THREE.Box3(new THREE.Vector3(-0.6, 0, -0.6), new THREE.Vector3(0.6, 1.3, 0.6)));
     this.bounds = box.getBoundingSphere(new THREE.Sphere());
-    this.center.set(0, this.bounds.center.y, 0);
     this.fx.setup(genome, this.creature.height, this.bounds.radius);
-    this.fx.burst("sparkles", HATCH.open, new THREE.Vector3(0, RIM + 0.3, 0));
-    this.fx.burst("puff", HATCH.burst, new THREE.Vector3(0, RIM * 0.7, 0));
+    if (this.meeting) {
+      // The family needs room: the parents come from the island's edges and watch from either side.
+      this.bounds.radius = Math.max(this.bounds.radius, 2.5);
+      this.bounds.center.y = Math.max(this.bounds.center.y, 0.85);
+      this.fx.burst("hearts", MEET.arrive + 0.05, new THREE.Vector3(0, 1.3, 0));
+    }
+    this.center.set(0, this.bounds.center.y, 0);
+    if (this.timing.open !== null) this.fx.burst("sparkles", this.timing.open, new THREE.Vector3(0, RIM + 0.3, 0));
+    this.fx.burst("puff", this.timing.burst, new THREE.Vector3(0, RIM * 0.7, 0));
     this.colors = {
       sky: look.sky,
       ink: { ground: look.ink, decor: look.ink, creature: genome.palette[5], egg: genome.rare ? "#14122e" : "#3b3328" },
@@ -105,12 +130,24 @@ export class Stage {
     this.fx.burst("hearts", t, new THREE.Vector3(0, this.creature.height * 0.9, 0.3));
   }
 
-  /** Poses everything at t seconds after the hatch began. `look` steers the creature's eyes. */
-  frame(t, { look = null, crying = false } = {}) {
-    tick(t);
+  /** The hatch's own clock at stage time t: it waits at `start` while the parents meet. */
+  hatchTime(t) {
+    return this.start + Math.max(0, t - this.lead);
+  }
+
+  /** Poses everything at t seconds after the hatch (or the meeting) began. `look` steers the creature's eyes. */
+  frame(stageTime, { look = null, crying = false } = {}) {
+    tick(stageTime);
+    const t = this.hatchTime(stageTime);
     const { egg, creature } = this;
-    const eggVisible = egg.pose(t, HATCH);
-    egg.root.visible = eggVisible;
+    egg.root.visible = egg.pose(t, HATCH);
+    if (this.meeting) {
+      // The egg pops out between the parents, overshooting a little, then sits until the meeting is over.
+      const k = Math.min(1, (stageTime - MEET.lay) / 0.3);
+      egg.root.visible &&= k >= 0;
+      egg.root.scale.setScalar(Math.max(0.001, 1 + 2.7 * (k - 1) ** 3 + 1.7 * (k - 1) ** 2));
+      this.meeting.pose(stageTime, this.timing.burst);
+    }
     const { open, burst, ready } = HATCH;
     creature.root.visible = t >= open;
     if (t >= open) {
@@ -135,11 +172,11 @@ export class Stage {
       this.shell.constant = -shellAt;
       creature.root.scale.setScalar(scale);
       creature.root.position.y = y;
-      const past = this.pokes.filter((p) => p <= t);
-      const react = past.length ? t - past.at(-1) : Infinity;
+      const past = this.pokes.filter((p) => p <= stageTime);
+      const react = past.length ? stageTime - past.at(-1) : Infinity;
       this.doing = creature.pose(t - open, { look, react, pokes: past.length - 1, crying: crying || cries });
     } else this.doing = { habit: null, s: 0 };
-    this.fx.pose(t, this.center, this.doing);
+    this.fx.pose(stageTime, this.center, this.doing);
   }
 }
 

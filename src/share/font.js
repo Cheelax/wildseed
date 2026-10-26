@@ -1,5 +1,6 @@
-// A 5 × 7 pixel font, drawn here row by row, for the GIF and the card. Text in other scripts (a seed in
-// Japanese or Arabic) falls back to the system font, drawn small and snapped to whole pixels.
+// A 5 × 7 pixel font, drawn here row by row, for the GIF and the card: capitals, small letters, digits and
+// the signs of a lineage. Text in other scripts (a seed in Japanese or Arabic) falls back to the system font,
+// drawn small and snapped to whole pixels.
 
 const GLYPHS = {
   A: [14, 17, 17, 31, 17, 17, 17], B: [30, 17, 17, 30, 17, 17, 30], C: [14, 17, 16, 16, 16, 17, 14],
@@ -20,10 +21,21 @@ const GLYPHS = {
   "!": [4, 4, 4, 4, 4, 0, 4], "?": [14, 17, 1, 2, 4, 0, 4], "/": [1, 2, 2, 4, 8, 8, 16],
   "+": [0, 4, 4, 31, 4, 4, 0], '"': [10, 10, 0, 0, 0, 0, 0], "·": [0, 0, 0, 12, 12, 0, 0],
   "★": [4, 4, 31, 14, 14, 27, 0], "♥": [0, 10, 31, 31, 14, 4, 0],
+  "*": [0, 4, 21, 14, 21, 4, 0], "×": [0, 17, 10, 4, 10, 17, 0], "#": [10, 10, 31, 10, 31, 10, 10],
+  "(": [2, 4, 8, 8, 8, 4, 2], ")": [8, 4, 2, 2, 2, 4, 8], "→": [0, 4, 2, 31, 2, 4, 0],
+  a: [0, 0, 14, 1, 15, 17, 15], b: [16, 16, 22, 25, 17, 17, 30], c: [0, 0, 14, 16, 16, 17, 14],
+  d: [1, 1, 13, 19, 17, 17, 15], e: [0, 0, 14, 17, 31, 16, 14], f: [6, 9, 8, 28, 8, 8, 8],
+  g: [0, 15, 17, 17, 15, 1, 14], h: [16, 16, 22, 25, 17, 17, 17], i: [4, 0, 12, 4, 4, 4, 14],
+  j: [2, 0, 6, 2, 2, 18, 12], k: [16, 16, 18, 20, 24, 20, 18], l: [12, 4, 4, 4, 4, 4, 14],
+  m: [0, 0, 26, 21, 21, 17, 17], n: [0, 0, 22, 25, 17, 17, 17], o: [0, 0, 14, 17, 17, 17, 14],
+  p: [0, 0, 30, 17, 30, 16, 16], q: [0, 0, 13, 19, 15, 1, 1], r: [0, 0, 22, 25, 16, 16, 16],
+  s: [0, 0, 14, 16, 14, 1, 30], t: [8, 8, 28, 8, 8, 9, 6], u: [0, 0, 17, 17, 17, 19, 13],
+  v: [0, 0, 17, 17, 17, 10, 4], w: [0, 0, 17, 17, 21, 21, 10], x: [0, 0, 17, 10, 4, 10, 17],
+  y: [0, 0, 17, 17, 15, 1, 14], z: [0, 0, 31, 2, 4, 8, 31],
 };
 
-/** Whether the pixel font can draw every character of `text` (case aside). */
-export const drawable = (text) => [...text.toUpperCase()].every((ch) => GLYPHS[ch]);
+/** Whether the pixel font can draw every character of `text`, in its own case. */
+export const drawable = (text) => [...text].every((ch) => GLYPHS[ch]);
 
 /** The width of `text` in pixels at `scale`. */
 export const measure = (text, scale = 1) => Math.max(0, [...text].length * 6 - 1) * scale;
@@ -31,8 +43,8 @@ export const measure = (text, scale = 1) => Math.max(0, [...text].length * 6 - 1
 /** Draws `text` with its top-left corner at (x, y), each font pixel `scale` pixels wide. */
 export function pixelText(g, text, x, y, color, scale = 1) {
   g.fillStyle = color;
-  [...text.toUpperCase()].forEach((ch, i) => {
-    const rows = GLYPHS[ch] ?? GLYPHS["?"];
+  [...text].forEach((ch, i) => {
+    const rows = GLYPHS[ch] ?? GLYPHS[ch.toUpperCase()] ?? GLYPHS["?"];
     rows.forEach((bits, r) => {
       for (let c = 0; c < 5; c++) if (bits & (16 >> c)) g.fillRect(x + (i * 6 + c) * scale, y + r * scale, scale, scale);
     });

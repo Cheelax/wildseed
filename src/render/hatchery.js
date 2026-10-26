@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { PIXEL_MIN } from "../rules.mjs";
 import { PixelRenderer } from "./pixel.js";
-import { HATCH, Stage, aim } from "./stage.js";
+import { Stage, aim } from "./stage.js";
 
 /** The art pixel's size in CSS pixels for a scene of w × h: about 160 art pixels tall, 3 or more. */
 export function pixelSize(w, h) {
@@ -12,14 +12,21 @@ export function pixelSize(w, h) {
 }
 
 export class Hatchery {
-  constructor(canvas, { onPoke = () => {}, onHatched = () => {}, onReady = () => {}, onResize = () => {} } = {}) {
+  constructor(canvas, { onPoke = () => {}, onHatched = () => {}, onReady = () => {}, onResize = () => {}, onCue = () => {} } = {}) {
     this.canvas = canvas;
     this.renderer = new PixelRenderer(canvas);
     this.stage = new Stage();
     this.controls = new OrbitControls(this.stage.camera, canvas);
     Object.assign(this.controls, { enablePan: false, enableDamping: true, dampingFactor: 0.12, rotateSpeed: 0.55, minPolarAngle: 0.45, maxPolarAngle: 1.5 });
-    Object.assign(this, { onPoke, onHatched, onReady, onResize });
+    Object.assign(this, { onPoke, onHatched, onReady, onResize, onCue });
     this.pointer = null;
+    // Frame pacing: a frame is drawn once the GPU has finished the last one (a fence), and a machine that
+    // takes long over each one rests between them, so a page drawn in software never stops answering.
+    this.paused = false;
+    this.cost = 0;
+    this.fence = null;
+    this.drawnAt = 0;
+    this.restUntil = 0;
     this.size = { width: 0, height: 0, pixel: 3 };
     this.listen();
     this.loop = this.loop.bind(this);
@@ -71,35 +78,53 @@ export class Hatchery {
     this.controls.update();
   }
 
-  /** Starts hatching a genome. Resolves when the creature is out and alive. */
-  hatch(genome) {
-    this.stage.set(genome);
+  /**
+   * Starts hatching a genome, after its `parents` meet and lay the egg when they are given; `quick` starts
+   * as the shell bursts. Returns when the egg cracks, opens and bursts, in seconds from now, for the sounds.
+   */
+  hatch(genome, { parents = null, quick = false } = {}) {
+    this.stage.set(genome, { parents, quick });
     this.started = performance.now();
     this.cried = false;
+    this.ready = false;
+    this.cue = 0;
     this.resize();
     this.reframe();
-    return new Promise((resolve) => (this.whenReady = resolve));
+    return this.stage.timing;
   }
 
   get time() {
     return (performance.now() - this.started) / 1000;
   }
 
-  loop() {
+  loop(now) {
     requestAnimationFrame(this.loop);
-    if (!this.stage.genome) return;
+    const gl = this.renderer.gl.getContext();
+    if (this.fence) {
+      if (gl.getSyncParameter(this.fence, gl.SYNC_STATUS) !== gl.SIGNALED) return;
+      gl.deleteSync(this.fence);
+      this.fence = null;
+      const took = Math.min(1500, now - this.drawnAt);
+      this.cost = this.cost ? 0.7 * this.cost + 0.3 * took : took;
+      this.restUntil = this.cost > 34 ? now + Math.min(1000, this.cost) : 0;
+    }
+    if (!this.stage.genome || this.paused || now < this.restUntil) return;
     this.resize();
     this.controls.update();
     const t = this.time;
     this.stage.frame(t, { look: this.lookAt() });
     this.renderer.render(this.stage, this.size.width, this.size.height);
-    if (!this.cried && t >= HATCH.burst) {
+    this.fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+    gl.flush();
+    this.drawnAt = performance.now();
+    const { timing, cues } = this.stage;
+    while (this.cue < cues.length && t >= cues[this.cue][0]) this.onCue(cues[this.cue++][1]);
+    if (!this.cried && t >= timing.burst) {
       this.cried = true;
       this.onHatched(this.stage.genome);
     }
-    if (this.whenReady && t >= HATCH.ready) {
-      this.whenReady();
-      this.whenReady = null;
+    if (!this.ready && t >= timing.ready) {
+      this.ready = true;
       this.onReady(this.stage.genome);
     }
   }
@@ -144,7 +169,7 @@ export class Hatchery {
   /** A tap or click: if it lands on the creature, the creature reacts. */
   tap(point) {
     const { camera, creature } = this.stage;
-    if (!creature?.root.visible || this.time < HATCH.ready) return;
+    if (!creature?.root.visible || this.time < this.stage.timing.ready) return;
     const ray = new THREE.Raycaster();
     ray.setFromCamera(point, camera);
     if (ray.intersectObject(creature.root, true).length) {
