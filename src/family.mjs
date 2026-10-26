@@ -2,6 +2,7 @@
 // traits came from. Pure: it reads genomes and never changes them.
 import { genomeOf } from "./genome.mjs";
 import { partOf } from "./genome/heirlooms.mjs";
+import { leaves, same, valueAt } from "./genome/paths.mjs";
 
 /** A creature with its parents and their parents, back to its grandparents (null where an ancestor is a word). */
 export function familyOf(genome) {
@@ -39,7 +40,8 @@ export function originsOf(child, [a, b]) {
   const out = [{ label: `a ${child.species}'s body`, from: fromWhich(child.species, a.species, b.species) }];
   out.push({ label: `${child.affinity} affinity`, from: fromWhich(child.affinity, a.affinity, b.affinity) });
   for (const h of child.heirlooms ?? []) {
-    const carrier = [a, b].findIndex((p) => p.species === h.species || (p.heirlooms ?? []).some((k) => k.species === h.species && k.part === h.part));
+    const carries = (p) => p.species === h.species || (p.heirlooms ?? []).some((k) => k.species === h.species && k.part === h.part);
+    const carrier = [a, b].findIndex(carries);
     out.push({ label: heirloomName(h), from: carrier, heirloom: true });
   }
   const carried = new Set((child.heirlooms ?? []).flatMap((h) => partOf(h).traits));
@@ -54,14 +56,3 @@ export function originsOf(child, [a, b]) {
   }
   return out;
 }
-
-function leaves(v, prefix = "", out = []) {
-  for (const [k, x] of Object.entries(v)) {
-    const path = prefix ? `${prefix}.${k}` : k;
-    if (x && typeof x === "object" && !Array.isArray(x)) leaves(x, path, out);
-    else out.push([path, x]);
-  }
-  return out;
-}
-const valueAt = (v, path) => path.split(".").reduce((o, k) => o?.[k], v);
-const same = (v, w) => v !== undefined && JSON.stringify(v) === JSON.stringify(w);

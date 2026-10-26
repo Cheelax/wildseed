@@ -78,7 +78,9 @@ export function parseLineage(text) {
     if (sign("#")) {
       at++;
       const n = next()?.word?.trim() ?? "";
-      if (!/^[1-9][0-9]*$/.test(n) || Number(n) > CLUTCH_MAX) fail(`#n is the couple's n-th egg, from 1 to ${CLUTCH_MAX}, with no leading zero`);
+      if (!/^[1-9][0-9]*$/.test(n) || Number(n) > CLUTCH_MAX) {
+        fail(`#n is the couple's n-th egg, from 1 to ${CLUTCH_MAX}, with no leading zero`);
+      }
       at++;
       clutch = Number(n);
     }

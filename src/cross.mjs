@@ -7,6 +7,7 @@ import { MUTATION_ONE_IN, RARE_CHILD_ONE_IN, STATS } from "./rules.mjs";
 import { parseLineage, writeLineage } from "./lineage.mjs";
 import { genesOf } from "./genome/genes.mjs";
 import { OWN_SLOTS, heirloomsOf, partOf, partsToHandDown, sameHeirloom } from "./genome/heirlooms.mjs";
+import { leaves, same, setAt, valueAt } from "./genome/paths.mjs";
 import { childName } from "./genome/names.mjs";
 import { childPalette } from "./genome/palette.mjs";
 import { SPECIES } from "./genome/species.mjs";
@@ -52,11 +53,14 @@ export function cross(a, b, clutch = 1) {
  */
 function heirloomsFor(species, x, y, d) {
   const kept = [];
-  for (const p of [x, y].filter((p) => p.species === species)) for (const h of heirloomsOf(p)) if (!kept.some((k) => sameHeirloom(h, k))) kept.push(h);
+  for (const p of [x, y].filter((p) => p.species === species)) {
+    for (const h of heirloomsOf(p)) if (!kept.some((k) => sameHeirloom(h, k))) kept.push(h);
+  }
   const other = [x, y].find((p) => p.species !== species);
   if (!other) return kept;
   const taken = new Set([...OWN_SLOTS[species], ...kept.map((h) => partOf(h).slot)]);
-  const offered = partsToHandDown(other).filter((h) => h.species !== species && !taken.has(partOf(h).slot) && !kept.some((k) => sameHeirloom(h, k)));
+  const offered = partsToHandDown(other)
+    .filter((h) => h.species !== species && !taken.has(partOf(h).slot) && !kept.some((k) => sameHeirloom(h, k)));
   const added = [];
   for (let n = 0; n < 2 && offered.length && (n === 0 || d.chance(0.35)); n++) {
     const h = d.pick(offered);
@@ -84,8 +88,10 @@ function meanings(g) {
  */
 function inherit({ seed, species, affinity, heirlooms }, x, y, gene) {
   const mx = meanings(x), my = meanings(y);
-  const layout = new Map();
-  for (const [m, p] of [[mx, x], [my, y]]) if (p.species === species) for (const [path, what] of m) if (!layout.has(path)) layout.set(path, what);
+  const layout = new Map(); // every trait the child has, by path, and what it is
+  for (const [m, p] of [[mx, x], [my, y]]) {
+    if (p.species === species) for (const [path, what] of m) if (!layout.has(path)) layout.set(path, what);
+  }
   for (const h of heirlooms) for (const t of partOf(h).traits) layout.set(t, h.species);
 
   const traits = {}, mutations = [];
@@ -130,21 +136,3 @@ function statsOf(x, y, rare, gene) {
   const weights = STATS.map((k) => x.stats[k] + (y.stats[k] - x.stats[k]) * gene(k).num(0.2, 0.8) - 9);
   return share(Math.min(250, Math.max(175, total)) + (rare ? 25 : 0), weights);
 }
-
-/** Every value of an object by its dotted path (`voice.pitch`). */
-function leaves(v, prefix = "", out = []) {
-  for (const [k, x] of Object.entries(v)) {
-    const path = prefix ? `${prefix}.${k}` : k;
-    if (x && typeof x === "object" && !Array.isArray(x)) leaves(x, path, out);
-    else out.push([path, x]);
-  }
-  return out;
-}
-const valueAt = (v, path) => path.split(".").reduce((o, k) => o?.[k], v);
-function setAt(v, path, value) {
-  const keys = path.split(".");
-  const last = keys.pop();
-  for (const k of keys) v = v[k] ??= {};
-  v[last] = value;
-}
-const same = (v, w) => JSON.stringify(v) === JSON.stringify(w);

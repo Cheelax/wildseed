@@ -1,7 +1,7 @@
 // Films a creature off screen, on a stage of its own: the same hatch and the same life as the page,
 // frame by frame at chosen times, in art pixels. The GIF, the card and the family tree's portraits are made
 // from these frames.
-import { Stage, aim, viewOf } from "../render/stage.js";
+import { Stage, aim, frameBox, viewOf } from "../render/stage.js";
 import { HABIT_START, habitLength } from "../render/creature.js";
 import { encodeGif } from "./gif.js";
 import { pixelText, measure } from "./font.js";
@@ -15,7 +15,9 @@ export function studio(renderer, genome, w, h, { zoom = 1, parents = null } = {}
   const cam = stage.camera;
   cam.aspect = w / h;
   cam.updateProjectionMatrix();
-  aim(cam, stage.center, stage.bounds.radius, 1.02 / zoom, { ...viewOf(stage), elevation: 0.22 });
+  const view = { ...viewOf(stage), elevation: 0.22 };
+  if (parents) frameBox(cam, stage.box, 1.02 / zoom, view);
+  else aim(cam, stage.center, stage.bounds.radius, 1.02 / zoom, view);
   return stage;
 }
 

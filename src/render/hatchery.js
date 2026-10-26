@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { PIXEL_MIN } from "../rules.mjs";
 import { PixelRenderer } from "./pixel.js";
-import { Stage, aim, viewOf } from "./stage.js";
+import { Stage, aim, frameBox, viewOf } from "./stage.js";
 
 /** The art pixel's size in CSS pixels for a scene of w × h: about 160 art pixels tall, 3 or more. */
 export function pixelSize(w, h) {
@@ -64,7 +64,8 @@ export class Hatchery {
 
   reframe() {
     const { camera, center, bounds } = this.stage;
-    const d = aim(camera, center, Math.max(bounds.radius, 1.3), 1.28, viewOf(this.stage));
+    const view = viewOf(this.stage);
+    const d = this.stage.parents ? frameBox(camera, this.stage.box, 1.1, view) : aim(camera, center, Math.max(bounds.radius, 1.3), 1.28, view);
     this.controls.target.copy(center);
     this.controls.minDistance = d * 0.7;
     this.controls.maxDistance = d * 1.6;

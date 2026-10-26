@@ -38,6 +38,19 @@ const WORLDS = {
   spark: { grass: "#e4cd6b", dirt: "#c98a52", rock: "#a8694a", sky: ["#f7a98f", "#f9bf98", "#fbd4a6", "#fde6bd"], ink: "#3a2416", decor: ["crystal", "tuft", "flower", "crystal", "rock"] },
 };
 
+/**
+ * Puts a camera where it sees all of `box` (a family side by side), `margin` times over, from `azimuth` and
+ * `elevation`: a wide box fills a wide picture. Returns its distance.
+ */
+export function frameBox(camera, box, margin, { azimuth, elevation }) {
+  const center = box.getCenter(new THREE.Vector3()), size = box.getSize(new THREE.Vector3());
+  const tall = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2), wide = tall * camera.aspect;
+  const d = margin * Math.max(size.y / 2 / tall, size.x / 2 / wide) + size.z / 2;
+  camera.position.set(center.x + d * Math.sin(azimuth) * Math.cos(elevation), center.y + d * Math.sin(elevation), center.z + d * Math.cos(azimuth) * Math.cos(elevation));
+  camera.lookAt(center);
+  return d;
+}
+
 /** Where the camera looks from: a little to the right, or nearly head-on at a family, so both parents show. */
 export const viewOf = (stage) => (stage.parents ? { azimuth: 0.12, elevation: 0.2 } : { azimuth: 0.4, elevation: 0.2 });
 
@@ -72,7 +85,7 @@ export class Stage {
     this.world.clear();
     const look = { ...WORLDS[genome.affinity], grass: groundFor(WORLDS[genome.affinity].grass, genome.palette[0]) };
     this.world.add(island(look, genome.seed, { family: !!parents }));
-    this.egg = new Egg(genome);
+    this.egg = new Egg(genome, { parents });
     this.creature = new Creature(genome);
     this.world.add(this.egg.root, this.creature.root);
     this.parents = parents ? new Parents(parents) : null;
@@ -97,6 +110,7 @@ export class Stage {
       this.parents.pose(this.readyAt, this.burstAt);
       box.union(new THREE.Box3().setFromObject(this.parents.root));
     }
+    this.box = box;
     this.bounds = box.getBoundingSphere(new THREE.Sphere());
     this.center.set(0, this.bounds.center.y, 0);
     this.fx.setup(genome, this.creature.height, this.alone.radius);
