@@ -10,6 +10,7 @@ import { cry, hatchSounds, meetSounds, mute, wakeAudio } from "./audio/cry.js";
 import { makeGif, portrait } from "./share/film.js";
 import { labelOf } from "./family.mjs";
 import { makeCard } from "./share/card.js";
+import { makeTree } from "./share/tree.js";
 import { save } from "./share/save.js";
 import { FamilyTree } from "./ui/family.js";
 import { Nest } from "./ui/nest.js";
@@ -38,7 +39,7 @@ const view = (() => {
     note.className = "no-webgl";
     note.textContent = "This browser cannot draw the hatchery: it needs WebGL 2.";
     document.querySelector(".stage").append(note);
-    for (const id of ["save-gif", "save-card"]) $(id).disabled = true;
+    for (const id of ["save-gif", "save-card", "save-tree"]) $(id).disabled = true;
     console.error(e);
     return null;
   }
@@ -191,6 +192,7 @@ async function exporting(button, busyText, make, filename) {
 const fileName = (g) => `${g.name.toLowerCase()}-${g.seed.replace(/\*/g, "-x-").replace(/[\s'#()]+/g, "-").replace(/-+/g, "-").replace(/-$/, "")}`;
 $("save-gif").addEventListener("click", () => exporting($("save-gif"), "Filming…", makeGif, (g) => `${fileName(g)}.gif`));
 $("save-card").addEventListener("click", () => exporting($("save-card"), "Drawing…", makeCard, (g) => `${fileName(g)}-card.png`));
+$("save-tree").addEventListener("click", () => exporting($("save-tree"), "Drawing…", makeTree, (g) => `${fileName(g)}-family.png`));
 
 /** Hatches what the address names, any way it is written; a page opened from a link hatches briskly. */
 function fromAddress({ push, tempo = 1 }) {

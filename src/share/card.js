@@ -30,14 +30,14 @@ function icon(g, rows, x, y, color) {
 }
 
 /** A rectangle with its corners cut, the pixel artist's rounded box. */
-function box(g, x, y, w, h, color) {
+export function box(g, x, y, w, h, color) {
   g.fillStyle = color;
   g.fillRect(x + 1, y, w - 2, h);
   g.fillRect(x, y + 1, w, h - 2);
 }
 
 /** Text with a one-pixel outline all around. */
-function outlined(g, text, x, y, fill, line, scale) {
+export function outlined(g, text, x, y, fill, line, scale) {
   for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]]) pixelText(g, text, x + dx, y + dy, line, scale);
   pixelText(g, text, x, y, fill, scale);
 }
@@ -46,7 +46,7 @@ function outlined(g, text, x, y, fill, line, scale) {
  * The seed cut into lines of at most `room` pixels: a lineage breaks after a "*" or a ")", a word anywhere.
  * Null when the pixel font cannot draw it.
  */
-function seedLines(seed, room) {
+export function seedLines(seed, room) {
   if (!drawable(seed, { caps: false })) return null;
   const per = Math.floor((room + 1) / 6);
   const lines = [];
@@ -60,7 +60,7 @@ function seedLines(seed, room) {
 }
 
 /** A picture of RGBA rows w × h, framed in ink at (x, y). */
-function framed(g, picture, x, y, w, h, ink) {
+export function framed(g, picture, x, y, w, h, ink) {
   g.fillStyle = ink;
   g.fillRect(x - 1, y - 1, w + 2, h + 2);
   g.putImageData(new ImageData(picture, w, h), x, y);
@@ -175,9 +175,14 @@ export async function makeCard(renderer, genome, { parents = null } = {}) {
     anyText(g, text, 10, y - (size === 9 ? 2 : 0), ink, size);
   }
 
+  return toPng(c);
+}
+
+/** A canvas of art pixels as a PNG blob, scaled up SCALE times without smoothing. */
+export function toPng(c) {
   const out = document.createElement("canvas");
-  out.width = W * SCALE;
-  out.height = H * SCALE;
+  out.width = c.width * SCALE;
+  out.height = c.height * SCALE;
   const o = out.getContext("2d");
   o.imageSmoothingEnabled = false;
   o.drawImage(c, 0, 0, out.width, out.height);
