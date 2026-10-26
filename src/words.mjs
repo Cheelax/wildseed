@@ -1,0 +1,20 @@
+// The words Random hatches, and the page hatches when the address names none: sixteen for each species,
+// dealt like a shuffled deck, so twenty presses hatch twenty different words.
+export const WORDS = [
+  "acorn", "almond", "amber", "anchor", "anise", "apple", "apricot", "aster", "aurora", "bagel", "bamboo",
+  "banjo", "basil", "beacon", "bean", "berry", "birch", "biscuit", "blossom", "bluebell", "bonbon",
+  "bracken", "bramble", "breeze", "bubble", "buttercup", "button", "cactus", "candle", "caramel", "cashew",
+  "cedar", "chestnut", "chime", "cider", "cinder", "clementine", "clover", "cobble", "cocoa", "comet",
+  "cookie", "copper", "coral", "cotton", "cranberry", "cricket", "crumble", "cuckoo", "cupcake", "daisy",
+  "dandelion", "dewdrop", "doodle", "drizzle", "dumpling", "dusk", "eclair", "elderberry", "ember", "fennel",
+  "fern", "figment", "firefly", "flint", "fudge", "gadget", "galaxy", "garnet", "gecko", "ginger", "gingko",
+  "glacier", "glimmer", "gravel", "gravy", "gumdrop", "hazel", "heather", "hedgehog", "honey", "hotpod",
+  "huckleberry", "inkwell", "jasper", "jellybean", "jubilee", "juniper", "kelp", "kettle", "kiwi", "lantern",
+  "lavender", "lemon", "lichen", "lilac", "lollipop", "lumen", "macaron", "mango", "maple", "marble",
+  "marigold", "marmalade", "marzipan", "meadow", "meringue", "mint", "mochi", "moss", "muffin", "nectar",
+  "noodle", "nugget", "nutmeg", "oat", "olive", "onyx", "orbit", "paprika", "parsnip", "peach", "peanut",
+  "pebble", "pepper", "pickle", "pinecone", "pixel", "plum", "pocket", "pollen", "popcorn", "poppy",
+  "pretzel", "pudding", "puddle", "puffin", "pumpkin", "quartz", "quill", "radish", "raisin", "ripple",
+  "rosemary", "saffron", "sage", "shortbread", "snowpea", "spark", "sprinkle", "strudel", "sundew",
+  "tangerine", "teapot", "thistle", "toffee", "truffle", "tumble", "turnip", "whisker",
+];
