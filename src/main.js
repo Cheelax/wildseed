@@ -11,7 +11,8 @@ import { cry, hatchSounds, mute, wakeAudio } from "./audio/cry.js";
 import { makeGif } from "./share/film.js";
 import { makeCard } from "./share/card.js";
 import { save } from "./share/save.js";
-import { drawFamily } from "./family.js";
+import { drawFamily, traitWords } from "./family.js";
+import { portrait } from "./render/portrait.js";
 
 const $ = (id) => document.querySelector(`[data-testid="${id}"]`);
 const card = $("creature-card");
@@ -21,6 +22,7 @@ const caption = document.querySelector(".caption");
 
 /** What the page shows, kept up to date: ARCHITECTURE.md, "window.__wild". */
 const wild = (window.__wild = { ready: false, renderer: null, pixel: null, creature: null });
+let readyAt = 0;
 
 /** The live scene, or null where the browser offers no WebGL 2: the page then says so and still names the creature. */
 const view = (() => {
@@ -28,9 +30,10 @@ const view = (() => {
     return new Hatchery($("scene"), {
       onHatched: (genome) => cry(genome),
       onPoke: (genome) => cry(genome),
-      onCue: (cue) => tell(cue),
+      onCue: (cue) => tell(cueText(cue)),
       onReady: (genome) => {
         if (wild.creature === genome) wild.ready = true;
+        readyAt = performance.now();
       },
       onResize: ({ pixel }) => (wild.pixel = pixel),
     });
@@ -141,9 +144,22 @@ function tell(text) {
   caption.hidden = !text;
 }
 
+/** What the line says at each moment of a crossing (Stage's cues), about the creature on screen. */
+function cueText(cue) {
+  const g = wild.creature;
+  if (!cue || !g?.parents) return null;
+  const [a, b] = g.parents.map((p) => genomeOf(p));
+  if (cue === "meet") return `${a.name} meets ${b.name}…`;
+  if (cue === "lay") return g.clutch > 1 ? `…and they lay egg #${g.clutch}!` : "…and they lay an egg!";
+  if (cue === "hatch") return "It's hatching…";
+  if (g.rare) return `★ A rare child: ${g.name}!`;
+  if (g.mutations.length) return `✦ ${g.name}, with a mutation: its ${traitWords(g.mutations)}!`;
+  return `Say hello to ${g.name}!`;
+}
+
 /**
  * Hatches a lineage (written form): the egg drops, cracks, and the creature comes out. A child's parents
- * first meet and lay the egg when `meet` is set; `quick` skips to the shell bursting, for a page that opens.
+ * first meet and lay the egg when `meet` is set; with `quick`, for a page that opens, it is out at once.
  */
 function hatch(seed, { push = true, meet = false, quick = false } = {}) {
   const genome = genomeOf(seed);
@@ -160,7 +176,7 @@ function hatch(seed, { push = true, meet = false, quick = false } = {}) {
   drawFamily($("family-tree"), genome, (ancestor) => {
     input.value = ancestor;
     hatch(ancestor);
-  });
+  }, paint);
   showCrossing(genome);
   remember(genome);
   const url = new URL(location.href);
@@ -169,11 +185,43 @@ function hatch(seed, { push = true, meet = false, quick = false } = {}) {
   if (url.href !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);
 }
 
+/**
+ * Portraits for the family tree, painted one at a time a second after the creature is out (once the frames
+ * have settled), on a machine that draws a frame in under 60 ms; a slower one (a page drawn in software)
+ * keeps the colored dots and its pace.
+ */
+const faces = new Map();
+const unpainted = [];
+let painting = false;
+function paint(genome, canvas) {
+  unpainted.push({ genome, canvas });
+  if (!painting) setTimeout(paintNext, 300);
+  painting = true;
+}
+function paintNext() {
+  const settled = wild.ready && !view?.paused && performance.now() - readyAt > 1000;
+  if (unpainted.length && view && !settled) return setTimeout(paintNext, 300);
+  if (!unpainted.length || !view || view.cost > 60) {
+    unpainted.length = 0;
+    painting = false;
+    return;
+  }
+  const { genome, canvas } = unpainted.shift();
+  if (canvas.isConnected) {
+    const key = `${genome.seed} ${canvas.width}x${canvas.height}`;
+    if (!faces.has(key)) faces.set(key, portrait(view.renderer, genome, canvas.width, canvas.height));
+    canvas.getContext("2d").putImageData(new ImageData(faces.get(key), canvas.width, canvas.height), 0, 0);
+    canvas.parentElement.classList.add("painted");
+  }
+  setTimeout(paintNext, 30);
+}
+
 /** The crossing box: the creature on screen, who to cross it with, and a child's parents' next egg. */
 function showCrossing(g) {
   const mate = document.querySelector(".cross .mate");
   mate.textContent = g.name;
   mate.style.setProperty("--chip", g.palette[0]);
+  document.querySelector(".cross .again").hidden = !g.parents;
   const next = $("next-egg");
   next.hidden = !g.parents || g.clutch >= 99;
   if (g.parents) next.textContent = `Their egg #${g.clutch + 1}`;
@@ -226,6 +274,17 @@ document.querySelector(".cross form").addEventListener("submit", (e) => {
   const partner = $("cross-input");
   if (!partner.value.trim()) return partner.focus();
   crossWith(partner.value);
+});
+
+$("random-mate").addEventListener("click", () => {
+  const partner = $("cross-input");
+  partner.value = randomWord();
+  crossWith(partner.value);
+});
+
+$("replay").addEventListener("click", () => {
+  wakeAudio();
+  if (wild.creature?.parents) hatch(wild.creature.seed, { meet: true, push: false });
 });
 
 $("next-egg").addEventListener("click", () => {

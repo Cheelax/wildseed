@@ -8,7 +8,7 @@
 import { MUTATION_ONE_IN } from "../rules.mjs";
 import { draw, fits } from "./genes.mjs";
 import { SPECIES } from "./species.mjs";
-import { CHARMS, traitsOf } from "./word.mjs";
+import { CHARMS, KNOBS, traitsOf } from "./word.mjs";
 
 /** Traits that come together: a child takes a whole group from one parent. Any other trait is a group of its own. */
 const GROUPS = [
@@ -39,20 +39,17 @@ export const SLOTS = {
 /** A pipkin's wings are nubs on a round bird: nothing another body could wear. */
 const KEPT = { pipkin: ["back"] };
 
-/** The knobs that could draw each trait: the ones every species has (word.mjs), then each species' own. */
-const COMMON = {
-  size: ["num", 0.88, 1.12], build: ["num", 0, 1], eyes: ["pick", ["round", "tall", "gem", "sleepy", "button"]],
-  eyeSize: ["num", 0.85, 1.2], eyeGap: ["num", 0.85, 1.15], mouth: ["pick", ["smile", "cat", "open", "fang", "beam"]],
-  cheeks: ["chance", 0.55], marking: ["pick", ["none", "spots", "stripes", "patch", "mask", "socks"]],
-  charm: ["pick", [...new Set(Object.values(CHARMS).flatMap(Object.keys))]],
-  mood: ["pick", ["bouncy", "sleepy", "curious", "shy", "proud"]], "voice.pitch": ["int", 200, 1100],
-  "voice.notes": ["int", 1, 3], "voice.contour": ["pick", ["rise", "fall", "hop", "trill"]], "voice.vowel": ["pick", ["a", "e", "i", "o", "u"]],
-};
-const KNOBS = new Map(Object.entries(COMMON).map(([path, knob]) => [path, [knob]]));
-for (const { knobs } of Object.values(SPECIES)) for (const [k, knob] of Object.entries(knobs)) KNOBS.set(k, [...(KNOBS.get(k) ?? []), knob]);
+/**
+ * The knobs that could draw each trait: the ones every species has (word.mjs, with any charm and any pitch),
+ * then each species' own, several where species share a name for different things (a hopple's ears, a
+ * prickle's).
+ */
+const COMMON = { ...KNOBS, charm: ["pick", Object.values(CHARMS).flatMap(Object.keys)], "voice.pitch": ["int", 0, 0] };
+const DRAWS = new Map(Object.entries(COMMON).map(([path, knob]) => [path, [knob]]));
+for (const { knobs } of Object.values(SPECIES)) for (const [k, knob] of Object.entries(knobs)) DRAWS.set(k, [...(DRAWS.get(k) ?? []), knob]);
 
 /** Whether two values are the same kind of trait, one knob could draw both: a hopple's "lop" ears and a trundle's "round" ones are not. */
-const alike = (path, v, w) => (KNOBS.get(path) ?? []).some((knob) => fits(knob, v) && fits(knob, w));
+const alike = (path, v, w) => (DRAWS.get(path) ?? []).some((knob) => fits(knob, v) && fits(knob, w));
 
 /** Every value of an object by its dotted path ("voice.pitch"), in order. */
 export function leaves(object, prefix = "", out = new Map()) {
@@ -137,7 +134,8 @@ function mutant(path, value, parents, species, affinity, gene) {
   const known = parents.filter((p) => p !== undefined);
   const nums = known.filter((p) => typeof p === "number");
   const own = path in COMMON || path in SPECIES[species].knobs;
-  const knob = KNOBS.get(path)?.find((k) => fits(k, value));
+  const knob = DRAWS.get(path)?.find((k) => fits(k, value));
+  if (!own && !knob) return undefined;
   for (let attempt = 0; attempt < 8; attempt++) {
     const fresh = (name) => gene(`fresh${attempt}.${name}`);
     const v = own ? leaves(traitsOf(SPECIES[species], affinity, fresh)).get(path) : draw(fresh(path), knob);

@@ -82,8 +82,9 @@ export class Stage {
       burst: at(HATCH.burst),
       ready: at(HATCH.ready),
     };
+    // What happens, for the page to tell: when the parents meet, the egg is laid, it hatches, the child is out.
     this.cues = this.meeting
-      ? [[0, `${parents[0].name} meets ${parents[1].name}…`], [MEET.lay, "…and they lay an egg!"], [this.lead + 0.3, `Egg #${genome.clutch} is hatching…`], [this.timing.ready + 0.4, null]]
+      ? [[0, "meet"], [MEET.lay, "lay"], [this.lead + 0.3, "hatch"], [this.timing.burst + 0.15, "out"], [this.timing.ready + 2.2, null]]
       : [];
     // What of the creature is still in its shell is not drawn: everything below this plane.
     this.shell = new THREE.Plane(new THREE.Vector3(0, 1, 0), 10);
@@ -119,6 +120,8 @@ export class Stage {
     this.center.set(0, this.bounds.center.y, 0);
     if (this.timing.open !== null) this.fx.burst("sparkles", this.timing.open, new THREE.Vector3(0, RIM + 0.3, 0));
     this.fx.burst("puff", this.timing.burst, new THREE.Vector3(0, RIM * 0.7, 0));
+    // A child with a mutation comes out in a second burst of sparkles: something new.
+    if (genome.mutations?.length && this.timing.burst > 0) this.fx.burst("sparkles", this.timing.burst + 0.35, new THREE.Vector3(0, this.creature.height * 0.8, 0.2));
     this.colors = {
       sky: look.sky,
       ink: { ground: look.ink, decor: look.ink, creature: genome.palette[5], egg: genome.rare ? "#14122e" : "#3b3328" },

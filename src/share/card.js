@@ -6,7 +6,7 @@ import { genomeOf } from "../genome.mjs";
 import { film, studio } from "./film.js";
 import { anyText, anyWidth, drawable, measure, pixelText } from "./font.js";
 
-const W = 160, H = 224, SCALE = 4;
+const W = 160, SCALE = 4; // the card is W art pixels wide, as tall as it needs, scaled up SCALE times
 const LINE = 23; // characters of the pixel font across the card
 
 /** A line about the creature, from its mood. */
@@ -58,16 +58,27 @@ function cut(text, max) {
   return [...out, rest.join("")];
 }
 
+/** A picture of a genome's creature out of its egg, w × h art pixels. */
+async function portrait(renderer, genome, w, h, zoom) {
+  const stage = studio(renderer, genome, w, h, { zoom });
+  const [picture] = await film(renderer, stage, [stage.timing.ready + 0.35], w, h);
+  stage.dispose();
+  return picture;
+}
+
+const PARENT = { w: 44, h: 36 }; // a parent's picture on a child's card
+
 export async function makeCard(renderer, genome) {
   const [body, belly, accent, , , ink] = genome.palette;
   const frame = genome.rare ? "#ffd66b" : accent;
   const artW = W - 18, artH = 108;
-  const stage = studio(renderer, genome, artW, artH, { zoom: 0.95 });
-  const [picture] = await film(renderer, stage, [stage.timing.ready + 0.35], artW, artH);
-  stage.dispose();
-  // The seed as it is written; a lineage on as many lines as it takes.
+  const picture = await portrait(renderer, genome, artW, artH, 0.95);
+  // A child's card shows its parents, side by side, and its lineage as it is written, on as many lines as it takes.
+  const parents = genome.parents ? genome.parents.map((p) => genomeOf(p)) : [];
+  const faces = [];
+  for (const p of parents) faces.push(await portrait(renderer, p, PARENT.w, PARENT.h, 1.5));
   const lineage = genome.parents ? cut(genome.seed, LINE) : [];
-  const H = 224 + 10 * Math.max(0, lineage.length - 1) + (genome.parents ? 10 : 0);
+  const H = 224 + (genome.parents ? PARENT.h + 14 + 10 * (lineage.length - 1) : 0);
 
   const c = document.createElement("canvas");
   c.width = W;
@@ -138,12 +149,17 @@ export async function makeCard(renderer, genome) {
   pixelText(g, about, Math.floor((W - measure(about)) / 2), y, ink);
   y += 11;
   if (genome.parents) {
-    // Where it comes from: its parents by name.
-    const [a, b] = genome.parents.map((p) => genomeOf(p));
-    const parents = `${a.name} × ${b.name}`;
-    const text = measure(`child of ${parents}`) <= W - 20 ? `child of ${parents}` : parents;
-    pixelText(g, text, Math.floor((W - measure(text)) / 2), y, ink);
-    y += 11;
+    // Where it comes from: its two parents, framed, each with its name, a heart between them.
+    parents.forEach((p, i) => {
+      const x = i ? W - 14 - PARENT.w : 14;
+      g.fillStyle = ink;
+      g.fillRect(x - 1, y - 1, PARENT.w + 2, PARENT.h + 2);
+      g.putImageData(new ImageData(faces[i], PARENT.w, PARENT.h), x, y);
+      const name = measure(p.name) <= PARENT.w + 18 ? p.name : p.name.slice(0, Math.floor((PARENT.w + 18) / 6));
+      pixelText(g, name, x + Math.floor((PARENT.w - measure(name)) / 2), y + PARENT.h + 3, ink);
+    });
+    pixelText(g, "♥", Math.floor((W - 10) / 2), y + Math.floor(PARENT.h / 2) - 7, frame === belly ? body : frame, 2);
+    y += PARENT.h + 14;
   }
 
   g.fillStyle = ink;

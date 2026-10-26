@@ -18,6 +18,25 @@ export const CHARMS = {
   spark: { none: 2, bolt: 1, orb: 1, star: 1 },
 };
 
+/**
+ * The knobs every species has, each drawn from the seed's gene of its name like a species' own (species.mjs).
+ * The charm draws from its affinity's CHARMS, and the voice's pitch from the species' voice and the size.
+ */
+export const KNOBS = {
+  size: ["num", 0.88, 1.12],
+  build: ["num", 0, 1],
+  eyes: ["pick", { round: 3, tall: 2, gem: 2, sleepy: 1, button: 1 }],
+  eyeSize: ["num", 0.85, 1.2],
+  eyeGap: ["num", 0.85, 1.15],
+  mouth: ["pick", ["smile", "cat", "open", "fang", "beam"]],
+  cheeks: ["chance", 0.55],
+  marking: ["pick", { none: 2, spots: 2, stripes: 2, patch: 1, mask: 1, socks: 1 }],
+  mood: ["pick", ["bouncy", "sleepy", "curious", "shy", "proud"]],
+  "voice.notes": ["int", 1, 3],
+  "voice.contour": ["pick", ["rise", "fall", "hop", "trill"]],
+  "voice.vowel": ["pick", ["a", "e", "i", "o", "u"]],
+};
+
 /** The genome of a word, a seed already normalized and checked (seed.mjs). */
 export function wordGenome(seed) {
   const gene = genesOf(seed);
@@ -63,24 +82,25 @@ export function shareStats(total, weight) {
 
 /** The knobs of the body and face: the ones every species has, then the species' own. */
 export function traitsOf(species, affinity, gene) {
-  const size = gene("size").num(0.88, 1.12);
+  const knob = (name, path = name) => draw(gene(name), KNOBS[path]);
+  const size = knob("size");
   return {
     size,
-    build: gene("build").num(0, 1),
-    eyes: gene("eyes").pick({ round: 3, tall: 2, gem: 2, sleepy: 1, button: 1 }),
-    eyeSize: gene("eyeSize").num(0.85, 1.2),
-    eyeGap: gene("eyeGap").num(0.85, 1.15),
-    mouth: gene("mouth").pick(["smile", "cat", "open", "fang", "beam"]),
-    cheeks: gene("cheeks").chance(0.55),
-    marking: gene("marking").pick({ none: 2, spots: 2, stripes: 2, patch: 1, mask: 1, socks: 1 }),
+    build: knob("build"),
+    eyes: knob("eyes"),
+    eyeSize: knob("eyeSize"),
+    eyeGap: knob("eyeGap"),
+    mouth: knob("mouth"),
+    cheeks: knob("cheeks"),
+    marking: knob("marking"),
     charm: gene("charm").pick(CHARMS[affinity]),
-    mood: gene("mood").pick(["bouncy", "sleepy", "curious", "shy", "proud"]),
+    mood: knob("mood"),
     voice: {
       pitch: Math.round((species.voice * gene("pitch").num(0.85, 1.2)) / size),
-      notes: gene("notes").int(1, 3),
-      contour: gene("contour").pick(["rise", "fall", "hop", "trill"]),
-      vowel: gene("vowel").pick(["a", "e", "i", "o", "u"]),
+      notes: knob("notes", "voice.notes"),
+      contour: knob("contour", "voice.contour"),
+      vowel: knob("vowel", "voice.vowel"),
     },
-    ...Object.fromEntries(Object.entries(species.knobs).map(([knob, how]) => [knob, draw(gene(knob), how)])),
+    ...Object.fromEntries(Object.entries(species.knobs).map(([name, how]) => [name, draw(gene(name), how)])),
   };
 }

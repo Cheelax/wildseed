@@ -534,16 +534,30 @@ body {
 }
 
 .cross .pair .btn {
-  grid-column: 1 / -1;
+  grid-column: span 2;
   background: var(--accent);
 }
 
-.cross .next-egg {
-  width: 100%;
+.cross .pair [data-testid="random-mate"] {
+  grid-column: span 1;
+  padding: 9px 10px;
+  background: var(--paper);
+}
+
+.cross .again {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   margin-top: 8px;
 }
 
+.cross .again .btn {
+  padding: 7px 10px;
+  white-space: normal;
+}
+
 .cross .next-egg[hidden],
+.cross .again[hidden],
 .family[hidden] {
   display: none;
 }
@@ -617,6 +631,37 @@ body {
 .who b {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* A portrait, once painted, takes the place of the color dot: two screen pixels per art pixel. */
+.who .face {
+  display: none;
+  flex-basis: 100%;
+  width: calc(var(--w) * 2px);
+  margin: 0 auto 3px;
+  border: 2px solid var(--line);
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+
+.who.grand .face {
+  --w: 24;
+}
+
+.who.parent .face {
+  --w: 28;
+}
+
+.who.child .face {
+  --w: 36;
+}
+
+.who.painted .face {
+  display: block;
+}
+
+.family .who.painted::before {
+  display: none;
 }
 
 .who small {

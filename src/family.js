@@ -3,7 +3,7 @@
 //
 // Nothing is stored: every ancestor is hatched again from the child's lineage.
 import { genomeOf } from "./genome.mjs";
-import { heritageOf } from "./genome/heredity.mjs";
+import { groupOf, heritageOf } from "./genome/heredity.mjs";
 
 /** What a group of traits is called in a sentence, after its first trait. */
 const CALLED = {
@@ -25,14 +25,23 @@ const el = (tag, className, text) => {
 /** "eyes, song and wings". */
 const list = (words) => (words.length < 2 ? words.join("") : `${words.slice(0, -1).join(", ")} and ${words.at(-1)}`);
 
-/** One creature of the tree: its color, its name and its seed; a click opens it. */
-function member(g, role, open) {
+/** What a list of trait paths is called in a sentence: "its horns and song". */
+export const traitWords = (paths) => list([...new Set(paths.map((p) => CALLED[groupOf(p)[0]] ?? p))]);
+
+/** The size of a portrait in art pixels, by place in the tree. */
+const FACE = { grand: [24, 20], parent: [28, 24], child: [36, 30] };
+
+/** One creature of the tree: its portrait (or its color), its name and its seed; a click opens it. */
+function member(g, role, { open, paint }) {
   const b = el("button", `who ${role}`);
   b.type = "button";
   b.style.setProperty("--c", g.palette[0]);
   b.title = `Open ${g.name}: “${g.seed}”`;
-  b.append(el("b", "", g.name), el("small", "", g.parents ? (g.clutch > 1 ? `egg #${g.clutch}` : "first egg") : `“${g.seed}”`));
+  const face = el("canvas", "face");
+  [face.width, face.height] = FACE[role];
+  b.append(face, el("b", "", g.name), el("small", "", g.parents ? (g.clutch > 1 ? `egg #${g.clutch}` : "first egg") : `“${g.seed}”`));
   b.addEventListener("click", () => open(g.seed));
+  paint?.(g, face);
   return b;
 }
 
@@ -65,9 +74,11 @@ function heritage(child, a, b) {
 
 /**
  * Draws the family tree of `genome` in `section`, hidden for a word: its grandparents over its parents over
- * the child, joined by ink brackets, then what it took from whom. `open(seed)` opens one of its ancestors.
+ * the child, joined by ink brackets, then what it took from whom. `open(seed)` opens one of its ancestors;
+ * `paint(genome, canvas)`, when given, paints a creature's portrait on its canvas, now or later.
  */
-export function drawFamily(section, genome, open) {
+export function drawFamily(section, genome, open, paint = null) {
+  const how = { open, paint };
   section.hidden = !genome.parents;
   if (!genome.parents) return section.replaceChildren();
   const [a, b] = genome.parents.map((p) => genomeOf(p));
@@ -76,7 +87,7 @@ export function drawFamily(section, genome, open) {
     const column = `${2 * i + 1} / span 2`;
     if (p.parents) {
       p.parents.forEach((g, k) => {
-        const grand = member(genomeOf(g), "grand", open);
+        const grand = member(genomeOf(g), "grand", how);
         grand.style.gridColumn = String(2 * i + 1 + k);
         tree.append(grand);
       });
@@ -88,11 +99,11 @@ export function drawFamily(section, genome, open) {
       word.style.gridColumn = column;
       tree.append(word);
     }
-    const parent = member(p, "parent", open);
+    const parent = member(p, "parent", how);
     parent.style.gridColumn = column;
     tree.append(parent);
   });
-  const child = member(genome, "child", open);
+  const child = member(genome, "child", how);
   child.disabled = true;
   tree.append(el("span", "link down"), child);
   section.replaceChildren(el("h3", "", "Family tree"), tree, heritage(genome, a, b));

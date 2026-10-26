@@ -45,8 +45,12 @@
               <span class="times" aria-hidden="true">×</span>
               <input data-testid="cross-input" name="partner" aria-label="Who to cross it with" placeholder="a friend's name…" spellcheck="false" enterkeyhint="go">
               <button type="submit" class="btn" data-testid="cross">Lay an egg</button>
+              <button type="button" class="btn" data-testid="random-mate" title="Cross it with a word from the list">With anyone</button>
             </form>
-            <button type="button" class="btn next-egg" data-testid="next-egg" hidden>Their next egg</button>
+            <div class="again" hidden>
+              <button type="button" class="btn" data-testid="replay">Watch them meet</button>
+              <button type="button" class="btn next-egg" data-testid="next-egg">Their next egg</button>
+            </div>
           </section>
           <p class="hint">Drag to turn the camera, click the creature to poke it. Drag a creature you hatched onto the scene to cross it.</p>
           <section class="hatched" hidden>

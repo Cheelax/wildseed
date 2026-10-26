@@ -26,7 +26,7 @@ export function writeLineage(tree) {
   return `${x}*${y}${tree.clutch > 1 ? `#${tree.clutch}` : ""}`;
 }
 
-/** A cross of two trees, its parents in their written order, checked against the limits of a lineage. */
+/** A cross of two trees, its parents in their written order. */
 function crossOf(a, b, clutch) {
   const [x, y] = asParent(a) <= asParent(b) ? [a, b] : [b, a];
   return { a: x, b: y, clutch };
