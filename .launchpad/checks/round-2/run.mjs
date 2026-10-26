@@ -334,7 +334,7 @@ await test("a bad lineage exits 2 with a reason on stderr and nothing on stdout"
   await succeeds(hatch, ["thomas*auri", "(thomas*auri)*noe"], "two good lineages");
   const cases = [[["a**b"], "two * in a row"], [["*a"], "a cross with no first parent"], [["a*"], "a cross with no second parent"],
     [["a*b*c"], "three parents with no parentheses"], [["(a*b"], "an unclosed parenthesis"], [["a*b)"], "a parenthesis never opened"],
-    [["(a)"], "a word in parentheses"], [["(a*b)"], "a whole lineage in parentheses"], [["((a*b))*c"], "a parent in two pairs of parentheses"],
+    [["(a)"], "a word in parentheses"], [["(a)*b"], "a parent that is a word in parentheses"], [["(a*b)"], "a whole lineage in parentheses"], [["((a*b))*c"], "a parent in two pairs of parentheses"],
     [["#2"], "a clutch with no cross"], [["a#2"], "a clutch on a word"], [["a*b#0"], "clutch 0"], [["a*b#100"], "clutch 100"],
     [["a*b#02"], "a clutch with a leading zero"], [["a*b#"], "# with no clutch"], [["a*b#x"], "a clutch that is not a number"],
     [["a*b#2#3"], "two clutches"], [["a*()"], "empty parentheses"], [["a*🐸"], "a parent that is not a seed"],
