@@ -104,3 +104,10 @@ export const SPECIES = {
     parts: { wings: ["wings", "wingShape", "eyespots"], antennae: ["antennae"], ruff: ["fluff"] },
   },
 };
+
+/**
+ * Heirlooms: parts a child can take from a parent of another species, each worn on the head of any
+ * species that has no such keys of its own (a wyrmlet's horns on a hopple, a hopple's ears on a pipkin).
+ * Each one is a part of the species it comes from, with that species' keys and ranges.
+ */
+export const HEIRLOOMS = { horns: "wyrmlet", ears: "hopple", crest: "pipkin", antennae: "inchling", antenna: "drift" };

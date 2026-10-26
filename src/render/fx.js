@@ -132,13 +132,15 @@ export class Fx {
   /** Something happened at time t0 at a point: "hearts" when poked, "sparkles" and "puff" as it hatches. */
   burst(kind, t0, at) {
     const parts = [];
-    const n = kind === "puff" ? 12 : 6;
+    const n = kind === "puff" ? 12 : kind === "stars" ? 10 : 6;
     for (let i = 0; i < n; i++) {
       const s = kind === "puff"
         ? sprite(i % 3 ? "puff" : "sparkle", i % 3 ? "#ffffff" : "#fff4b8", i % 3 ? 2 : 1)
         : kind === "sparkles"
           ? sprite(i % 2 ? "sparkle" : "star", i % 2 ? "#ffffff" : "#fff4b8")
-          : sprite(i % 2 ? "sparkle" : "heart", i % 2 ? "#fff4b8" : "#ff6f91", i % 2 ? 1 : 2);
+          : kind === "stars"
+            ? sprite(i % 2 ? "sparkle" : "star", i % 3 ? "#ffd66b" : "#ffffff", i % 2 ? 1 : 2)
+            : sprite(i % 2 ? "sparkle" : "heart", i % 2 ? "#fff4b8" : "#ff6f91", i % 2 ? 1 : 2);
       const a = (i / n) * Math.PI * 2 + 0.4;
       s.userData.dir = new THREE.Vector3(Math.cos(a), kind === "puff" ? 0.3 + (i % 3) * 0.35 : 1.2 + (i % 2) * 0.5, Math.sin(a));
       this.group.add(s);

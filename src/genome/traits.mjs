@@ -3,7 +3,7 @@
 // the gene of its name. Round 1 draws a word's traits from it; crossing reads it to keep a child's traits
 // inside its species' ranges.
 import { chance, int, num, pick } from "./kinds.mjs";
-import { SPECIES } from "./species.mjs";
+import { HEIRLOOMS, SPECIES } from "./species.mjs";
 
 /** What an affinity can wear on its head or back. A child may wear a charm of its other parent's affinity. */
 const CHARMS = {
@@ -13,8 +13,26 @@ const CHARMS = {
 };
 const ANY_CHARM = new Set(Object.values(CHARMS).flatMap(Object.keys));
 
-/** The spec of the traits of a creature of `species` and `affinity`, in the order a genome lists them. */
-export function traitSpecs(species, affinity) {
+/** The keys of an heirloom part, and their specs, from the species it comes from. */
+const heirloomSpecs = (part) => {
+  const { knobs, parts } = SPECIES[HEIRLOOMS[part]];
+  return Object.fromEntries(parts[part].map((k) => [k, knobs[k]]));
+};
+
+/** The heirlooms a creature of `species` can wear: those none of whose keys it has of its own. */
+export function wearable(species) {
+  const own = SPECIES[species].knobs;
+  return Object.keys(HEIRLOOMS).filter((part) => HEIRLOOMS[part] !== species && SPECIES[HEIRLOOMS[part]].parts[part].every((k) => !(k in own)));
+}
+
+/** The heirlooms a genome wears: the wearable parts whose keys are all in its traits. */
+export const heirloomsOf = (genome) => wearable(genome.species).filter((part) => SPECIES[HEIRLOOMS[part]].parts[part].every((k) => k in genome.traits));
+
+/**
+ * The spec of the traits of a creature of `species` and `affinity`, in the order a genome lists them, with
+ * the `heirlooms` it wears last.
+ */
+export function traitSpecs(species, affinity, heirlooms = []) {
   const { voice, knobs } = SPECIES[species];
   return {
     size: num(0.88, 1.12),
@@ -35,11 +53,12 @@ export function traitSpecs(species, affinity) {
       vowel: pick(["a", "e", "i", "o", "u"]),
     },
     ...knobs,
+    ...Object.assign({}, ...heirlooms.map(heirloomSpecs)),
   };
 }
 
-/** What a child inherits whole, part by part: every creature's parts, then its species' own. */
-export function partsOf(species) {
+/** What a child inherits whole, part by part: every creature's parts, then its species' own and its heirlooms. */
+export function partsOf(species, heirlooms = []) {
   return {
     body: ["size", "build"],
     eyes: ["eyes", "eyeSize", "eyeGap"],
@@ -50,6 +69,7 @@ export function partsOf(species) {
     mood: ["mood"],
     voice: ["voice.pitch", "voice.notes", "voice.contour", "voice.vowel"],
     ...SPECIES[species].parts,
+    ...Object.fromEntries(heirlooms.map((part) => [part, SPECIES[HEIRLOOMS[part]].parts[part]])),
   };
 }
 

@@ -46,6 +46,7 @@ export function toadle(g, m) {
   return {
     body, head, wiggles: [], flaps: [], puffs: [throat],
     face: { eyes: open, happy, irises, mouth: mo },
+    top: { at: [0, 0.42, -0.14], r: 0.5 },
     charmAt: { parent: head, at: [0, 0.44, -0.12], rot: [0, 0, 0] },
     height: 0.5 + 0.36 + D * 1.9,
   };

@@ -107,15 +107,14 @@ export async function makeCard(renderer, genome) {
     }
     y += 1;
     if (parents) {
-      // Its parents, each with its face, a heart between them.
-      parents.forEach((p, i) => {
-        const x = i ? W - 10 - 26 : 10;
-        draw(g, faces[i], 26, 26, x, y - 2);
-        const name = measure(p.name) <= 40 ? p.name : `${p.name.slice(0, 6)}.`;
-        pixelText(g, name, i ? x - 3 - measure(name) : x + 29, y + 10, ink);
-      });
-      pixelText(g, "♥", Math.floor(W / 2) - 2, y + 2, "#ff6f91");
-      pixelText(g, "parents", Math.floor((W - measure("parents")) / 2), y + 10, ink);
+      // Its parents' faces, a heart between them, and their names under them.
+      const mid = Math.floor(W / 2);
+      parents.forEach((p, i) => draw(g, faces[i], 26, 26, i ? mid + 6 : mid - 32, y - 3));
+      pixelText(g, "♥", mid - 2, y + 7, "#ff6f91");
+      const [a, b] = parents.map((p) => p.name);
+      let names = `${a} × ${b}`;
+      if (measure(names) > W - 20) names = `${a.slice(0, 9)} × ${b.slice(0, 9)}`;
+      pixelText(g, names, Math.floor((W - measure(names)) / 2), y + 25, ink);
       y += 35;
     } else {
       const about = MOODS[genome.traits.mood];

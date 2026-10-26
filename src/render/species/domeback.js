@@ -41,6 +41,7 @@ export function domeback(g, m) {
   return {
     body, head, wiggles, flaps,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
+    top: { at: [0, radii[1] - 0.03, 0], r: hs },
     charmAt: { parent: body, at: [0, shellAt[1] + S - 0.02, shellAt[2]], rot: [0, 0, 0] },
     height: Math.max(shellAt[1] + S + 0.3, headAt[1] + hs),
   };

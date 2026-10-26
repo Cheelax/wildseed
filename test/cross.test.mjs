@@ -5,6 +5,8 @@ import { cross } from "../src/cross.mjs";
 import { genomeOf } from "../src/genome.mjs";
 import { originsOf } from "../src/family.mjs";
 import { splitName } from "../src/genome/names.mjs";
+import { HEIRLOOMS } from "../src/genome/species.mjs";
+import { heirloomsOf } from "../src/genome/traits.mjs";
 import { COLORS_NEAR, MUTATION_ONE_IN, RARE_CHILD_ONE_IN, SIBLINGS_DIFFER, TAKES_AFTER_BOTH } from "../src/rules.mjs";
 
 /** Every value of an object by its dotted path. */
@@ -115,4 +117,18 @@ test("a child of a child: grandchildren hatch, up to six generations", () => {
   const g = genomeOf("(((((a*b)*c)*d)*e)*f)*g");
   assert.equal(g.parents[0], "((((a*b)*c)*d)*e)*f");
   assert.throws(() => cross(genomeOf("(((((a*b)*c)*d)*e)*f)*g"), genomeOf("h")), /6 generations/);
+});
+
+test("a child of two species may wear its other parent's horns, ears, crest or antennae, and keeps them in its line", () => {
+  const worn = families.filter(({ child }) => heirloomsOf(child).length);
+  assert.ok(worn.length > families.length / 10, `${worn.length} children wear an heirloom`);
+  for (const { a, b, child } of worn.slice(0, 200)) {
+    for (const part of heirloomsOf(child)) {
+      const from = [a, b].filter((p) => p.species !== child.species || heirloomsOf(p).includes(part));
+      assert.ok(from.some((p) => p.species === HEIRLOOMS[part] || heirloomsOf(p).includes(part)), `${child.seed}: ${part}`);
+    }
+  }
+  const { child } = worn[0];
+  const grandchild = genomeOf(`(${child.seed})*(${child.seed}#2)`);
+  if (grandchild.species === child.species) for (const part of heirloomsOf(child)) assert.ok(heirloomsOf(grandchild).includes(part));
 });

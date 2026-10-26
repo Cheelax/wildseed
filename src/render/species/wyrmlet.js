@@ -95,6 +95,7 @@ export function wyrmlet(g, m) {
   return {
     body, head, wiggles, flaps,
     face: { eyes: e.open, happy: e.happy, irises: e.irises, mouth: mo },
+    top: { at: [0, radii[1] - 0.03, 0], r: radii[0] },
     charmAt: { parent: head, at: [0, 0.42, 0.06], rot: [0.15, 0, 0] },
     height: 1.26 + 0.45 + 0.2 * H,
   };

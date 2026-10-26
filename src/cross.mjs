@@ -3,16 +3,18 @@
 // the same egg number always hatch the same child, whichever order the parents come in.
 //
 // A child takes its species from one parent and its affinity from one parent. Its body is inherited part
-// by part (one parent's ears, the other's tail), its coat is one parent's colors tinted by the other's,
-// its name joins the front of one parent's name to the ending of the other's, and now and then a part
-// mutates. genomeOf(lineage) hatches every child through here.
+// by part (one parent's ears, the other's tail), and a child of two species may wear a part of its other
+// parent's on its head (an heirloom: a wyrmlet's horns on a hopple). Its coat is one parent's colors tinted
+// by the other's, its name joins the front of one parent's name to the ending of the other's, and now and
+// then a part mutates. genomeOf(lineage) hatches every child through here.
 import { CLUTCH_MAX, MUTATION_ONE_IN, RARE_CHILD_ONE_IN, STATS } from "./rules.mjs";
 import { isCross, readLineage, writeCross } from "./lineage.mjs";
 import { genesOf } from "./genome/genes.mjs";
 import { crossName } from "./genome/names.mjs";
 import { crossPalette } from "./genome/palette.mjs";
 import { RARE_BONUS, TOTAL, share, totalOf } from "./genome/stats.mjs";
-import { at, partsOf, traitSpecs } from "./genome/traits.mjs";
+import { HEIRLOOMS } from "./genome/species.mjs";
+import { at, heirloomsOf, partsOf, traitSpecs, wearable } from "./genome/traits.mjs";
 
 /** The child of genomes `a` and `b` (as genomeOf returns them) from their egg number `clutch`, 1 to 99. */
 export function cross(a, b, clutch = 1) {
@@ -29,7 +31,8 @@ export function cross(a, b, clutch = 1) {
   const { affinity } = either("affinity");
   const rare = gene("rare").chance(1 / RARE_CHILD_ONE_IN[[x, y].filter((p) => p.rare).length]);
   const front = either("namer");
-  const { traits, mutations } = inherit(x, y, species, affinity, gene);
+  const heirlooms = heirloomsFor(x, y, species, gene("heirloom"));
+  const { traits, mutations } = inherit(x, y, species, affinity, heirlooms, gene);
   return {
     seed,
     name: crossName(front, front === x ? y : x, affinity, gene("name")),
@@ -46,16 +49,36 @@ export function cross(a, b, clutch = 1) {
 }
 
 /**
+ * The heirlooms a child of `species` wears. It keeps every one its parents of the same species wear (a
+ * child keeps all the traits of such a parent), and, half the time, takes one more from a parent of
+ * another species: a part of that parent's species it can wear on its head, or an heirloom that parent
+ * wears.
+ */
+function heirloomsFor(x, y, species, d) {
+  const can = wearable(species);
+  const kept = new Set([x, y].filter((p) => p.species === species).flatMap(heirloomsOf));
+  const offered = new Set();
+  for (const p of [x, y].filter((p) => p.species !== species)) {
+    const own = Object.keys(HEIRLOOMS).filter((part) => HEIRLOOMS[part] === p.species);
+    for (const part of [...own, ...heirloomsOf(p)]) {
+      if (can.includes(part) && !kept.has(part) && p.traits[part] !== "none") offered.add(part);
+    }
+  }
+  if (offered.size && d.chance(0.5)) kept.add(d.pick([...offered]));
+  return can.filter((part) => kept.has(part));
+}
+
+/**
  * The child's traits, part by part. Each part comes whole from one parent, or, one time in five, with its
  * numbers blended from both; one part in 50 mutates, drawn afresh inside its species' ranges. A parent's
  * part that a child of its species cannot have (a trundle's ears on a hopple) is not passed on, and a
  * number from another species is brought inside the child's own range.
  */
-function inherit(x, y, species, affinity, gene) {
-  const specs = traitSpecs(species, affinity);
+function inherit(x, y, species, affinity, heirlooms, gene) {
+  const specs = traitSpecs(species, affinity, heirlooms);
   const traits = { voice: {} };
   const mutations = [];
-  for (const [part, paths] of Object.entries(partsOf(species))) {
+  for (const [part, paths] of Object.entries(partsOf(species, heirlooms))) {
     const d = gene(`part ${part}`);
     const mutant = d.chance(1 / MUTATION_ONE_IN);
     const way = d.pick({ x: 2, y: 2, blend: 1 });

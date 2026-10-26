@@ -14,6 +14,7 @@ import { makeTree } from "./share/tree.js";
 import { save } from "./share/save.js";
 import { showCard } from "./page/card.js";
 import { showTree } from "./page/tree.js";
+import { resemblance } from "./family.mjs";
 
 const $ = (id) => document.querySelector(`[data-testid="${id}"]`);
 const card = $("creature-card");
@@ -30,7 +31,13 @@ const view = (() => {
   try {
     return new Hatchery($("scene"), {
       onMeet: ([a, b]) => (cry(a), cry(b, 0.3)),
-      onHatched: (genome) => cry(genome),
+      onHatched: (genome) => {
+        cry(genome);
+        const parents = view.stage.meeting?.parents.map((p) => p.genome);
+        if (!parents) return;
+        parents.forEach((p, i) => cry(p, 0.55 + 0.25 * i)); // and its parents cheer
+        announce(genome, parents);
+      },
       onPoke: (genome) => cry(genome),
       onReady: (genome) => {
         if (wild.creature === genome) wild.ready = true;
@@ -67,6 +74,16 @@ function drawFaces() {
   if (!faces.has(key)) faces.set(key, new ImageData(portrait(view.renderer, job.genome, job.size, job.size), job.size, job.size));
   job.canvas.getContext("2d").putImageData(faces.get(key), 0, 0);
   requestAnimationFrame(() => wild.ready && drawFaces());
+}
+
+/** Says, over the scene, who just hatched and whom it takes after. */
+const news = document.querySelector(".news");
+let newsTimer = 0;
+function announce(child, [a, b]) {
+  news.replaceChildren(Object.assign(document.createElement("b"), { textContent: `${child.name} hatched!` }), ` ${resemblance(child, a, b).join(" · ")}`);
+  news.hidden = false;
+  clearTimeout(newsTimer);
+  newsTimer = setTimeout(() => (news.hidden = true), 5000);
 }
 
 /** The creatures hatched on this device, newest first: chips that hatch them again, or cross them with the one on screen. */
@@ -142,6 +159,7 @@ function hatch(seed, { push = true, quick = false } = {}) {
   wild.creature = genome;
   error.hidden = true;
   waiting.length = 0;
+  news.hidden = true;
   const from = quick && !parents ? HATCH.cracks[0] + 0.3 : 0;
   view?.hatch(genome, { from });
   if (view) hatchSounds(HATCH, { at: view.stage.timeline.hatch - from, laid: !!parents });

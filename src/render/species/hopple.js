@@ -43,6 +43,7 @@ export function hopple(g, m) {
   return {
     body, head, wiggles, flaps,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
+    top: { at: [0, radii[1] - 0.04, 0], r: radii[0] },
     charmAt: t.ears === "up" ? { parent: head, at: [0, 0.47, 0.12], rot: [0.2, 0, 0] } : { parent: head, at: [0, 0.49, 0], rot: [0, 0, 0] },
     height: 1.24 + (t.ears === "up" ? 0.5 + 0.7 * L : 0.6),
   };

@@ -74,8 +74,9 @@ export class Stage {
     this.sun = new THREE.DirectionalLight(0xffffff, Math.PI * 0.8);
     this.sun.position.set(-3.5, 7, 5);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(512, 512);
-    Object.assign(this.sun.shadow.camera, { left: -3.2, right: 3.2, top: 3.2, bottom: -3.2, near: 1, far: 20 });
+    // About one shadow texel per art pixel, over the island: no finer, so a phone without a GPU keeps up.
+    this.sun.shadow.mapSize.set(256, 256);
+    Object.assign(this.sun.shadow.camera, { left: -2.6, right: 2.6, top: 2.6, bottom: -2.6, near: 1, far: 20 });
     this.sun.shadow.bias = -0.002;
     this.sun.shadow.normalBias = 0.02;
     this.scene.add(this.sun, this.sun.target, new THREE.AmbientLight(0xffffff, Math.PI * 0.3));
@@ -125,6 +126,7 @@ export class Stage {
     this.bounds = box.getBoundingSphere(new THREE.Sphere());
     this.center.set(0, this.bounds.center.y, 0);
     this.fx.setup(genome, this.creature.height, this.bounds.radius);
+    this.fx.group.visible = !alone; // a portrait has no motes in the air around it
     const { hatch, burst, meet } = this.timeline;
     if (this.meeting) {
       this.fx.burst("hearts", meet, new THREE.Vector3(0, 1.1, 0.2));
@@ -133,6 +135,8 @@ export class Stage {
     }
     this.fx.burst("sparkles", hatch + HATCH.open, new THREE.Vector3(0, RIM + 0.3, 0));
     this.fx.burst("puff", hatch + HATCH.burst, new THREE.Vector3(0, RIM * 0.7, 0));
+    // A child that mutated comes out in a shower of gold stars.
+    if (genome.mutations?.length) this.fx.burst("stars", burst + 0.12, new THREE.Vector3(0, this.creature.height * 0.6, 0.2));
     this.colors = {
       sky: look.sky,
       ink: { ground: look.ink, decor: look.ink, creature: genome.palette[5], egg: genome.rare ? "#14122e" : "#3b3328" },
@@ -147,7 +151,7 @@ export class Stage {
    */
   aim(camera, margin, { least = 0, ...angles } = {}) {
     if (this.meeting) {
-      const d = frame(camera, this.box, margin * 0.86, angles);
+      const d = frame(camera, this.box, margin * 0.94, angles);
       this.center.copy(this.box.getCenter(new THREE.Vector3()));
       return d;
     }
@@ -180,10 +184,11 @@ export class Stage {
   frame(time, { look = null, crying = false } = {}) {
     tick(time);
     const { egg, creature } = this;
-    this.meeting?.pose(time, { cheer: this.timeline.burst, pokes: this.parentPokes });
+    const { hatch } = this.timeline;
+    this.meeting?.pose(time, { cheer: this.timeline.burst, cracks: HATCH.cracks.map((c) => hatch + c + 0.05), pokes: this.parentPokes });
     // The egg's own time: a child's egg is laid by its parents, so it pops up rather than drops.
-    const t = time - this.timeline.hatch;
-    egg.root.visible = time >= this.timeline.hatch && egg.pose(t, HATCH, { laid: !!this.meeting });
+    const t = time - hatch;
+    egg.root.visible = time >= hatch && egg.pose(t, HATCH, { laid: !!this.meeting });
     const { open, burst, ready } = HATCH;
     creature.root.visible = t >= open;
     if (t >= open) {
@@ -260,8 +265,9 @@ function island(look, seed) {
   }
   for (let i = 0; i < 5; i++) g.add(cloud(r, i));
   for (let i = 0; i < 3; i++) g.add(farIsland(r, i, look));
+  // Decor takes the creature's shadow but casts none: one draw fewer each for the sun.
   g.traverse((o) => {
-    if (o.isMesh && o !== top && o !== under) o.receiveShadow = true;
+    if (o.isMesh && o !== top && o !== under) [o.receiveShadow, o.castShadow] = [true, false];
   });
   return g;
 }

@@ -35,7 +35,7 @@ export class Meeting {
    * Poses both parents at t seconds after the meeting began. `cheer` is when their child comes out of the
    * egg (they jump for joy), `pokes` the times each one was poked since.
    */
-  pose(t, { cheer = Infinity, pokes = [[], []] } = {}) {
+  pose(t, { cheer = Infinity, cracks = [], pokes = [[], []] } = {}) {
     this.parents.forEach((p, i) => {
       const side = i ? 1 : -1;
       let x, z, turn, y = 0;
@@ -60,6 +60,8 @@ export class Meeting {
         y = t < MEET.back ? 0.16 * Math.sin(Math.PI * s) : 0;
         turn = lerp(1.25, 0.45, s);
       }
+      // Each knock on the egg makes them jump a little.
+      for (const c of cracks) if (t > c && t < c + 0.22) y += 0.1 * Math.sin((Math.PI * (t - c)) / 0.22);
       p.root.position.set(side * x, y, z);
       p.root.rotation.y = -side * turn;
       // Hearts in their eyes as they meet, and again when their child comes out; a poke makes them laugh.
