@@ -83,7 +83,8 @@ function inherit(node, [a, b]) {
   while (total > 280) { for (const k of STATS) if (total > 280 && stats[k] > 10) { stats[k]--; total--; } }
   while (total < 160) { for (const k of STATS) if (total < 160 && stats[k] < 100) { stats[k]++; total++; } }
   const stems = [a, b].map((p) => stemOf(p.name.toLowerCase()).slice(0, 5));
-  const name = (stems[0] + stems[1]).slice(0, 12).padEnd(3, "i");
+  const ending = ["", "i", "o", "el", "en", "ie"][(node.clutch - 1) % 6];
+  const name = (stems[0] + stems[1] + ending).slice(0, 12).padEnd(3, "i");
   return {
     seed: node.seed, name: name[0].toUpperCase() + name.slice(1), species, affinity, rare,
     stats, palette, traits, parents: [a.seed, b.seed], clutch: node.clutch, mutations, origins,

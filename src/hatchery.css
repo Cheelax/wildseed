@@ -468,7 +468,7 @@ body {
 /* The crossing garden: a paper album around the little pixel world. */
 :root { --paper: #fffaf0; --line: #27382f; }
 body { background: #f3efdf; font-weight: 500; }
-.app { height: auto; min-height: 100dvh; max-width: 1520px; margin: auto; }
+.app { height: auto; min-height: 100dvh; width: 100%; max-width: 1520px; margin: auto; grid-template-columns: minmax(0, 1fr); }
 .top { padding: 22px 28px; gap: 12px 24px; }
 .logo { font-size: 30px; letter-spacing: -1.5px; }
 .hatch input, .btn { border-width: 2px; border-radius: 8px; box-shadow: 0 2px 0 var(--line); }
@@ -543,6 +543,6 @@ button:focus-visible { outline: 3px solid #bc6e83; outline-offset: 3px; }
  .cross-mark { font-size: 28px; } .cross-form { flex-wrap: wrap; gap: 10px; } .parent-slot { flex-basis: 38%; }
  .cross-submit { width: 100%; } .stage { height: 400px; } .side { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
  .card,.hatched,.hint,.copy-link { grid-column: 1/-1; } .card .name { font-size: 34px; } .child-actions,.share { grid-template-columns: 1fr; }
- .family { padding: 18px 14px; } .family h2 { font-size: 22px; } .family-chart > .family-branch { min-width: 580px; } .trait-list { grid-template-columns: 1fr; }
+ .family { padding: 18px 14px; } .family h2 { font-size: 22px; } .family-chart.deep-family > .family-branch { min-width: 580px; } .family-member { min-width: 135px; gap: 6px; padding: 6px; } .family-portrait { width: 42px; height: 42px; } .member-text strong { font-size: 15px; } .ancestors { gap: 10px; } .trait-list { grid-template-columns: 1fr; }
 }
 @media(prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

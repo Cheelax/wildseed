@@ -9,6 +9,7 @@ import { CLASS, PATTERN, tick, toon } from "./toon.js";
 import { cone, cylinder, ellipsoid, gem, hueGap, mesh } from "./parts.js";
 import { hash32, stream } from "../genome/genes.mjs";
 import { genomeOf } from "../genome.mjs";
+import { batchScenery } from "./batch.js";
 import { dispose } from "./dispose.js";
 
 /**
@@ -67,7 +68,7 @@ export class Stage {
     dispose(this.world);
     this.world.clear();
     const look = { ...WORLDS[genome.affinity], grass: groundFor(WORLDS[genome.affinity].grass, genome.palette[0]) };
-    this.world.add(island(look, genome.seed));
+    this.world.add(batchScenery(island(look, genome.seed)));
     this.egg = new Egg(genome);
     this.creature = new Creature(genome);
     this.world.add(this.egg.root, this.creature.root);
@@ -89,6 +90,7 @@ export class Stage {
     this.bounds = box.getBoundingSphere(new THREE.Sphere());
     this.center.set(0, this.bounds.center.y, 0);
     this.fx.setup(genome, this.creature.height, this.bounds.radius);
+    if (this.parents.length) this.fx.burst("hearts", -0.65, new THREE.Vector3(0, 1.1, 0.1));
     this.fx.burst("sparkles", HATCH.open, new THREE.Vector3(0, RIM + 0.3, 0));
     this.fx.burst("puff", HATCH.burst, new THREE.Vector3(0, RIM * 0.7, 0));
     this.colors = {

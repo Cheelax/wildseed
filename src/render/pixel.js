@@ -139,6 +139,10 @@ export class PixelRenderer {
 
   /** Renders a stage off screen and returns the RGBA pixels, top row first. */
   capture(stage, width, height) {
+    if (this.captureTarget && (this.captureTarget.width !== width || this.captureTarget.height !== height)) {
+      this.captureTarget.dispose();
+      this.captureTarget = null;
+    }
     const out = (this.captureTarget?.width === width && this.captureTarget?.height === height)
       ? this.captureTarget
       : (this.captureTarget = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false }));

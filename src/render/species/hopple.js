@@ -1,7 +1,7 @@
 // Hopple: a hopper with a big head, long ears (up, flopped or out to the sides) and big feet.
 import { ellipsoid, face, joint, onSurface } from "../parts.js";
 
-const EARS = { up: [-0.12, 0.2], lop: [0.35, 2.25], side: [0, 1.2] };
+const EARS = { up: [-0.12, 0.2], lop: [0.35, 2.25], side: [0, 1.2], round: [-0.1, 0.45], pointy: [-0.12, 0.25], leaf: [0, 0.8] };
 
 export function hopple(g, m) {
   const t = g.traits;
@@ -24,8 +24,10 @@ export function hopple(g, m) {
   const L = t.earLength;
   for (const side of [-1, 1]) {
     const ear = joint([side * 0.22, 0.38, -0.06], [tilt, 0, -side * out]);
-    ear.add(ellipsoid(m.plain, [0.12, 0.36 * L, 0.07], { at: [0, 0.34 * L, 0] }));
-    ear.add(ellipsoid(m.accent, [0.065, 0.27 * L, 0.04], { at: [0, 0.34 * L, 0.04] }));
+    const length = t.ears === "round" ? 0.16 : t.ears === "leaf" ? 0.25 : 0.36;
+    const width = t.ears === "round" ? 0.17 : 0.12;
+    ear.add(ellipsoid(m.plain, [width, length * L, 0.07], { at: [0, (length - 0.02) * L, 0] }));
+    ear.add(ellipsoid(m.accent, [width * 0.54, length * L * 0.75, 0.04], { at: [0, (length - 0.02) * L, 0.04] }));
     head.add(ear);
     wiggles.push({ obj: ear, axis: "z", amp: 0.07, speed: 2.4, phase: side });
     flaps.push({ obj: ear, axis: "x", amp: -0.5 });

@@ -49,7 +49,7 @@ function breakLine(seed) {
 }
 
 /** The angles from a0 to a1: evenly spaced, and every tooth between them, so the edges stay sharp. */
-function anglesFrom(a0, a1, teeth, step = TAU / 96) {
+function anglesFrom(a0, a1, teeth, step = TAU / 48) {
   const out = [];
   for (let a = a0; a < a1; a += step) out.push(a);
   for (const t of teeth) for (const k of [-1, 0, 1]) if (t + k * TAU > a0 && t + k * TAU < a1) out.push(t + k * TAU);
@@ -58,7 +58,7 @@ function anglesFrom(a0, a1, teeth, step = TAU / 96) {
 
 /** A piece of shell over `angles`, from height from(a) up to to(a). */
 function piece(material, angles, from, to) {
-  const up = 12;
+  const up = 8;
   const pos = [], idx = [];
   for (const a of angles) {
     for (let j = 0; j <= up; j++) {

@@ -121,15 +121,21 @@ function showError(message) {
 /** Hatches a seed: the egg drops, cracks, and the creature that word was always going to be comes out. */
 function hatch(seed, { push = true } = {}) {
   const genome = genomeOf(seed);
+  input.value = genome.seed;
   wild.ready = false;
   wild.creature = genome;
   error.hidden = true;
   view?.hatch(genome);
   if (view) {
     const offset = genome.parents ? COURTSHIP : 0;
+    if (genome.parents) {
+      const parents = genome.parents.map(genomeOf);
+      cry(parents[0]);
+      setTimeout(() => { if (wild.creature === genome) cry(parents[1]); }, 420);
+    }
     hatchSounds({ cracks: HATCH.cracks.map(t => t + offset), open: HATCH.open + offset, burst: HATCH.burst + offset });
   }
-  document.querySelector(".stage-status").textContent = genome.parents ? "Two little worlds, one new beginning…" : "Someone is waking up…";
+  document.querySelector(".stage-status").textContent = genome.parents ? `${genome.parents.map(seed => genomeOf(seed).name).join(" meets ")}…` : "Someone is waking up…";
   family?.show(genome);
   showCard(genome);
   card.classList.remove("fresh");

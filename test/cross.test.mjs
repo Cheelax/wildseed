@@ -78,7 +78,7 @@ test('10,000 independent families obey inheritance, provenance, rarity, mutation
   assert.ok(metrics.mixedShare>=.7);
   assert.ok(metrics.colorShare>=.8);
 });
-test('first four eggs differ for 500 couples, including self-crosses', () => {
+test('first four eggs differ for 500 couples; self-crosses are valid', () => {
   let unique=0;
   for(let i=0;i<500;i++) {
     const a=genomeOf(`fern${i}`),b=genomeOf(`breeze${i}`);

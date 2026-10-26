@@ -1,5 +1,6 @@
 import { genomeOf } from "../genome.mjs";
 import { traitLeaves } from "../cross.mjs";
+import { traitHighlights, traitLabel, originText } from "../heritage.mjs";
 import { portrait } from "../render/portrait.js";
 import { HATCH, hatchOffset } from "../render/stage.js";
 import { film, studio } from "./film.js";
@@ -56,12 +57,10 @@ export async function makeFamilyCard(renderer, child) {
   rule(719);
   text("WHAT THEY PASSED ON", 34, 747, 12);
   const leaves = traitLeaves(child.traits);
-  const paths = ["eyes", "marking", "ears", "tail", "wings", "voice.contour", ...child.mutations];
-  [...new Set(paths)].filter(path => path in leaves).slice(0, 4).forEach((path, i) => {
+  traitHighlights(child, 4).forEach((path, i) => {
     const x = 34 + (i % 2) * 365, y = 778 + Math.floor(i / 2) * 33;
-    const source = child.origins[path];
-    const who = typeof source === "number" ? parents[source].name : source === "mutation" ? "new mutation" : "both parents";
-    text(`${path.replace("voice.", "voice ")}: ${leaves[path]} · ${who}`, x, y, 13);
+    const who = originText(child, path, parents);
+    text(`${traitLabel(path)}: ${leaves[path]} · ${who}`, x, y, 12);
   });
   rule(837);
   Object.entries(child.stats).forEach(([key, value], i) => {

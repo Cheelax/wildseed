@@ -96,7 +96,7 @@ so the GIF shows the same creature as the page.
   the input and keeps the creature. Random deals the 160 built-in words, sixteen per species, from a
   shuffled deck, so twenty presses hatch twenty different words. Under the card, "Hatched here" keeps the
   last twelve creatures hatched on this device (in `localStorage`); a chip hatches its creature again.
-- **The hatch** takes about two and a half seconds. The egg drops and wobbles; a jagged crack, its teeth
+- **The solo hatch** takes 1.55 seconds. A child first has a 1.55-second meeting between its parents. The egg drops and wobbles; a jagged crack, its teeth
   drawn from the seed, starts on the side facing you and runs around in three knocks, branching, chips of
   shell flying off. The cap pops off and only the head comes out first, looking around (the rest of the
   body is not drawn while it is still in the shell). Then the bottom falls open in three pieces, the body
@@ -137,5 +137,14 @@ stats. Words retain their original card, with seeds drawn in their original lowe
 
 `npm test` includes parser boundaries, frozen symmetric crossing, the original 466 genomes,
 10,000 additional families' distributions and provenance, and 500 couples' sibling diversity.
-`node test/browser.mjs` runs additional desktop/mobile crossing and export regressions against a
-local preview server (see the script's header). Nothing in these tests uploads an entry.
+`npm run build && node test/browser.mjs` runs additional desktop/mobile crossing and export regressions
+in a Playwright environment; the script starts its own local server under `/garden/`. Nothing in these tests uploads an entry.
+
+The renderer batches stationary sibling meshes and scenery while leaving every animated joint and face
+part independent. Object-space pattern coordinates survive the batching. Pattern spots use one jittered
+cell lookup; shadows use a 256-pixel map. The drift uses its full bounds as a touch target, including
+the gaps between its tentacles. Capture targets are disposed when export dimensions change.
+
+Crossed hopples can wear round, pointed and leaf ears inherited from trundles. Siblings retain both
+parents' name stems with a rotating ending. The additional render regression constructs and poses
+1,000 crossed creatures and descendants, checking every transform and position for finite values.

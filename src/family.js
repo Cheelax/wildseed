@@ -1,6 +1,8 @@
 import { genomeOf } from "./genome.mjs";
 import { cross, traitLeaves } from "./cross.mjs";
+import { HATCH, COURTSHIP } from "./render/stage.js";
 import { drawPortrait } from "./render/portrait.js";
+import { traitLabel as label, traitHighlights, originText } from "./heritage.mjs";
 
 const el = (tag, cls, text) => {
   const node = document.createElement(tag);
@@ -8,12 +10,6 @@ const el = (tag, cls, text) => {
   if (text !== undefined) node.textContent = text;
   return node;
 };
-const label = (path) => path.replace(/^voice\./, "voice · ").replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
-export function originText(child, path, parents) {
-  const origin = child.origins[path];
-  return origin === "mutation" ? "New mutation" : origin === "blend" ? "A blend of both" : origin === "both" ? "Both parents" : parents[origin].name;
-}
-
 export function setupFamily({ view, hatch, current, onError, wakeAudio }) {
   const fields = [document.querySelector("#parent-a"), document.querySelector("#parent-b")];
   const previews = [...document.querySelectorAll(".parent-portrait")];
@@ -112,7 +108,8 @@ export function setupFamily({ view, hatch, current, onError, wakeAudio }) {
     next.textContent = g.clutch === 99 ? "Clutch complete" : `Lay egg ${g.clutch + 1}`;
     fields.forEach((f, i) => f.value = g.parents[i]);
     note.textContent = `Egg ${g.clutch} · ${g.mutations.length ? `${g.mutations.length} new ${g.mutations.length === 1 ? "mutation" : "mutations"}` : "A familiar spark, a new little life"}`;
-    // Render portraits after the live hatch has had its first frames. Stale tasks cannot replace a new tree.
+    tree.replaceChildren(el("p", "hint", "Growing the family album…"));
+    // Portrait work follows the ceremony, so it cannot interrupt the parents meeting.
     setTimeout(() => {
       if (current() !== g) return;
       updatePreviews();
@@ -122,6 +119,8 @@ export function setupFamily({ view, hatch, current, onError, wakeAudio }) {
       title.append(el("span", "eyebrow", "THE FAMILY ALBUM"), el("h2", "", "You can see the resemblance."));
       heading.append(title, el("span", "egg-number", `EGG ${String(g.clutch).padStart(2, "0")}`));
       const chart = el("div", "family-chart");
+      chart.classList.toggle("deep-family", parents.some(parent => parent.parents));
+      chart.setAttribute("aria-label", "Family tree; scroll sideways for a larger family");
       chart.append(member(g));
       const details = el("details", "inheritance");
       details.append(el("summary", "", "Every little thing they passed on"));
@@ -133,15 +132,13 @@ export function setupFamily({ view, hatch, current, onError, wakeAudio }) {
       }
       details.append(list);
       const highlights = el("div", "inheritance-highlights");
-      const paths = ["eyes", "marking", "ears", "tail", "wings", "voice.contour", ...g.mutations];
-      const leaves = traitLeaves(g.traits);
-      for (const path of [...new Set(paths)].filter(p => p in leaves).slice(0, 6)) {
+      for (const path of traitHighlights(g)) {
         const item = el("div", "inheritance-chip");
         item.append(el("strong", "", label(path)), el("span", "", originText(g, path, parents)));
         highlights.append(item);
       }
       tree.replaceChildren(heading, chart, highlights, details);
-    }, 400);
+    }, (HATCH.ready + COURTSHIP + 0.3) * 1000);
   }
   setTimeout(updatePreviews, 1800);
   return { show };

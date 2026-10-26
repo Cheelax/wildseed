@@ -120,8 +120,8 @@ export function toon(base, { mark = null, belly = null, stars = 0, cls = CLASS.c
   m.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vObj;\nvarying vec3 vObjN;")
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvObj = position;\nvObjN = normal;");
+      .replace("#include <common>", "#include <common>\nvarying vec3 vObj;\nvarying vec3 vObjN;\n#ifdef BATCHED_PARTS\nattribute vec3 patternPosition;\nattribute vec3 patternNormal;\n#endif")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\n#ifdef BATCHED_PARTS\nvObj = patternPosition;\nvObjN = patternNormal;\n#else\nvObj = position;\nvObjN = normal;\n#endif");
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", `#include <common>\n${PARS}`)
       .replace("#include <opaque_fragment>", MAIN);
