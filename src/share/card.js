@@ -3,9 +3,10 @@
 // line about its mood, and its seed. Rare creatures get a gold frame that sparkles.
 import { HATCH } from "../render/stage.js";
 import { film, studio } from "./film.js";
-import { anyText, anyWidth, measure, pixelText } from "./font.js";
+import { anyText, anyWidth, drawable, measure, pixelText } from "./font.js";
 
 const W = 160, H = 224, SCALE = 4;
+const SEED_FONT_SIZE = 9, FOOTER_PADDING = 6;
 
 /** A line about the creature, from its mood. */
 const MOODS = {
@@ -122,27 +123,32 @@ export async function makeCard(renderer, genome) {
   y += 4;
   // Preserve the written seed, including lowercase letters and lineage signs.
   const room = W - 20;
+  const seed = `seed "${genome.seed}"`;
+  const pixel = drawable(seed, true);
+  const lineHeight = pixel ? 11 : SEED_FONT_SIZE + 5;
+  const textHeight = pixel ? 7 : SEED_FONT_SIZE + 4;
+  const widthOf = text => pixel ? measure(text) : anyWidth(text, SEED_FONT_SIZE);
   const lines = [];
   let line = '';
-  for (const ch of `seed "${genome.seed}"`) {
-    if (anyWidth(line + ch, 7) > room) { lines.push(line); line = ''; }
+  for (const ch of seed) {
+    if (widthOf(line + ch) > room) { lines.push(line); line = ''; }
     line += ch;
   }
   lines.push(line);
   // Long families get extra paper below the normal card.
-  const extra = Math.max(0, lines.length - 1) * 10;
   const paper = document.createElement('canvas');
   paper.width = W;
-  paper.height = H + extra;
+  paper.height = Math.max(H, y + (lines.length - 1) * lineHeight + textHeight + FOOTER_PADDING);
   const pg = paper.getContext('2d');
-  pg.fillStyle = ink;
-  pg.fillRect(0, 0, W, paper.height);
-  pg.fillStyle = belly;
-  pg.fillRect(5, 5, W - 10, paper.height - 10);
-  pg.drawImage(c, 0, 0);
-  pg.fillStyle = belly;
-  pg.fillRect(5, y - 1, W - 10, paper.height - y - 4);
-  lines.forEach((text, i) => anyText(pg, text, 10, y + i * 10, ink, 7));
+  box(pg, 0, 0, W, paper.height, ink);
+  box(pg, 2, 2, W - 4, paper.height - 4, frame);
+  box(pg, 5, 5, W - 10, paper.height - 10, belly);
+  pg.drawImage(c, 0, 0, W, y - 1, 0, 0, W, y - 1);
+  lines.forEach((text, i) => {
+    const top = y + i * lineHeight;
+    if (pixel) pixelText(pg, text, 10, top, ink, 1, true);
+    else anyText(pg, text, 10, top, ink, SEED_FONT_SIZE);
+  });
 
   const out = document.createElement("canvas");
   out.width = W * SCALE;

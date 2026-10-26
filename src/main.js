@@ -25,7 +25,10 @@ const view = (() => {
       onHatched: (genome) => cry(genome),
       onPoke: (genome) => cry(genome),
       onReady: (genome) => {
-        if (wild.creature === genome) wild.ready = true;
+        if (wild.creature === genome) {
+          reveal(genome);
+          wild.ready = true;
+        }
       },
       onResize: ({ pixel }) => (wild.pixel = pixel),
     });
@@ -123,6 +126,18 @@ function hatch(seed, { push = true, parents = null } = {}) {
   error.hidden = true;
   view?.hatch(genome, parents);
   if (view) hatchSounds(HATCH, parents ? 0.9 : 0);
+  card.hidden = true;
+  $("family-tree").hidden = true;
+  $("next-egg").hidden = true;
+  if (!view) reveal(genome);
+  const url = new URL(location.href);
+  url.search = `?seed=${encodeURIComponent(genome.seed)}`;
+  if (url.href !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);
+}
+
+/** Reveal the card and ancestors together once the child has left its shell. */
+function reveal(genome) {
+  card.hidden = false;
   showCard(genome);
   showFamily($("family-tree"), genome);
   $("next-egg").hidden = !genome.parents || genome.clutch >= 99;
@@ -131,9 +146,6 @@ function hatch(seed, { push = true, parents = null } = {}) {
   void card.offsetWidth; // restart the card's little hop
   card.classList.add("fresh");
   remember(genome);
-  const url = new URL(location.href);
-  url.search = `?seed=${encodeURIComponent(genome.seed)}`;
-  if (url.href !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);
 }
 
 /** Random deals the words from a shuffled deck: no word comes back before the deck runs out. */

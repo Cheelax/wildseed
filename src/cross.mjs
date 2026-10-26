@@ -2,7 +2,6 @@
 import { genesOf } from './genome/genes.mjs';
 import { SPECIES } from './genome/species.mjs';
 import { traitsOf } from './genome/traits.mjs';
-import { stemOf } from './genome/names.mjs';
 import { blendPalette } from './genome/palette.mjs';
 import { parseLineage, writtenForm } from './lineage.mjs';
 import { CLUTCH_MIN, CLUTCH_MAX, MUTATION_ONE_IN, CHILD_RARE_ONE_IN, STATS } from './rules.mjs';
@@ -19,8 +18,17 @@ export function cross(a, b, clutch = CLUTCH_MIN) {
   const fresh = traitsOf(SPECIES[species], affinity, gene);
   const traits = inherit(fresh, a.traits, b.traits, gene, mutations, inherited);
   const mix = gene('stats').num(0.2, 0.8);
-  const stats = Object.fromEntries(STATS.map(k => [k, Math.floor(a.stats[k] * mix + b.stats[k] * (1 - mix))]));
-  const name = stemOf(a.name.toLowerCase()) + b.name.toLowerCase().slice(-gene('name').int(3, 5));
+  // Cumulative rounding keeps the rounded blended total instead of losing points per stat.
+  let total = 0, rounded = 0;
+  const stats = Object.fromEntries(STATS.map(k => {
+    total += a.stats[k] * mix + b.stats[k] * (1 - mix);
+    const next = Math.round(total), value = next - rounded;
+    rounded = next;
+    return [k, value];
+  }));
+  const d = gene('name');
+  const [lead, ending] = d.chance(0.5) ? [a.name, b.name] : [b.name, a.name];
+  const name = (lead.slice(0, d.int(2, Math.min(5, lead.length))) + ending.slice(-d.int(2, Math.min(5, ending.length)))).toLowerCase();
   return {
     seed, name: name[0].toUpperCase() + name.slice(1, 12), species, affinity,
     rare: gene('rare').chance(a.rare || b.rare ? 1 / 8 : 1 / CHILD_RARE_ONE_IN),

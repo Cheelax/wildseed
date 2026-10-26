@@ -108,7 +108,7 @@ so the GIF shows the same creature as the page.
   It is encoded in the browser by [src/share/gif.js](src/share/gif.js) (median cut, LZW).
 - **The card** is 640 × 896, four pixels per art pixel: name, the creature on its island, species and
   affinity, the four stats as bars and numbers, a line about its mood, in a 5 × 7 pixel font drawn in [src/share/font.js](src/share/font.js).
-  The seed uses the system font snapped to whole pixels, preserving its written case. Long lineages
+  The seed uses lowercase pixel glyphs, with a system-font fallback for other scripts. Long lineages
   wrap onto extra paper below the card.
 
 ## Build it with your agent
@@ -139,7 +139,7 @@ Spaces around signs do not count. Limits are six generations and 120 characters 
 A child picks its species and affinity from its parents, then picks each compatible trait from one of
 them, retaining all traits for its species. Each trait independently mutates 1 in 50, using the original
 species' ranges. Numbers are picked for traits (so counts stay whole); stats blend with one shared
-weight and round down. Colors blend in HSL along the shorter hue arc, keeping the parents' saturation
-and lightness. Names join the first parent's opening syllable to the second parent's ending.
+weight and round cumulatively to preserve the blended total. Colors blend in HSL along the shorter hue
+arc, keeping the parents' saturation and lightness. The name gene chooses which parent leads and how many letters each contributes.
 Two common parents have a 1-in-64 rare child; with a rare parent the chance is 1-in-8. Every choice is
 seeded by the written lineage, including the egg number; nothing depends on the time or device.

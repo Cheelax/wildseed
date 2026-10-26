@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { cross } from '../src/cross.mjs';
 import { genomeOf } from '../src/genome.mjs';
+import { TOTAL_RANGE } from '../src/rules.mjs';
 
 function leaves(value, prefix = '', out = {}) {
   for (const [key, v] of Object.entries(value)) {
@@ -45,5 +46,25 @@ test('all 466 recorded word genomes keep identical bytes', () => {
   for (const line of lines) {
     const g = JSON.parse(line);
     assert.equal(JSON.stringify(genomeOf(g.seed)), JSON.stringify(g));
+  }
+});
+
+test('sibling names vary while remaining names made from their parents', () => {
+  const names = [1, 2, 3, 4].map(n => cross(genomeOf('thomas'), genomeOf('auri'), n).name);
+  assert.notEqual(names[0], names[2]);
+  assert.ok(new Set(names).size >= 3);
+  for (const name of names) assert.match(name, /^\p{Lu}\p{Ll}{2,11}$/u);
+});
+
+test('six generations of low-total parents preserve the blended total', () => {
+  const sum = g => Object.values(g.stats).reduce((a, b) => a + b, 0);
+  const low = Array.from({ length: 1000 }, (_, n) => genomeOf(`s${n}`)).filter(g => sum(g) === 175);
+  assert.ok(low.length >= 7);
+  let child = low[0];
+  for (let generation = 1; generation <= 6; generation++) {
+    child = cross(child, low[generation]);
+    assert.equal(sum(child), 175);
+    assert.ok(sum(child) >= TOTAL_RANGE[0] && sum(child) <= TOTAL_RANGE[1]);
+    assert.deepEqual(child, genomeOf(child.seed));
   }
 });

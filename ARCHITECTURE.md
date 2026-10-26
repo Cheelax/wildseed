@@ -170,8 +170,8 @@ without outer parentheses, in seed order), `clutch`, `mutations` (distinct dotte
 `inherited` (trait path to `a`, `b` or `mutation`). Species and affinity come from a parent. The child
 keeps its species' trait keys; each trait is picked from a compatible parent value, except a 1-in-50
 mutation drawn with the original species' trait generator. Stats blend, palettes blend HSL on the short
-hue arc, and names combine a syllable and an ending of the parents' names. Two common parents have a
-1-in-64 rare child; a rare parent raises this to 1-in-8.
+hue arc, and names combine a gene-selected opening and ending of the parents' names. Two common parents
+have a 1-in-64 rare child; a rare parent raises this to 1-in-8.
 
 The command validates all lineages before printing. The page carries written lineages in its query,
 encoding `#` as `%23`. Its crossing form brings two parents together before the egg hatches; the next
