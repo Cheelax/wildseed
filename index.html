@@ -20,7 +20,10 @@
         <p class="error" data-testid="seed-error" role="alert" hidden></p>
       </header>
       <main class="hatchery">
-        <div class="stage"><canvas data-testid="scene" aria-label="The creature, in 3D: drag to turn the camera, click it to poke it"></canvas></div>
+        <div class="stage">
+          <canvas data-testid="scene" aria-label="The creature, in 3D: drag to turn the camera, click it to poke it"></canvas>
+          <p class="caption" aria-live="polite" hidden></p>
+        </div>
         <aside class="side">
           <article class="card" data-testid="creature-card">
             <p class="rare" hidden>★ rare</p>

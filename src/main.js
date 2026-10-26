@@ -107,6 +107,25 @@ const nest = new Nest({ root: $("cross"), recent: document.querySelector(".hatch
   showError,
 });
 
+/** The caption over the scene while a child's parents meet and its egg hatches: what happens, as it happens. */
+const caption = document.querySelector(".caption");
+let story = [];
+function narrate(genome, parents, tempo) {
+  story.forEach(clearTimeout);
+  caption.hidden = true;
+  if (!parents || !view) return;
+  const at = (seconds, text) => setTimeout(() => {
+    caption.textContent = text;
+    caption.hidden = !text;
+  }, (seconds * 1000) / tempo);
+  story = [
+    at(0, `${parents[0].name} meets ${parents[1].name}…`),
+    at(MEET.laid, "An egg!"),
+    at(MEET.laid + HATCH.burst, `It's ${genome.name}!${genome.mutations.length ? " ✦" : ""}`),
+    at(MEET.laid + HATCH.ready + 2, ""),
+  ];
+}
+
 /**
  * Hatches a lineage: the egg drops, cracks, and the creature that word was always going to be comes out; or,
  * for a child, its parents meet and lay its egg first. `tempo` plays the hatch faster (a page opened from a link).
@@ -121,6 +140,7 @@ function hatch(lineage, { push = true, tempo = 1 } = {}) {
   view?.hatch(genome, { parents, tempo }).then(() => tree.paint());
   if (view && parents) meetSounds(parents, MEET);
   if (view) hatchSounds(HATCH, parents ? MEET.laid : 0);
+  narrate(genome, parents, tempo);
   showCard(genome, parents);
   card.classList.remove("fresh");
   void card.offsetWidth; // restart the card's little hop

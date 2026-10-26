@@ -435,6 +435,25 @@ body {
   font-weight: 800;
 }
 
+.caption {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  margin: 0;
+  padding: 4px 14px;
+  border: 3px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  font-weight: 800;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.caption[hidden] {
+  display: none;
+}
+
 .stage.dropping {
   outline: 4px dashed var(--accent);
   outline-offset: -12px;
