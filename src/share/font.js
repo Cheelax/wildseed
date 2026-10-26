@@ -1,5 +1,7 @@
-// A 5 × 7 pixel font, drawn here row by row, for the GIF and the card. Text in other scripts (a seed in
-// Japanese or Arabic) falls back to the system font, drawn small and snapped to whole pixels.
+// A 5 × 7 pixel font, drawn here row by row, for the GIF, the card and the family tree: capitals, small
+// letters (whose tails hang one row lower), accents set over small letters, digits and the signs of a
+// lineage, so a seed prints as it is written. Text in other scripts (a seed in Japanese or Arabic) falls
+// back to the system font, drawn small and snapped to whole pixels.
 
 const GLYPHS = {
   A: [14, 17, 17, 31, 17, 17, 17], B: [30, 17, 17, 30, 17, 17, 30], C: [14, 17, 16, 16, 16, 17, 14],
@@ -20,10 +22,38 @@ const GLYPHS = {
   "!": [4, 4, 4, 4, 4, 0, 4], "?": [14, 17, 1, 2, 4, 0, 4], "/": [1, 2, 2, 4, 8, 8, 16],
   "+": [0, 4, 4, 31, 4, 4, 0], '"': [10, 10, 0, 0, 0, 0, 0], "·": [0, 0, 0, 12, 12, 0, 0],
   "★": [4, 4, 31, 14, 14, 27, 0], "♥": [0, 10, 31, 31, 14, 4, 0],
+  "*": [0, 4, 21, 14, 21, 4, 0], "×": [0, 17, 10, 4, 10, 17, 0], "#": [10, 10, 31, 10, 31, 10, 10],
+  "(": [2, 4, 8, 8, 8, 4, 2], ")": [8, 4, 2, 2, 2, 4, 8], "=": [0, 0, 31, 0, 31, 0, 0], "✦": [4, 4, 14, 31, 14, 4, 4],
+  "<": [2, 4, 8, 16, 8, 4, 2], ">": [8, 4, 2, 1, 2, 4, 8],
+  a: [0, 0, 14, 1, 15, 17, 15], b: [16, 16, 22, 25, 17, 17, 30], c: [0, 0, 14, 16, 16, 17, 14],
+  d: [1, 1, 13, 19, 17, 17, 15], e: [0, 0, 14, 17, 31, 16, 14], f: [6, 9, 8, 28, 8, 8, 8],
+  g: [0, 0, 15, 17, 17, 15, 1, 14], h: [16, 16, 22, 25, 17, 17, 17], i: [4, 0, 12, 4, 4, 4, 14],
+  j: [2, 0, 6, 2, 2, 2, 18, 12], k: [16, 16, 18, 20, 24, 20, 18], l: [12, 4, 4, 4, 4, 4, 14],
+  m: [0, 0, 26, 21, 21, 17, 17], n: [0, 0, 22, 25, 17, 17, 17], o: [0, 0, 14, 17, 17, 17, 14],
+  p: [0, 0, 30, 17, 17, 30, 16, 16], q: [0, 0, 15, 17, 17, 15, 1, 1], r: [0, 0, 22, 25, 16, 16, 16],
+  s: [0, 0, 15, 16, 14, 1, 30], t: [8, 8, 28, 8, 8, 9, 6], u: [0, 0, 17, 17, 17, 19, 13],
+  v: [0, 0, 17, 17, 17, 10, 4], w: [0, 0, 17, 17, 21, 21, 10], x: [0, 0, 17, 10, 4, 10, 17],
+  y: [0, 0, 17, 17, 17, 15, 1, 14], z: [0, 0, 31, 2, 4, 8, 31],
 };
 
-/** Whether the pixel font can draw every character of `text` (case aside). */
-export const drawable = (text) => [...text.toUpperCase()].every((ch) => GLYPHS[ch]);
+/** Accents over a small letter, its two top rows (and a cedilla under it): é, è, ê, ë, ñ, ç… */
+const MARKS = { "\u0301": [2, 4], "\u0300": [8, 4], "\u0302": [4, 10], "\u0308": [10, 0], "\u0303": [13, 22], "\u030a": [4, 4], "\u0327": null };
+const DOTLESS = { i: [0, 0, 12, 4, 4, 4, 14], j: [0, 0, 6, 2, 2, 2, 18, 12] };
+
+/** The rows of a character's glyph: as written, else its capital, else its letter with an accent set on it. */
+function glyph(ch) {
+  if (GLYPHS[ch]) return GLYPHS[ch];
+  const [base, ...marks] = ch.normalize("NFD");
+  const rows = DOTLESS[base] ?? GLYPHS[base];
+  if (marks.length === 1 && rows && base === base.toLowerCase() && marks[0] in MARKS) {
+    const mark = MARKS[marks[0]];
+    return mark ? [mark[0] | rows[0], mark[1] | rows[1], ...rows.slice(2)] : [...rows.slice(0, 7), 4];
+  }
+  return GLYPHS[ch.toUpperCase()] ?? null;
+}
+
+/** Whether the pixel font can draw every character of `text`. */
+export const drawable = (text) => [...text.normalize("NFC")].every((ch) => glyph(ch));
 
 /** The width of `text` in pixels at `scale`. */
 export const measure = (text, scale = 1) => Math.max(0, [...text].length * 6 - 1) * scale;
@@ -31,8 +61,8 @@ export const measure = (text, scale = 1) => Math.max(0, [...text].length * 6 - 1
 /** Draws `text` with its top-left corner at (x, y), each font pixel `scale` pixels wide. */
 export function pixelText(g, text, x, y, color, scale = 1) {
   g.fillStyle = color;
-  [...text.toUpperCase()].forEach((ch, i) => {
-    const rows = GLYPHS[ch] ?? GLYPHS["?"];
+  [...text.normalize("NFC")].forEach((ch, i) => {
+    const rows = glyph(ch) ?? GLYPHS["?"];
     rows.forEach((bits, r) => {
       for (let c = 0; c < 5; c++) if (bits & (16 >> c)) g.fillRect(x + (i * 6 + c) * scale, y + r * scale, scale, scale);
     });

@@ -1,19 +1,30 @@
 #!/usr/bin/env node
-// node bin/hatch.mjs <seed>…: prints each seed's genome as one line of JSON. ARCHITECTURE.md, "The command".
-// Every seed is checked before anything is printed: one bad seed and nothing goes to stdout.
-import { genomeOf, normalizeSeed, seedProblem } from "../src/genome.mjs";
+// node bin/hatch.mjs <lineage>…: prints each lineage's genome as one line of JSON. ARCHITECTURE.md, "The command".
+// A lineage is a word ("thomas") or a cross ("thomas*auri", "(thomas*auri)*noe#2"). Every lineage is read
+// before anything is printed: one bad lineage and nothing goes to stdout.
+import { genomeOf, readLineage } from "../src/genome.mjs";
 
-const seeds = process.argv.slice(2);
+const lineages = process.argv.slice(2);
 
-if (seeds.length === 0) {
-  console.error("usage: node bin/hatch.mjs <seed>…  (give at least one seed)");
+/** Why a lineage is refused, or null. */
+const problem = (text) => {
+  try {
+    readLineage(text);
+    return null;
+  } catch (e) {
+    return e.message;
+  }
+};
+
+if (lineages.length === 0) {
+  console.error("usage: node bin/hatch.mjs <lineage>…  (a word, or a cross like 'thomas*auri' or '(thomas*auri)*noe#2')");
   process.exitCode = 2;
 } else {
-  const bad = seeds.map((s) => [s, seedProblem(normalizeSeed(s))]).find(([, problem]) => problem);
+  const bad = lineages.map((s) => [s, problem(s)]).find(([, why]) => why);
   if (bad) {
-    console.error(`hatch: ${JSON.stringify(bad[0])} is not a seed: ${bad[1]}`);
+    console.error(`hatch: ${JSON.stringify(bad[0])} is not a lineage: ${bad[1]}`);
     process.exitCode = 2;
   } else {
-    process.stdout.write(seeds.map((s) => `${JSON.stringify(genomeOf(s))}\n`).join(""));
+    process.stdout.write(lineages.map((s) => `${JSON.stringify(genomeOf(s))}\n`).join(""));
   }
 }

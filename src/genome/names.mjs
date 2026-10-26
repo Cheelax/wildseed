@@ -40,3 +40,27 @@ export function nameOf(seed, affinity, d) {
   const name = (stem.endsWith(ending[0]) ? stem.slice(0, -1) : stem) + ending;
   return name[0].toUpperCase() + name.slice(1, 12);
 }
+
+const ALL_ENDINGS = Object.values(ENDINGS).flat().sort((a, b) => b.length - a.length);
+
+/** A name's front and its ending: "Thomnub" is "thom" and "nub". Every name ends with an affinity's ending. */
+export function splitName(name) {
+  const lower = name.toLowerCase();
+  const ending = ALL_ENDINGS.find((e) => lower.endsWith(e) && lower.length > e.length) ?? lower.slice(-2);
+  return [lower.slice(0, -ending.length), ending];
+}
+
+/**
+ * A child's name sounds like both parents': the front of one parent's name and the ending of the other's
+ * ("Thomnub" and "Aurizap" have a Thomzap or an Aurinub). A child that would carry a parent's very name
+ * (two parents with one ending, a word crossed with itself) takes a new ending of its affinity.
+ */
+export function crossName(front, back, affinity, d) {
+  const [stem] = splitName(front.name);
+  const [, ending] = splitName(back.name);
+  const join = (e) => (stem.length > 1 && stem.endsWith(e[0]) ? stem.slice(0, -1) : stem) + e;
+  let name = join(ending);
+  const taken = [front.name, back.name].map((n) => n.toLowerCase());
+  if (taken.includes(name)) name = join(d.pick(ENDINGS[affinity].filter((e) => !taken.includes(join(e)))));
+  return name[0].toUpperCase() + name.slice(1, 12);
+}

@@ -14,8 +14,16 @@ test("prints one line of JSON per seed, in order", () => {
   assert.deepEqual(lines.map((g) => g.seed), ["moss", "pebble", "東京"]);
 });
 
-test("one bad seed: nothing on stdout, the reason on stderr, exit 2", () => {
-  for (const args of [[], ["moss", "a*b"], ["🐸"]]) {
+test("prints a child for each lineage, its seed written one way", () => {
+  const r = hatch("thomas*auri", "Auri × Thomas #2", "noe*(thomas*auri)");
+  assert.equal(r.status, 0);
+  const lines = r.stdout.trimEnd().split("\n").map((l) => JSON.parse(l));
+  assert.deepEqual(lines.map((g) => g.seed), ["auri*thomas", "auri*thomas#2", "(auri*thomas)*noe"]);
+  assert.deepEqual(lines[2].parents, ["auri*thomas", "noe"]);
+});
+
+test("one bad seed or lineage: nothing on stdout, the reason on stderr, exit 2", () => {
+  for (const args of [[], ["moss", "a**b"], ["🐸"], ["a*b*c"], ["(a)*b"], ["a*b#0"], ["thomas*auri", "(a*b"]]) {
     const r = hatch(...args);
     assert.equal(r.status, 2);
     assert.equal(r.stdout, "");

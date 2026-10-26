@@ -25,13 +25,19 @@ export function wakeAudio() {
   if (live.state === "suspended") live.resume();
 }
 
-/** The egg's sounds, from now: a crack at each of `cracks` seconds, a pop as the cap comes off at `open`, a crumble at `burst`. */
-export function hatchSounds({ cracks, open, burst }) {
+/**
+ * The egg's sounds, its hatch starting `at` seconds from now (sooner, from a link, skips what is past): a
+ * soft plop if it is laid, a crack at each of `cracks` seconds, a pop as the cap comes off at `open`, a
+ * crumble at `burst`.
+ */
+export function hatchSounds({ cracks, open, burst }, { at = 0, laid = false } = {}) {
   if (muted || live?.state !== "running") return;
-  const now = live.currentTime + 0.02;
-  cracks.forEach((t, i) => noise(live, now + t, 0.035, 1800 + 500 * i, 0.5));
-  noise(live, now + open, 0.1, 1100, 0.8);
-  noise(live, now + burst, 0.16, 650, 0.9);
+  const now = live.currentTime + 0.02 + at;
+  const play = (t, ...sound) => now + t >= live.currentTime && noise(live, now + t, ...sound);
+  if (laid) play(0, 0.12, 320, 0.9);
+  cracks.forEach((t, i) => play(t, 0.035, 1800 + 500 * i, 0.5));
+  play(open, 0.1, 1100, 0.8);
+  play(burst, 0.16, 650, 0.9);
 }
 
 /** A short burst of filtered noise: a crack (short, high) or a pop (longer, lower). */
@@ -51,9 +57,9 @@ function noise(ctx, at, length, freq, gain) {
   src.start(at);
 }
 
-/** Plays the creature's cry now. Does nothing until the page has had a gesture. */
-export function cry(genome) {
-  if (!muted && live?.state === "running") sing(live, genome, live.currentTime + 0.02);
+/** Plays the creature's cry now, or `delay` seconds from now. Does nothing until the page has had a gesture. */
+export function cry(genome, delay = 0) {
+  if (!muted && live?.state === "running") sing(live, genome, live.currentTime + 0.02 + delay);
 }
 
 /**
