@@ -141,13 +141,22 @@ export class Hatchery {
     });
   }
 
-  /** A tap or click: if it lands on the creature, the creature reacts. */
+  /** A tap or click: if it lands on the creature (body or thin tentacles), the creature reacts. */
   tap(point) {
-    const { camera, creature } = this.stage;
+    const { camera, creature, center, bounds } = this.stage;
     if (!creature?.root.visible || this.time < HATCH.ready) return;
     const ray = new THREE.Raycaster();
+    ray.params.Line = { threshold: 0.25 };
+    ray.params.Points = { threshold: 0.25 };
     ray.setFromCamera(point, camera);
-    if (ray.intersectObject(creature.root, true).length) {
+    const hit = ray.intersectObject(creature.root, true).length > 0;
+    // Loose sphere so frilly tentacles still count even when the ray misses a thin tube.
+    const near = (() => {
+      if (!center || !bounds) return false;
+      const sphere = new THREE.Sphere(center.clone(), Math.max(bounds.radius, 1.1) * 1.15);
+      return ray.ray.intersectsSphere(sphere);
+    })();
+    if (hit || near) {
       this.stage.poke(this.time);
       this.onPoke(this.stage.genome);
     }

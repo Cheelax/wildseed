@@ -461,6 +461,83 @@ body {
 }
 
 .card .name {
-    font-size: 30px;
+  font-size: 30px;
+}
+
+.family {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed color-mix(in srgb, var(--ink, #2a2633) 35%, transparent);
+  font-size: 12px;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--ink, #2a2633) 85%, #fff);
+}
+
+.family .tree-line {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+
+.family .tree-trait {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.cross-panel {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--belly, #fff) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink, #2a2633) 12%, transparent);
+}
+
+.cross-panel h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cross-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.cross-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.cross-row select {
+  flex: 1 1 90px;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--ink, #2a2633) 20%, transparent);
+  background: #fff8;
+  font: inherit;
+}
+
+.cross-row .times {
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.card.crossing {
+  animation: meet 0.28s ease-out;
+}
+
+@keyframes meet {
+  0% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.03); filter: brightness(1.15); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.crossing {
+    animation: none;
   }
 }
