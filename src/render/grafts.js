@@ -176,8 +176,8 @@ export function graftsOf(genome) {
   const own = SPECIES[genome.species].knobs;
   const out = {};
   for (const [slot, keys] of Object.entries(SLOTS)) {
-    const extra = keys.filter((k) => k in genome.traits && !(k in own) && genome.traits[k] !== "none");
-    if (extra.length) out[slot] = Object.fromEntries(keys.filter((k) => k in genome.traits && !(k in own)).map((k) => [k, genome.traits[k]]));
+    const theirs = keys.filter((k) => k in genome.traits && !(k in own));
+    if (theirs.some((k) => genome.traits[k] !== "none")) out[slot] = Object.fromEntries(theirs.map((k) => [k, genome.traits[k]]));
   }
   return out;
 }

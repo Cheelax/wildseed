@@ -46,8 +46,8 @@ export function cross(a, b, clutch = 1) {
 const rareOdds = (x, y) => (4 ** (Number(x.rare) + Number(y.rare))) / RARE_ONE_IN;
 
 /**
- * Stats near the parents': a total between theirs (175 to 250, 25 more when rare), shared like the average of
- * their stats, each share nudged by the child's own genes.
+ * Stats near the parents': a total near the average of theirs (175 to 250, 25 more when rare), shared like the
+ * average of their stats, each share nudged by the child's own genes.
  */
 function statsOf(x, y, rare, gene) {
   const plain = (g) => Object.values(g.stats).reduce((sum, v) => sum + v, 0) - (g.rare ? 25 : 0);
