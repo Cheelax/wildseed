@@ -149,6 +149,7 @@ function hatch(lineage, { push = true, tempo = 1 } = {}) {
   nest.show(genome);
   const url = new URL(location.href);
   url.search = `?seed=${encodeURIComponent(genome.seed)}`;
+  url.hash = "";
   if (url.href !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);
 }
 
@@ -220,7 +221,9 @@ $("save-tree").addEventListener("click", () => exporting($("save-tree"), "Drawin
 
 /** Hatches what the address names, any way it is written; a page opened from a link hatches briskly. */
 function fromAddress({ push, tempo = 1 }) {
-  const asked = new URLSearchParams(location.search).get("seed");
+  let asked = new URLSearchParams(location.search).get("seed");
+  // A link pasted with its # unescaped (`?seed=a*b#2`) still names that egg.
+  if (asked !== null && /^#[0-9]+$/.test(location.hash)) asked += location.hash;
   if (asked !== null) {
     const problem = lineageProblem(asked);
     if (!problem) return hatch(lineageOf(asked), { push, tempo });
