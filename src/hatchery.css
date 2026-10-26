@@ -420,13 +420,33 @@ body {
     font-size: 24px;
   }
 
+  .sound {
+    order: 1;
+    margin-left: auto;
+  }
+
   .hatch {
+    order: 2;
     flex-basis: 100%;
     flex-wrap: wrap;
   }
 
   .hatch input {
     flex-basis: 40%;
+  }
+
+  .hatch .btn {
+    flex: 1;
+  }
+
+  .error {
+    order: 3;
+  }
+
+  .news {
+    bottom: 8px;
+    padding: 5px 10px;
+    font-size: 12px;
   }
 
   .hatchery {
@@ -452,7 +472,6 @@ body {
 }
 
 .card .kin[hidden],
-.eggs[hidden],
 .family[hidden],
 .save-tree[hidden] {
   display: none;
@@ -467,6 +486,14 @@ body {
   grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 8px;
+}
+
+.eggs .mate {
+  grid-column: 1 / -1;
+}
+
+.eggs:not(.child) :is(.prev, .which, .next) {
+  display: none;
 }
 
 .eggs .which {

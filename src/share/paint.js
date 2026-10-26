@@ -24,9 +24,18 @@ export function line(g, text, x, y, color) {
 /** The width of a line drawn by line(). */
 export const textWidth = (text) => (drawable(text) ? measure(text) : anyWidth(text, 9));
 
-/** A lineage cut into lines of at most `room` pixels, between its parents' signs where it can be. */
+/**
+ * A lineage cut into lines of at most `room` pixels: between its two parents when the first fits on a line,
+ * else between the signs inside them.
+ */
 export function wrapLineage(seed, room) {
-  const pieces = seed.split(/(?<=[*)])|(?=[(#])/); // "(auri*thomas#2)*noe": "(auri*", "thomas", "#2)*", "noe"
+  if (textWidth(seed) <= room) return [seed];
+  let depth = 0;
+  for (let i = 0; i < seed.length; i++) {
+    depth += seed[i] === "(" ? 1 : seed[i] === ")" ? -1 : 0;
+    if (seed[i] === "*" && depth === 0 && textWidth(seed.slice(0, i + 1)) <= room) return [seed.slice(0, i + 1), ...wrapLineage(seed.slice(i + 1), room)];
+  }
+  const pieces = seed.split(/(?<=\*)/); // "(auri*thomas#2)*noe": "(auri*", "thomas#2)*", "noe"
   const lines = [""];
   for (const piece of pieces) {
     if (lines.at(-1) && textWidth(lines.at(-1) + piece) > room) lines.push("");

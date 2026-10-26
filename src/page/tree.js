@@ -43,13 +43,16 @@ export function showTree(section, genome, { face, pick }) {
     return button;
   };
 
+  // Grandparents, when a parent is a child itself.
   const grand = el("div", "row grand");
-  family.parents.forEach((p, i) => {
-    const pair = el("div", `pair ${i ? "right" : "left"}`);
-    if (p.parents) pair.append(...p.parents.map((q) => member(q, 2)));
-    else pair.append(el("span", "root", "a word, no parents"));
-    grand.append(pair);
-  });
+  if (family.parents.some((p) => p.parents)) {
+    family.parents.forEach((p, i) => {
+      const pair = el("div", `pair ${i ? "right" : "left"}`);
+      if (p.parents) pair.append(...p.parents.map((q) => member(q, 2)));
+      else pair.append(el("span", "root", "a word, no parents"));
+      grand.append(pair);
+    });
+  }
   const parents = el("div", "row parents");
   parents.append(member(family.parents[0], 1, "left"), el("span", "heart", "♥"), member(family.parents[1], 1, "right"));
   const child = el("div", "row child");
@@ -67,5 +70,5 @@ export function showTree(section, genome, { face, pick }) {
 
   const title = el("h3", "", `${genome.name}'s family`);
   section.replaceChildren(title, el("div", "tree", ""), origins);
-  section.querySelector(".tree").append(grand, parents, child);
+  section.querySelector(".tree").append(...(grand.children.length ? [grand] : []), parents, child);
 }

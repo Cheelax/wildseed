@@ -65,10 +65,11 @@ export class Meeting {
       p.root.position.set(side * x, y, z);
       p.root.rotation.y = -side * turn;
       // Hearts in their eyes as they meet, and again when their child comes out; a poke makes them laugh.
+      // Once back in their places they look at the egg, then at their child.
       const since = [MEET.meet, cheer, ...pokes[i]].filter((at) => at <= t);
       const last = since.length ? since.at(-1) : -Infinity;
       const kind = last === MEET.meet ? 2 : 0; // a happy wiggle as they meet, a jump otherwise
-      p.pose(t + i * 0.7, { look: t > MEET.back ? { x: side * 0.55, y: -0.25 } : null, react: t - last, pokes: kind, crying: Math.abs(t - MEET.meet - 0.1) < 0.25 });
+      p.pose(t + i * 0.7, { look: t > MEET.back ? { x: -side, y: -0.3 } : null, react: t - last, pokes: kind, crying: Math.abs(t - MEET.meet - 0.1) < 0.25 });
     });
   }
 

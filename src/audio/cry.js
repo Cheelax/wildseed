@@ -172,3 +172,22 @@ export function sing(ctx, genome, start = 0) {
   }
   return end - start;
 }
+
+/** A little run of bells, `delay` seconds from now: a child that came out with something new. */
+export function chime(delay = 0) {
+  if (muted || live?.state !== "running") return;
+  const start = live.currentTime + 0.02 + delay;
+  [1318.5, 1568, 1975.5, 2637].forEach((f, i) => {
+    const osc = live.createOscillator();
+    const g = live.createGain();
+    osc.type = "sine";
+    osc.frequency.value = f;
+    const t0 = start + i * 0.07;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.45);
+    osc.connect(g).connect(live.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.5);
+  });
+}

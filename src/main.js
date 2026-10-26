@@ -7,13 +7,14 @@ import { CLUTCH_MAX } from "./rules.mjs";
 import { WORDS } from "./words.mjs";
 import { Hatchery } from "./render/hatchery.js";
 import { HATCH } from "./render/stage.js";
-import { cry, hatchSounds, mute, wakeAudio } from "./audio/cry.js";
-import { makeGif, portrait } from "./share/film.js";
+import { chime, cry, hatchSounds, mute, wakeAudio } from "./audio/cry.js";
+import { makeGif } from "./share/film.js";
 import { makeCard } from "./share/card.js";
 import { makeTree } from "./share/tree.js";
 import { save } from "./share/save.js";
 import { showCard } from "./page/card.js";
 import { showTree } from "./page/tree.js";
+import { Faces } from "./page/faces.js";
 import { resemblance } from "./family.mjs";
 
 const $ = (id) => document.querySelector(`[data-testid="${id}"]`);
@@ -36,12 +37,13 @@ const view = (() => {
         const parents = view.stage.meeting?.parents.map((p) => p.genome);
         if (!parents) return;
         parents.forEach((p, i) => cry(p, 0.55 + 0.25 * i)); // and its parents cheer
+        if (genome.mutations.length || genome.rare) chime(0.2);
         announce(genome, parents);
       },
       onPoke: (genome) => cry(genome),
       onReady: (genome) => {
         if (wild.creature === genome) wild.ready = true;
-        drawFaces();
+        faces.wake(true);
       },
       onResize: ({ pixel }) => (wild.pixel = pixel),
     });
@@ -57,24 +59,7 @@ const view = (() => {
 })();
 wild.renderer = view?.kind ?? null;
 
-/**
- * The family's faces, drawn by the live renderer once the creature on screen is out of its egg, one
- * per frame so the scene stays smooth; each face is drawn once per page.
- */
-const faces = new Map();
-const waiting = [];
-function face(genome, size, canvas) {
-  waiting.push({ genome, size, canvas });
-  if (wild.ready) drawFaces();
-}
-function drawFaces() {
-  const job = waiting.shift();
-  if (!job || !view) return;
-  const key = `${job.size} ${job.genome.seed}`;
-  if (!faces.has(key)) faces.set(key, new ImageData(portrait(view.renderer, job.genome, job.size, job.size), job.size, job.size));
-  job.canvas.getContext("2d").putImageData(faces.get(key), 0, 0);
-  requestAnimationFrame(() => wild.ready && drawFaces());
-}
+const faces = new Faces(view?.renderer);
 
 /** Says, over the scene, who just hatched and whom it takes after. */
 const news = document.querySelector(".news");
@@ -158,7 +143,7 @@ function hatch(seed, { push = true, quick = false } = {}) {
   wild.ready = false;
   wild.creature = genome;
   error.hidden = true;
-  waiting.length = 0;
+  faces.wake(false);
   news.hidden = true;
   const from = quick && !parents ? HATCH.cracks[0] + 0.3 : 0;
   view?.hatch(genome, { from });
@@ -170,7 +155,7 @@ function hatch(seed, { push = true, quick = false } = {}) {
   card.classList.remove("fresh");
   void card.offsetWidth; // restart the card's little hop
   card.classList.add("fresh");
-  showTree($("family-tree"), genome, { face, pick: (s) => hatch(s) });
+  showTree($("family-tree"), genome, { face: (g, size, canvas) => faces.draw(g, size, canvas), pick: (s) => hatch(s) });
   showEggs(genome, parents);
   treeButton.hidden = !parents;
   remember(genome);
@@ -189,19 +174,20 @@ function layWith(other) {
   }
 }
 
-/** A child's eggs: its parents' egg before and after this one, laid with a click. */
+/** A child's eggs: its parents' egg before and after this one, laid with a click. A word can find a mate. */
 function showEggs(genome, parents) {
   const eggs = document.querySelector(".eggs");
-  eggs.hidden = !parents;
+  eggs.classList.toggle("child", !!parents);
   if (!parents) return;
   const n = genome.clutch;
   eggs.querySelector(".which").textContent = `${parents[0].name} × ${parents[1].name}, egg #${n}`;
-  const [prev, next] = eggs.querySelectorAll("button");
+  const prev = eggs.querySelector(".prev"), next = eggs.querySelector(".next");
   prev.disabled = n <= 1;
   next.disabled = n >= CLUTCH_MAX;
   prev.onclick = () => hatch(crossOf(genome.parents[0], genome.parents[1], n - 1));
   next.onclick = () => (wakeAudio(), hatch(crossOf(genome.parents[0], genome.parents[1], n + 1)));
 }
+document.querySelector(".eggs .mate").addEventListener("click", () => layWith(randomWord()));
 
 /** The button says what Enter does: hatch what is typed, or lay an egg of it and a second creature. */
 function syncButton() {
@@ -289,15 +275,20 @@ $("save-gif").addEventListener("click", () => exporting($("save-gif"), "Filming�
 $("save-card").addEventListener("click", () => exporting($("save-card"), "Drawing…", makeCard, (g) => `${fileName(g)}-card.png`));
 const treeButton = document.querySelector(".save-tree");
 treeButton.addEventListener("click", () => exporting(treeButton, "Drawing…", makeTree, (g) => `${fileName(g)}-family.png`));
+// The link: shared through the device's own sheet where there is one (a phone), else copied.
 const linkButton = document.querySelector(".copy-link");
+if (navigator.share) linkButton.textContent = "Share link";
 linkButton.addEventListener("click", async () => {
+  const g = wild.creature;
+  const text = linkButton.textContent;
   try {
+    if (navigator.share) return await navigator.share({ title: `${g.name} · Wildseed`, text: g.parents ? `${g.name}, the child of ${g.parents.map((s) => genomeOf(s).name).join(" and ")}` : `${g.name}, hatched from “${g.seed}”`, url: location.href });
     await navigator.clipboard.writeText(location.href);
     linkButton.textContent = "Link copied";
   } catch {
-    linkButton.textContent = "Copy it from the address bar";
+    if (!navigator.share) linkButton.textContent = "Copy it from the address bar";
   }
-  setTimeout(() => (linkButton.textContent = "Copy link"), 1800);
+  setTimeout(() => (linkButton.textContent = text), 1800);
 });
 
 function fromAddress({ push, quick = false }) {
