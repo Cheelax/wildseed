@@ -63,7 +63,7 @@ function eggNames(x, y, clutch) {
 
 /**
  * The heirlooms a child of `species` wears. It keeps every one its parents of the same species wear (a
- * child keeps all the traits of such a parent), and, half the time, takes one more from a parent of
+ * child keeps all the traits of such a parent), and, three times in five, takes one more from a parent of
  * another species: a part of that parent's species it can wear on its head, or an heirloom that parent
  * wears.
  */
@@ -77,7 +77,7 @@ function heirloomsFor(x, y, species, d) {
       if (can.includes(part) && !kept.has(part) && p.traits[part] !== "none") offered.add(part);
     }
   }
-  if (offered.size && d.chance(0.5)) kept.add(d.pick([...offered]));
+  if (offered.size && d.chance(0.6)) kept.add(d.pick([...offered]));
   return can.filter((part) => kept.has(part));
 }
 

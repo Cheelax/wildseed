@@ -136,7 +136,7 @@ ARCHITECTURE.md ([src/lineage.mjs](src/lineage.mjs)).
   between both parents instead. So you can point at one parent's ears and the other's tail. Every creature
   has eight parts (body, eyes, mouth, cheeks, markings, charm, mood, voice), and each species adds its own
   (a hopple's ears, feet and tail; a drift's bell, tentacles and antenna…).
-- **Heirlooms.** A child of two species takes its body from one, and half the time wears a part of the
+- **Heirlooms.** A child of two species takes its body from one, and three times in five wears a part of the
   other on its head: a wyrmlet's horns, a hopple's ears, a pipkin's crest, an inchling's antennae or a
   drift's antenna, when its own species has no such part. The part keeps its parent's values and is built
   the way its species builds it, sized to the new head; the child's own children of its species keep it.
@@ -159,15 +159,28 @@ ARCHITECTURE.md ([src/lineage.mjs](src/lineage.mjs)).
 - **Rare children** are starlit like rare words, and keep the accent and detail their parents gave them.
   One child in 64 of two common parents is rare, one in 8 with a rare parent, one in 2 with two.
 - **The meeting** lasts about a second before the hatch: the parents hop in from either side of the island,
-  meet nose to nose under hearts and sing, the egg pops up between them in a puff of sparkles, and they step
-  back to watch. They jump for joy when their child comes out, then stay behind it, alive, where you can poke
-  them too and compare them with their child.
+  meet nose to nose, twirl under hearts and sing, the egg pops up between them in a puff of sparkles, and
+  they step back to watch, jumping at each knock on the shell. They cheer and sing when their child comes
+  out, then stay behind it, alive, where you can poke them too and compare them with their child; the child
+  looks at one parent, then the other. A line over the scene says whom it takes after ("a wyrmlet like
+  Aurbit · Aurbit's horns · Thomnub's mouth"), and a child with something new comes out in gold stars, with
+  a chime.
 - **The family tree** shows the child, its parents and its grandparents with their faces (drawn by the same
   renderer, each once), and one chip per part saying whose it is: a parent's name, both, a blend, or ✦ new.
   Clicking a member hatches it. Save tree downloads it as a picture.
 - **The GIF** of a child starts with its parents meeting, its parents' names along the top; its card shows
   its parents' faces and names and its whole lineage, cut between parents when it is long, in a pixel font
   that now has small letters, so seeds print as they are written.
+
+## Smooth without a GPU
+
+The page is drawn by SwiftShader wherever there is no GPU, as in the checks' Chromium, so a few choices
+keep it quick there: the scene's box has square corners (a rounded box that clips the WebGL canvas costs
+the compositor a second or two of compiling, and work on every frame); spheres come in three levels of
+detail by their size, so an eye or a claw is a few dozen triangles; the parts of a joint that never move on
+their own and share a plain material are merged into one mesh (a mane of twenty tufts is one draw); the sun's
+shadow map is about one texel per art pixel; tiny parts cast no shadow; and a page opened from a link starts
+a word's hatch with the egg already landed, so its creature is out and alive about a second sooner.
 
 ## Build it with your agent
 
