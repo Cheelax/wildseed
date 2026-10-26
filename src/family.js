@@ -79,11 +79,11 @@ export function setupFamily({ view, hatch, current, onError, wakeAudio }) {
     }
   });
 
-  function member(g, depth = 0) {
+  function member(g, depth = 0, portraits = []) {
     const branch = el("div", "family-branch");
     if (g.parents && depth < 2) {
       const ancestors = el("div", "ancestors");
-      ancestors.append(...g.parents.map(seed => member(genomeOf(seed), depth + 1)));
+      ancestors.append(...g.parents.map(seed => member(genomeOf(seed), depth + 1, portraits)));
       branch.append(ancestors);
     }
     const node = el("button", "family-member");
@@ -91,7 +91,7 @@ export function setupFamily({ view, hatch, current, onError, wakeAudio }) {
     node.title = `Open ${g.seed}`;
     const canvas = el("canvas", "family-portrait");
     canvas.width = canvas.height = 72;
-    drawPortrait(view?.renderer, g, canvas);
+    portraits.push(() => drawPortrait(view?.renderer, g, canvas));
     const text = el("div", "member-text");
     text.append(el("strong", "", g.name), el("span", "", g.species), el("small", "", g.seed));
     node.append(canvas, text);
@@ -108,36 +108,43 @@ export function setupFamily({ view, hatch, current, onError, wakeAudio }) {
     next.textContent = g.clutch === 99 ? "Clutch complete" : `Lay egg ${g.clutch + 1}`;
     fields.forEach((f, i) => f.value = g.parents[i]);
     note.textContent = `Egg ${g.clutch} · ${g.mutations.length ? `${g.mutations.length} new ${g.mutations.length === 1 ? "mutation" : "mutations"}` : "A familiar spark, a new little life"}`;
-    tree.replaceChildren(el("p", "hint", "Growing the family album…"));
-    // Portrait work follows the ceremony, so it cannot interrupt the parents meeting.
+    // Names and provenance are synchronous; ready never points at an incomplete album.
+    const portraits = [];
+    const parents = g.parents.map(genomeOf);
+    const heading = el("div", "family-heading");
+    const title = el("div");
+    title.append(el("span", "eyebrow", "THE FAMILY ALBUM"), el("h2", "", "You can see the resemblance."));
+    heading.append(title, el("span", "egg-number", `EGG ${String(g.clutch).padStart(2, "0")}`));
+    const chart = el("div", "family-chart");
+    chart.classList.toggle("deep-family", parents.some(parent => parent.parents));
+    chart.setAttribute("aria-label", "Family tree; scroll sideways for a larger family");
+    chart.append(member(g, 0, portraits));
+    const details = el("details", "inheritance");
+    details.append(el("summary", "", "Every little thing they passed on"));
+    const list = el("dl", "trait-list");
+    for (const [path, value] of Object.entries(traitLeaves(g.traits))) {
+      const row = el("div", g.mutations.includes(path) ? "mutation" : "");
+      row.append(el("dt", "", label(path)), el("dd", "", `${value} · ${originText(g, path, parents)}`));
+      list.append(row);
+    }
+    details.append(list);
+    const highlights = el("div", "inheritance-highlights");
+    for (const path of traitHighlights(g)) {
+      const item = el("div", "inheritance-chip");
+      item.append(el("strong", "", label(path)), el("span", "", originText(g, path, parents)));
+      highlights.append(item);
+    }
+    tree.replaceChildren(heading, chart, highlights, details);
+    // Paint only the expensive pictures later, without delaying or replacing the family text.
     setTimeout(() => {
       if (current() !== g) return;
       updatePreviews();
-      const parents = g.parents.map(genomeOf);
-      const heading = el("div", "family-heading");
-      const title = el("div");
-      title.append(el("span", "eyebrow", "THE FAMILY ALBUM"), el("h2", "", "You can see the resemblance."));
-      heading.append(title, el("span", "egg-number", `EGG ${String(g.clutch).padStart(2, "0")}`));
-      const chart = el("div", "family-chart");
-      chart.classList.toggle("deep-family", parents.some(parent => parent.parents));
-      chart.setAttribute("aria-label", "Family tree; scroll sideways for a larger family");
-      chart.append(member(g));
-      const details = el("details", "inheritance");
-      details.append(el("summary", "", "Every little thing they passed on"));
-      const list = el("dl", "trait-list");
-      for (const [path, value] of Object.entries(traitLeaves(g.traits))) {
-        const row = el("div", g.mutations.includes(path) ? "mutation" : "");
-        row.append(el("dt", "", label(path)), el("dd", "", `${value} · ${originText(g, path, parents)}`));
-        list.append(row);
-      }
-      details.append(list);
-      const highlights = el("div", "inheritance-highlights");
-      for (const path of traitHighlights(g)) {
-        const item = el("div", "inheritance-chip");
-        item.append(el("strong", "", label(path)), el("span", "", originText(g, path, parents)));
-        highlights.append(item);
-      }
-      tree.replaceChildren(heading, chart, highlights, details);
+      const paintNext = () => {
+        if (current() !== g || !portraits.length) return;
+        portraits.shift()();
+        setTimeout(paintNext, 0);
+      };
+      paintNext();
     }, (HATCH.ready + COURTSHIP + 0.3) * 1000);
   }
   setTimeout(updatePreviews, 1800);
