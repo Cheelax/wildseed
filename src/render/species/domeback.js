@@ -1,6 +1,6 @@
 // Domeback: a slow walker under a dome of a shell, its head out in front on a short neck.
 import * as THREE from "three";
-import { cone, dome, ellipsoid, face, joint, mesh, tube } from "../parts.js";
+import { cone, dome, ellipsoid, face, joint, mesh, skin, tube } from "../parts.js";
 import { PATTERN, toon } from "../toon.js";
 
 const SHELL_PATTERN = {
@@ -42,6 +42,12 @@ export function domeback(g, m) {
     body, head, wiggles, flaps,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
     charmAt: { parent: body, at: [0, shellAt[1] + S - 0.02, shellAt[2]], rot: [0, 0, 0] },
+    places: {
+      crown: { parent: head, at: skin(radii, Math.PI, 1.3), size: hs / 0.5 },
+      ears: { parent: head, at: skin(radii, 0.95, 0.55), size: hs / 0.5 },
+      back: { parent: body, at: [0, shellAt[1] + S * 0.97, -0.15] },
+      tail: { parent: body, at: [0, 0.28, -0.98], size: 0.85 },
+    },
     height: Math.max(shellAt[1] + S + 0.3, headAt[1] + hs),
   };
 }

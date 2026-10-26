@@ -64,8 +64,6 @@ export class PixelRenderer {
     this.gl = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance" });
     this.gl.outputColorSpace = THREE.LinearSRGBColorSpace;
     this.gl.setPixelRatio(1);
-    this.gl.shadowMap.enabled = true;
-    this.gl.shadowMap.type = THREE.BasicShadowMap;
     this.gl.localClippingEnabled = true; // a hatching creature shows only what is out of its shell
     this.gl.setClearColor(0x000000, 0);
     this.kind = "webgl2"; // three.js renders through WebGL 2 only
@@ -119,10 +117,28 @@ export class PixelRenderer {
     return t;
   }
 
+  /**
+   * Whether the last frame drew a part of `classes` (CLASS ids) within `radius` art pixels of a point given
+   * from -1 to 1 on each axis: a tap that lands between a drift's tentacles still touches the drift.
+   */
+  touches(point, classes, radius = 2) {
+    const t = this.last;
+    if (!t) return false;
+    const size = 2 * radius + 1;
+    const x = Math.round(((point.x + 1) / 2) * t.width) - radius, y = Math.round(((point.y + 1) / 2) * t.height) - radius;
+    const x0 = Math.max(0, x), y0 = Math.max(0, y), w = Math.min(t.width, x + size) - x0, h = Math.min(t.height, y + size) - y0;
+    if (w <= 0 || h <= 0) return false;
+    const pixels = new Uint8Array(w * h * 4);
+    this.gl.readRenderTargetPixels(t, x0, y0, w, h, pixels);
+    for (let i = 3; i < pixels.length; i += 4) if (classes.includes(pixels[i])) return true;
+    return false;
+  }
+
   /** Draws a stage at width × height art pixels into `out` (a render target) or, without one, the canvas. */
   render({ scene, camera, colors }, width, height, out = null) {
     this.setColors(colors);
     const t = this.target(width, height);
+    if (!out) this.last = t;
     this.gl.setRenderTarget(t);
     this.gl.clear();
     this.gl.render(scene, camera);
@@ -133,8 +149,22 @@ export class PixelRenderer {
     u.uNear.value = camera.near;
     u.uFar.value = camera.far;
     this.gl.setRenderTarget(out);
+    // On the canvas, the last pass is wrapped in a query: drawn() says, without waiting, once the GPU drew it.
+    const gl = this.gl.getContext();
+    if (!out) gl.beginQuery(gl.ANY_SAMPLES_PASSED_CONSERVATIVE, (this.query ??= gl.createQuery()));
     this.gl.render(this.postScene, this.postCamera);
+    if (!out) {
+      gl.endQuery(gl.ANY_SAMPLES_PASSED_CONSERVATIVE);
+      this.pending = true;
+    }
     this.gl.setRenderTarget(null);
+  }
+
+  /** Whether the GPU has drawn the last frame rendered on the canvas. Never waits for it. */
+  drawn() {
+    const gl = this.gl.getContext();
+    if (this.pending && gl.getQueryParameter(this.query, gl.QUERY_RESULT_AVAILABLE)) this.pending = false;
+    return !this.pending;
   }
 
   /** Renders a stage off screen and returns the RGBA pixels, top row first. */

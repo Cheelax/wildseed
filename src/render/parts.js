@@ -3,26 +3,31 @@
 import * as THREE from "three";
 import { CLASS, PATTERN, flat, toon } from "./toon.js";
 
-const SPHERE = new THREE.SphereGeometry(1, 22, 16);
-const HEMISPHERE = new THREE.SphereGeometry(1, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+// Spheres in three sizes of detail: a small part needs few faces to look round at the art resolution, and
+// a page drawn in software spends its time on vertices (see README, "Speed").
+const SPHERES = [[0.13, new THREE.SphereGeometry(1, 10, 7)], [0.3, new THREE.SphereGeometry(1, 14, 10)], [Infinity, new THREE.SphereGeometry(1, 18, 13)]];
+const HEMISPHERE = new THREE.SphereGeometry(1, 18, 7, 0, Math.PI * 2, 0, Math.PI / 2);
 const CONE = new THREE.ConeGeometry(1, 1, 14, 1);
 const CYLINDER = new THREE.CylinderGeometry(1, 1, 1, 14, 1);
 const OCTAHEDRON = new THREE.OctahedronGeometry(1, 0);
 CONE.translate(0, 0.5, 0); // cones grow up from their base
 CYLINDER.translate(0, 0.5, 0);
-for (const g of [SPHERE, HEMISPHERE, CONE, CYLINDER, OCTAHEDRON]) g.userData.shared = true;
+for (const g of [...SPHERES.map(([, g]) => g), HEMISPHERE, CONE, CYLINDER, OCTAHEDRON]) g.userData.shared = true;
 
-/** A mesh that casts a shadow, placed with optional position, rotation (Euler XYZ) and scale. */
+/**
+ * A mesh, placed with optional position, rotation (Euler XYZ) and scale. It casts a shadow unless it is
+ * a small part (under 0.15 across its largest side), whose shadow would be a pixel or two.
+ */
 export function mesh(geometry, material, { at, rot, scale } = {}) {
   const m = new THREE.Mesh(geometry, material);
   if (at) m.position.set(...at);
   if (rot) m.rotation.set(...rot);
   if (scale) typeof scale === "number" ? m.scale.setScalar(scale) : m.scale.set(...scale);
-  m.castShadow = true;
+  m.castShadow = !scale || Math.max(...[scale].flat()) >= 0.15;
   return m;
 }
 
-export const ellipsoid = (material, [rx, ry, rz], options = {}) => mesh(SPHERE, material, { ...options, scale: [rx, ry, rz] });
+export const ellipsoid = (material, [rx, ry, rz], options = {}) => mesh(SPHERES.find(([r]) => Math.max(rx, ry, rz) < r)[1], material, { ...options, scale: [rx, ry, rz] });
 export const dome = (material, [rx, ry, rz], options = {}) => mesh(HEMISPHERE, material, { ...options, scale: [rx, ry, rz] });
 export const cone = (material, radius, height, options = {}) => mesh(CONE, material, { scale: [radius, height, radius], ...options });
 export const cylinder = (material, radius, height, options = {}) => mesh(CYLINDER, material, { scale: [radius, height, radius], ...options });
@@ -84,6 +89,9 @@ export function surface([rx, ry, rz], yaw, pitch) {
   const normal = new THREE.Vector3(point.x / (rx * rx), point.y / (ry * ry), point.z / (rz * rz)).normalize();
   return { point, normal };
 }
+
+/** The point at `yaw` and `pitch` on an ellipsoid centered on `center`, as [x, y, z]: where a part sits on the skin. */
+export const skin = (radii, yaw, pitch, center = [0, 0, 0]) => surface(radii, yaw, pitch).point.add(new THREE.Vector3(...center)).toArray();
 
 const FORWARD = new THREE.Vector3(0, 0, 1);
 /** A group on an ellipsoid's surface, its +z along the surface's normal: where a face part sits. */

@@ -37,7 +37,7 @@ export function hatchSounds({ cracks, open, burst }, { parents = null, meet = 0,
   if (parents) noise(live, now + lay, 0.12, 420, 0.9);
   cracks.forEach((t, i) => noise(live, now + t, 0.035, 1800 + 500 * i, 0.5));
   if (open !== null) noise(live, now + open, 0.1, 1100, 0.8);
-  noise(live, now + burst, 0.16, 650, 0.9);
+  if (burst > 0) noise(live, now + burst, 0.16, 650, 0.9);
 }
 
 /** A short burst of filtered noise: a crack (short, high) or a pop (longer, lower). */

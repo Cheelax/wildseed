@@ -5,6 +5,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { PIXEL_MIN } from "../rules.mjs";
 import { PixelRenderer } from "./pixel.js";
 import { Stage, aim } from "./stage.js";
+import { CLASS } from "./toon.js";
 
 /** The art pixel's size in CSS pixels for a scene of w × h: about 160 art pixels tall, 3 or more. */
 export function pixelSize(w, h) {
@@ -20,11 +21,13 @@ export class Hatchery {
     Object.assign(this.controls, { enablePan: false, enableDamping: true, dampingFactor: 0.12, rotateSpeed: 0.55, minPolarAngle: 0.45, maxPolarAngle: 1.5 });
     Object.assign(this, { onPoke, onHatched, onReady, onResize, onCue });
     this.pointer = null;
-    // Frame pacing: a frame is drawn once the GPU has finished the last one (a fence), and a machine that
-    // takes long over each one rests between them, so a page drawn in software never stops answering.
+    // Frame pacing: a frame is drawn once the GPU has drawn the last one, which the renderer tells without
+    // waiting for it (a fence would block the page until the GPU catches up). A machine that takes very long
+    // over each frame (a page drawn in software, a tenth of a second or more) rests between them, so the
+    // page keeps answering.
     this.paused = false;
+    this.waiting = false;
     this.cost = 0;
-    this.fence = null;
     this.drawnAt = 0;
     this.restUntil = 0;
     this.size = { width: 0, height: 0, pixel: 3 };
@@ -70,8 +73,9 @@ export class Hatchery {
   }
 
   reframe() {
-    const { camera, center, bounds } = this.stage;
-    const d = aim(camera, center, Math.max(bounds.radius, 1.3), 1.28);
+    const { camera, center, bounds, meeting } = this.stage;
+    // Parents meeting are seen almost from the front, in profile, nose to nose.
+    const d = aim(camera, center, Math.max(bounds.radius, 1.3), 1.28, { azimuth: meeting ? 0.15 : 0.4 });
     this.controls.target.copy(center);
     this.controls.minDistance = d * 0.7;
     this.controls.maxDistance = d * 1.6;
@@ -87,6 +91,7 @@ export class Hatchery {
     this.started = performance.now();
     this.cried = false;
     this.ready = false;
+    this.drawnTime = -Infinity;
     this.cue = 0;
     this.resize();
     this.reframe();
@@ -99,33 +104,35 @@ export class Hatchery {
 
   loop(now) {
     requestAnimationFrame(this.loop);
-    const gl = this.renderer.gl.getContext();
-    if (this.fence) {
-      if (gl.getSyncParameter(this.fence, gl.SYNC_STATUS) !== gl.SIGNALED) return;
-      gl.deleteSync(this.fence);
-      this.fence = null;
+    if (this.waiting) {
+      if (!this.renderer.drawn()) return;
       const took = Math.min(1500, now - this.drawnAt);
       this.cost = this.cost ? 0.7 * this.cost + 0.3 * took : took;
-      this.restUntil = this.cost > 34 ? now + Math.min(1000, this.cost) : 0;
+      this.restUntil = this.cost > 100 ? now + Math.min(800, 0.6 * this.cost) : 0;
+      // Ready once a frame of the creature out and alive is drawn, not just asked for.
+      if (!this.ready && this.drawnTime >= this.stage.timing.ready) {
+        this.ready = true;
+        this.warming = true;
+        this.onReady(this.stage.genome);
+      }
+      this.waiting = false;
     }
     if (!this.stage.genome || this.paused || now < this.restUntil) return;
     this.resize();
     this.controls.update();
     const t = this.time;
     this.stage.frame(t, { look: this.lookAt() });
+    if (this.warming) this.stage.warm();
+    this.warming = false;
     this.renderer.render(this.stage, this.size.width, this.size.height);
-    this.fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
-    gl.flush();
+    this.waiting = true;
     this.drawnAt = performance.now();
+    this.drawnTime = t;
     const { timing, cues } = this.stage;
     while (this.cue < cues.length && t >= cues[this.cue][0]) this.onCue(cues[this.cue++][1]);
     if (!this.cried && t >= timing.burst) {
       this.cried = true;
-      this.onHatched(this.stage.genome);
-    }
-    if (!this.ready && t >= timing.ready) {
-      this.ready = true;
-      this.onReady(this.stage.genome);
+      if (timing.burst > 0) this.onHatched(this.stage.genome);
     }
   }
 
@@ -166,13 +173,22 @@ export class Hatchery {
     });
   }
 
-  /** A tap or click: if it lands on the creature, the creature reacts. */
+  /**
+   * A tap or click: the creature it lands on reacts, a parent watching it or the creature itself, and a
+   * tap in the gaps of its silhouette (between a drift's tentacles) counts for the creature.
+   */
   tap(point) {
-    const { camera, creature } = this.stage;
+    const { camera, creature, meeting } = this.stage;
     if (!creature?.root.visible || this.time < this.stage.timing.ready) return;
     const ray = new THREE.Raycaster();
     ray.setFromCamera(point, camera);
-    if (ray.intersectObject(creature.root, true).length) {
+    const who = [creature, ...(meeting?.parents ?? [])];
+    const hit = ray.intersectObjects(who.map((c) => c.root), true)[0];
+    const owner = hit && who.find((c) => c.root === hit.object || c.root.getObjectById(hit.object.id));
+    if (owner && owner !== creature) {
+      this.stage.pokeParent(meeting.parents.indexOf(owner), this.time);
+      this.onPoke(owner.genome);
+    } else if (owner || this.renderer.touches(point, [CLASS.creature, CLASS.face])) {
       this.stage.poke(this.time);
       this.onPoke(this.stage.genome);
     }

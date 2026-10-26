@@ -1,6 +1,6 @@
 // Wyrmlet: a dragon pup that sits like a dog, front legs straight, a fluffy mane around its head, ram's
 // horns, plates down its chest, wings too small to fly, and a long tail curled at its side.
-import { cone, ellipsoid, eyes, cheeks, joint, mouth, onSurface, plate, tube } from "../parts.js";
+import { cone, ellipsoid, eyes, cheeks, joint, mouth, onSurface, plate, skin, tube } from "../parts.js";
 
 const WING = [[0, 0], [0.18, 0.2], [0.42, 0.3], [0.62, 0.12], [0.5, 0.04], [0.42, -0.08], [0.3, 0.0], [0.2, -0.1], [0.08, -0.04]];
 const SPADE = [[0, -0.02], [0.12, 0.06], [0.1, 0.18], [0, 0.3], [-0.1, 0.18], [-0.12, 0.06]];
@@ -96,6 +96,7 @@ export function wyrmlet(g, m) {
     body, head, wiggles, flaps,
     face: { eyes: e.open, happy: e.happy, irises: e.irises, mouth: mo },
     charmAt: { parent: head, at: [0, 0.42, 0.06], rot: [0.15, 0, 0] },
+    places: { ears: { parent: head, at: skin(radii, 0.95, 0.55) } },
     height: 1.26 + 0.45 + 0.2 * H,
   };
 }

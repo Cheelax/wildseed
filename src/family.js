@@ -36,14 +36,6 @@ function member(g, role, open) {
   return b;
 }
 
-/** A parent's own two parents, or a word's note that it hatched from a word. */
-function elders(g, open) {
-  const box = el("div", "elders");
-  if (g.parents) box.append(...g.parents.map((p) => member(genomeOf(p), "grand", open)));
-  else box.append(el("span", "word", "a word"));
-  return box;
-}
-
 /** What the child took from each parent, by group of traits, in sentences. */
 function heritage(child, a, b) {
   const by = { a: [], b: [], both: [], blend: [], mutation: [] };
@@ -71,20 +63,37 @@ function heritage(child, a, b) {
   return ul;
 }
 
-/** Draws the family tree of `genome` in `section`, hidden for a word. `open(seed)` opens one of its ancestors. */
+/**
+ * Draws the family tree of `genome` in `section`, hidden for a word: its grandparents over its parents over
+ * the child, joined by ink brackets, then what it took from whom. `open(seed)` opens one of its ancestors.
+ */
 export function drawFamily(section, genome, open) {
   section.hidden = !genome.parents;
   if (!genome.parents) return section.replaceChildren();
   const [a, b] = genome.parents.map((p) => genomeOf(p));
   const tree = el("div", "tree");
-  const parents = el("div", "couple");
-  for (const p of [a, b]) {
-    const side = el("div", "side-of");
-    side.append(elders(p, open), member(p, "parent", open));
-    parents.append(side);
-  }
+  [a, b].forEach((p, i) => {
+    const column = `${2 * i + 1} / span 2`;
+    if (p.parents) {
+      p.parents.forEach((g, k) => {
+        const grand = member(genomeOf(g), "grand", open);
+        grand.style.gridColumn = String(2 * i + 1 + k);
+        tree.append(grand);
+      });
+      const link = el("span", "link");
+      link.style.gridColumn = column;
+      tree.append(link);
+    } else {
+      const word = el("span", "word", "from a word");
+      word.style.gridColumn = column;
+      tree.append(word);
+    }
+    const parent = member(p, "parent", open);
+    parent.style.gridColumn = column;
+    tree.append(parent);
+  });
   const child = member(genome, "child", open);
   child.disabled = true;
-  tree.append(parents, child);
+  tree.append(el("span", "link down"), child);
   section.replaceChildren(el("h3", "", "Family tree"), tree, heritage(genome, a, b));
 }

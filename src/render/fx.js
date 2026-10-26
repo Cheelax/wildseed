@@ -129,6 +129,12 @@ export class Fx {
     this.group.add(...this.zs, ...this.stars);
   }
 
+  /** Shows a sprite for one frame, far out of sight: see Stage.warm. */
+  warm() {
+    this.zs[0].visible = true;
+    this.zs[0].position.set(0, -60, 0);
+  }
+
   /** Something happened at time t0 at a point: "hearts" when poked, "sparkles" and "puff" as it hatches. */
   burst(kind, t0, at) {
     const parts = [];

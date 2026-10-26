@@ -1,6 +1,6 @@
 // Flutterling: a fluffy moth that hovers on two pairs of wings, a ruff around its neck and feathered
 // antennae on its head. Its wings can carry eyespots.
-import { ellipsoid, face, joint, plate, tube } from "../parts.js";
+import { ellipsoid, face, joint, plate, skin, tube } from "../parts.js";
 
 /** Wing outlines, the root at the origin, spreading to +x. */
 const UPPER = {
@@ -73,6 +73,7 @@ export function flutterling(g, m) {
     body, head, wiggles, flaps, hover: 0.32,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
     charmAt: { parent: head, at: [0, 0.38, -0.16], rot: [-0.3, 0, 0] },
+    places: { ears: { parent: head, at: skin(radii, 0.95, 0.6), size: 0.85 }, tail: { parent: body, at: skin([B, B * 1.12, B * 0.95], Math.PI, -0.3, [0, 0.72, -0.04]) } },
     height: 1.4 + 0.4 + 0.45,
   };
 }

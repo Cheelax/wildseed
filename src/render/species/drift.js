@@ -1,6 +1,6 @@
 // Drift: a floating bell with a frilled skirt and tentacles that sway under it.
 import * as THREE from "three";
-import { ellipsoid, face, joint, mesh, tube } from "../parts.js";
+import { ellipsoid, face, joint, mesh, skin, tube } from "../parts.js";
 import { PATTERN, toon } from "../toon.js";
 
 /** The bell, turned on a lathe: a dome that flares at the rim and tucks in underneath. */
@@ -76,6 +76,12 @@ export function drift(g, m) {
     body, head, wiggles, flaps, hover: 0.5,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
     charmAt: t.antenna === "none" ? { parent: head, at: [0, h - 0.03, 0], rot: [0, 0, 0] } : null,
+    places: {
+      crown: { parent: head, at: [0, h - 0.03, -0.05] },
+      ears: { parent: head, at: skin([R, h, R], 0.85, 0.8) },
+      back: { parent: head, at: skin([R, h, R], Math.PI, 0.6), size: 0.9 },
+      tail: { parent: head, at: skin([R * 1.05, h, R * 1.05], Math.PI, 0.1) },
+    },
     height: 0.95 + h + (t.antenna === "none" ? 0.1 : 0.3),
   };
 }

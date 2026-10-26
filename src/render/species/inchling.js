@@ -1,5 +1,5 @@
 // Inchling: a caterpillar of round segments that rears its head up in an S.
-import { cone, ellipsoid, face, joint, tube } from "../parts.js";
+import { cone, ellipsoid, face, joint, skin, tube } from "../parts.js";
 
 export function inchling(g, m) {
   const t = g.traits;
@@ -8,6 +8,7 @@ export function inchling(g, m) {
   const wiggles = [], flaps = [];
   const striped = t.marking === "stripes";
   let last = [0, 0, 0];
+  let saddle = null, rump = null; // the top of a segment a third of the way along, and the back of the last one
   for (let i = 0; i < n; i++) {
     const s = i / n;
     const r = 0.22 + 0.13 * s + 0.04 * t.build;
@@ -18,6 +19,8 @@ export function inchling(g, m) {
     if (t.marking === "spots") for (const side of [-1, 1]) seg.add(ellipsoid(m.accent, [r * 0.22, r * 0.18, r * 0.22], { at: [side * r * 0.45, r * 0.78, 0] }));
     if (lift < 0.15) for (const side of [-1, 1]) seg.add(ellipsoid(m.belly, [r * 0.22, r * 0.16, r * 0.24], { at: [side * r * 0.55, -r * 0.82, r * 0.1] }));
     body.add(seg);
+    if (i === Math.floor(n * 0.3)) saddle = [at[0], at[1] + r * 0.95, at[2]];
+    if (i === 0) rump = [at[0], at[1], at[2] - r * 0.9];
     wiggles.push({ obj: seg, axis: "y", amp: 0.04, speed: 3, phase: i * 0.8, move: true });
     last = at;
   }
@@ -47,6 +50,11 @@ export function inchling(g, m) {
     body, head, wiggles, flaps,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
     charmAt: { parent: body, at: [0.1 * Math.sin(5 * 0.15), 0.6, -0.65], rot: [0, 0, 0] },
+    places: {
+      ears: { parent: head, at: skin(radii, 0.9, 0.6) },
+      back: { parent: body, at: saddle, size: 0.8 },
+      tail: { parent: body, at: rump, size: 0.8 },
+    },
     height: head.position.y + 0.4 + 0.3 * A,
   };
 }

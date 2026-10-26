@@ -7,8 +7,8 @@ import { Creature } from "./creature.js";
 /** The meeting, in seconds: they arrive, meet, lay the egg, and have stepped back to watch it at `lead`. */
 export const MEET = { arrive: 1.0, lay: 1.35, lead: 1.75 };
 
-const FROM = 2.05, GAP = 0.08; // how far out they start, and the gap between their noses when they meet
-const WATCH = { x: 1.6, z: -0.85, turn: 0.6 }; // where they watch from, turned toward the egg
+const FROM = 2.05, GAP = 0.12; // how far out they start, and the gap between their noses when they meet
+const WATCH = { x: 1.9, z: -0.95, turn: 0.75 }; // where they watch from, turned toward the egg
 
 const ease = (k) => 1 - (1 - k) ** 2;
 const clamp01 = (k) => Math.min(1, Math.max(0, k));
@@ -16,13 +16,19 @@ const clamp01 = (k) => Math.min(1, Math.max(0, k));
 export class Meeting {
   constructor(parents) {
     this.parents = parents.map((g) => new Creature(g));
+    this.pokes = parents.map(() => []);
     this.root = new THREE.Group();
     for (const p of this.parents) this.root.add(p.root);
     // They meet nose to nose: each stands as far from the middle as its nose is in front of it.
     this.reach = this.parents.map((p) => {
       p.pose(0);
-      return THREE.MathUtils.clamp(new THREE.Box3().setFromObject(p.root).max.z * 0.85, 0.3, 0.8);
+      return THREE.MathUtils.clamp(new THREE.Box3().setFromObject(p.root).max.z, 0.3, 0.9);
     });
+  }
+
+  /** Remembers that parent `i` was poked at stage time t. */
+  poke(i, t) {
+    this.pokes[i].push(t);
   }
 
   /** Poses the parents at stage time `t`; their child bursts out of the egg at `burst`. */
@@ -49,9 +55,9 @@ export class Meeting {
       }
       p.root.position.set(x, y, z);
       p.root.rotation.y = turn;
-      // They laugh when they meet, and again when their child is out.
-      const since = [burst, MEET.arrive].find((at) => t >= at);
-      const react = since === undefined ? Infinity : t - since;
+      // They laugh when they meet, again when their child is out, and when they are poked.
+      const events = [MEET.arrive, burst, ...this.pokes[i]].filter((at) => at <= t);
+      const react = events.length ? t - Math.max(...events) : Infinity;
       const look = t >= MEET.lay ? { x: -side * 0.45, y: -0.35 } : { x: 0, y: 0 };
       p.pose(t + 3 * i, { look, react, pokes: 0 });
     });

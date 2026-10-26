@@ -1,12 +1,13 @@
 // Trundle: a sturdy four-legged trotter with a long soft nose, a tail and a ridge along its back.
-import { cone, cylinder, ellipsoid, eyes, cheeks, joint, mouth, tube } from "../parts.js";
+import { cone, cylinder, ellipsoid, eyes, cheeks, joint, mouth, skin, tube } from "../parts.js";
 
 export function trundle(g, m) {
   const t = g.traits;
   const legLength = 0.3 * t.legs;
   const y = legLength + 0.4;
   const body = joint();
-  body.add(ellipsoid(m.torso, [0.5 + 0.1 * t.build, 0.44, 0.76], { at: [0, y, -0.05] }));
+  const torso = [0.5 + 0.1 * t.build, 0.44, 0.76];
+  body.add(ellipsoid(m.torso, torso, { at: [0, y, -0.05] }));
 
   for (const [x, z] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) {
     body.add(cylinder(m.limb, 0.12, legLength + 0.12, { at: [x * 0.29, 0.04, z * 0.42 - 0.05] }));
@@ -68,6 +69,7 @@ export function trundle(g, m) {
     body, head, wiggles, flaps,
     face: { eyes: e.open, happy: e.happy, irises: e.irises, mouth: mo },
     charmAt: { parent: body, at: [0, y + 0.42, -0.25], rot: [0, 0, 0] },
+    places: { crown: { parent: head, at: skin(radii, Math.PI, 1.35) }, back: { parent: body, at: skin(torso, 0, 1.3, [0, y, -0.05]) } },
     height: y + 0.75,
   };
 }

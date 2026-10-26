@@ -15,7 +15,7 @@ export function studio(renderer, genome, w, h, { zoom = 1, parents = null } = {}
   const cam = stage.camera;
   cam.aspect = w / h;
   cam.updateProjectionMatrix();
-  aim(cam, stage.center, stage.bounds.radius, 1.02 / zoom, { elevation: 0.22 });
+  aim(cam, stage.center, stage.bounds.radius, 1.02 / zoom, { elevation: 0.22, azimuth: parents ? 0.15 : 0.4 });
   return stage;
 }
 

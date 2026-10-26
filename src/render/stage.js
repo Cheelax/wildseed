@@ -6,7 +6,8 @@ import { Creature } from "./creature.js";
 import { Egg, RIM } from "./egg.js";
 import { Fx } from "./fx.js";
 import { MEET, Meeting } from "./meeting.js";
-import { CLASS, PATTERN, tick, toon } from "./toon.js";
+import { CLASS, PATTERN, ramp, tick, toon } from "./toon.js";
+import { Shadows } from "./shadow.js";
 import { cone, cylinder, ellipsoid, gem, hueGap, mesh } from "./parts.js";
 import { hash32, stream } from "../genome/genes.mjs";
 import { dispose } from "./dispose.js";
@@ -46,11 +47,7 @@ export class Stage {
     this.camera = new THREE.PerspectiveCamera(30, 1, 0.5, 60);
     this.sun = new THREE.DirectionalLight(0xffffff, Math.PI * 0.8);
     this.sun.position.set(-3.5, 7, 5);
-    this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(512, 512);
-    Object.assign(this.sun.shadow.camera, { left: -3.2, right: 3.2, top: 3.2, bottom: -3.2, near: 1, far: 20 });
-    this.sun.shadow.bias = -0.002;
-    this.sun.shadow.normalBias = 0.02;
+    this.shadows = new Shadows(this.sun.position, 2.3);
     this.scene.add(this.sun, this.sun.target, new THREE.AmbientLight(0xffffff, Math.PI * 0.3));
     this.world = new THREE.Group();
     this.scene.add(this.world);
@@ -60,7 +57,8 @@ export class Stage {
 
   /**
    * Builds the island, the egg and the creature of a genome, ready to hatch from t = 0. With `parents`, they
-   * first meet and lay the egg (meeting.js); `quick` starts as the shell bursts, for a page that just opened.
+   * first meet and lay the egg (meeting.js); `quick` starts with the creature out, for a page that just
+   * opened: a smile at once, with a little hop.
    */
   set(genome, { parents = null, quick = false } = {}) {
     this.genome = genome;
@@ -75,7 +73,8 @@ export class Stage {
     if (this.meeting) this.world.add(this.meeting.root);
     // The hatch's own clock starts at `start` once `lead` seconds of meeting are over.
     this.lead = this.meeting ? MEET.lead : 0;
-    this.start = this.meeting ? HATCH.drop + 0.2 : quick ? HATCH.burst - 0.3 : 0;
+    this.quick = quick && !this.meeting;
+    this.start = this.meeting ? HATCH.drop + 0.2 : this.quick ? HATCH.ready + 0.15 : 0;
     const at = (h) => this.lead + h - this.start;
     this.timing = {
       cracks: HATCH.cracks.filter((c) => c >= this.start).map(at),
@@ -91,6 +90,16 @@ export class Stage {
     this.creature.root.traverse((o) => {
       for (const m of [o.material ?? []].flat()) m.clippingPlanes = [this.shell];
     });
+    // The parents keep all of themselves, but through the same shaders as their child: no new ones to build.
+    const keep = new THREE.Plane(new THREE.Vector3(0, 1, 0), 100);
+    this.meeting?.root.traverse((o) => {
+      for (const m of [o.material ?? []].flat()) m.clippingPlanes = [keep];
+    });
+    // Everything casts its shadow on the island; the creature's only once it is out of the egg.
+    this.shadows.color = ramp(look.grass)[1];
+    this.shadows.cast(this.world);
+    this.creatureShadows = [];
+    this.creature.root.traverse((o) => o.userData.shadow && this.creatureShadows.push(o));
     // Its size at rest, for the cameras: a sphere around the creature, egg and pop included.
     this.creature.pose(0);
     const box = new THREE.Box3().setFromObject(this.creature.root);
@@ -103,8 +112,8 @@ export class Stage {
     this.fx.setup(genome, this.creature.height, this.bounds.radius);
     if (this.meeting) {
       // The family needs room: the parents come from the island's edges and watch from either side.
-      this.bounds.radius = Math.max(this.bounds.radius, 2.5);
-      this.bounds.center.y = Math.max(this.bounds.center.y, 0.85);
+      this.bounds.radius = Math.max(this.bounds.radius, 2.4);
+      this.bounds.center.y = Math.max(this.bounds.center.y, 0.95);
       this.fx.burst("hearts", MEET.arrive + 0.05, new THREE.Vector3(0, 1.3, 0));
     }
     this.center.set(0, this.bounds.center.y, 0);
@@ -121,13 +130,20 @@ export class Stage {
   dispose() {
     dispose(this.world);
     dispose(this.fx.group);
-    this.sun.shadow.dispose();
+    this.shadows.material.dispose();
   }
 
   /** Remembers that the creature was poked at time t: it jumps, laughs and hearts float up. */
   poke(t) {
     this.pokes.push(t);
     this.fx.burst("hearts", t, new THREE.Vector3(0, this.creature.height * 0.9, 0.3));
+  }
+
+  /** The same for one of the parents watching it. */
+  pokeParent(i, t) {
+    const p = this.meeting.parents[i];
+    this.meeting.poke(i, t);
+    this.fx.burst("hearts", t, p.root.position.clone().setY(p.height * 0.9));
   }
 
   /** The hatch's own clock at stage time t: it waits at `start` while the parents meet. */
@@ -150,6 +166,7 @@ export class Stage {
     }
     const { open, burst, ready } = HATCH;
     creature.root.visible = t >= open;
+    for (const s of this.creatureShadows) s.visible = t >= burst;
     if (t >= open) {
       const { small, low, high } = this.emerge;
       let scale = 1, y = 0, cries = false, shellAt = -10;
@@ -169,6 +186,11 @@ export class Stage {
         shellAt = RIM - 0.1 - (RIM + 0.6) * Math.min(1, s / 0.55);
         cries = s > 0.1 && s < 0.8;
       }
+      if (this.quick && stageTime < 0.4) {
+        // Out at once: it pops up from a squat.
+        const k = stageTime / 0.4 - 1;
+        scale *= 0.8 + 0.2 * (1 + 2.7 * k ** 3 + 1.7 * k ** 2);
+      }
       this.shell.constant = -shellAt;
       creature.root.scale.setScalar(scale);
       creature.root.position.y = y;
@@ -177,6 +199,17 @@ export class Stage {
       this.doing = creature.pose(t - open, { look, react, pokes: past.length - 1, crying: crying || cries });
     } else this.doing = { habit: null, s: 0 };
     this.fx.pose(stageTime, this.center, this.doing);
+  }
+
+  /**
+   * After frame(): this frame also draws, far under the island, what this stage has not drawn yet but may,
+   * the egg and a sprite. A GPU in software builds what it draws the first time it draws it, which takes a
+   * while: better once the creature is out (the page calls it then) than in the next hatch or the first poke.
+   */
+  warm() {
+    this.egg.root.visible = true;
+    this.egg.root.position.y = -60;
+    this.fx.warm();
   }
 }
 
@@ -205,7 +238,6 @@ function island(look, seed) {
   const grass = toon(look.grass, { cls: CLASS.ground, bands: [0.42, 0.6, 1.2] });
   const dirt = toon(look.dirt, { cls: CLASS.ground, mark: { color: look.rock, pattern: PATTERN.rings, scale: 6, cut: 0.25, offset: 0.1 } });
   const top = mesh(new THREE.CylinderGeometry(2.35, 2.2, 0.36, 11, 1), [dirt, grass, dirt], { at: [0, -0.18, 0] });
-  top.receiveShadow = true;
   top.castShadow = false;
   const under = mesh(new THREE.ConeGeometry(2.2, 1.7, 11, 1), toon(look.rock, { cls: CLASS.ground }), { at: [0, -0.36 - 0.85, 0], rot: [Math.PI, 0, 0] });
   under.castShadow = false;
@@ -224,9 +256,6 @@ function island(look, seed) {
   }
   for (let i = 0; i < 5; i++) g.add(cloud(r, i));
   for (let i = 0; i < 3; i++) g.add(farIsland(r, i, look));
-  g.traverse((o) => {
-    if (o.isMesh && o !== top && o !== under) o.receiveShadow = true;
-  });
   return g;
 }
 

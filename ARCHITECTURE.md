@@ -12,7 +12,7 @@ and behaviours below; entries differ inside these lines, never on them.
 | Round | Adds | Checked by |
 | --- | --- | --- |
 | 1. Hatch | Seeds, genomes, the `hatch` command, the hatchery page, GIF and card export | The command's output on thousands of seeds; the built page in headless Chromium |
-| 2. Cross | Two seeds lay an egg; the child mixes both parents; its seed is its lineage | Written on round 1's winner |
+| 2. Cross | Two seeds lay an egg; the child mixes both parents; its seed is its lineage | The command and `cross()` on thousands of children; the built page in headless Chromium |
 | 3. Battle | Turn-based fights, with moves that come from each creature's body | Written on round 2's winner |
 | 4. The island | A small 3D island, wild creatures to tame, a creature of the day, saves | Written on round 3's winner |
 
@@ -36,7 +36,8 @@ A seed is a word or a short phrase. The command and the page read it the same wa
    refused, including an empty seed.
 
 So `Thomas`, `  thomas ` and `thomas` are one seed; `noé` typed with a composed or a decomposed `é` is one
-seed; `東京`, `o'brien` and `x-1` are valid; `a*b`, `🐸` and a 25-character seed are refused.
+seed; `東京`, `o'brien` and `x-1` are valid; `a*b`, `🐸` and a 25-character seed are refused as words
+(since round 2, `a*b` reads as a lineage: see "Lineages").
 
 ## The genome
 
@@ -78,6 +79,82 @@ node bin/hatch.mjs <seed>…
 - With no seed, or with any seed that fails validation, prints nothing on stdout, a reason on stderr that
   names the bad seed, and exits 2.
 - Hatching 1,000 seeds in one run takes a few seconds at most.
+
+## Lineages
+
+Round 2 crosses creatures. A child's seed is its **lineage**, so a link carries the whole family tree and
+nothing is stored anywhere. `src/lineage.mjs` reads and writes lineages; `src/rules.mjs` holds their numbers
+(`LINEAGE_MAX`, `GENERATIONS_MAX`, `CLUTCH_MAX`, `MUTATION_ONE_IN`, `MIX_SHARE`, `COLOR_SHARE`,
+`SIBLING_SHARE`).
+
+```
+lineage = word | cross
+cross   = parent "*" parent [ "#" clutch ]
+parent  = word | "(" cross ")"
+```
+
+- A **word** is a round 1 seed, read the way round 1 reads it, and hatches round 1's creature, unchanged. A
+  word may cross with itself (`a*a`).
+- `×` reads as `*`, and spaces around `*`, `#`, `(` and `)` do not count: `Thomas × Auri` is `thomas*auri`.
+- `#n` is a couple's n-th egg, n from 1 to 99 with no leading zero. `#1` is the first egg, written with no
+  number.
+- Parentheses wrap a parent that is itself a child, and nothing else: `(a)`, `(a)*b`, `(a*b)` on its own and
+  `((a*b))*c` are refused, and so is `a*b*c` (write `(a*b)*c`).
+- **One written form.** The two parents of every cross are written in JavaScript's default sort order
+  (`[x, y].sort()`, each parent as it is written, a child with its parentheses), inner crosses first, and
+  `#1` is left out. `thomas*auri`, `Auri × Thomas` and `thomas*auri#1` are all `auri*thomas`;
+  `noe*(thomas*auri)` is `(auri*thomas)*noe`.
+- **Limits**, counted on the written form: 6 generations at most (a child of two words is one generation,
+  its child with a word two) and 120 characters (code points).
+
+A text that is not a lineage is refused with a reason, as a bad seed is.
+
+### The child's genome
+
+`genomeOf(lineage)` returns round 1's fields, inside round 1's ranges, and:
+
+| Field | Value |
+| --- | --- |
+| `seed` | The lineage's written form. |
+| `parents` | Its two parents' lineages, each in its written form without parentheses, in the order the seed writes them: `(auri*thomas)*noe` has `["auri*thomas", "noe"]`. |
+| `clutch` | The egg's number, 1 to 99. |
+| `mutations` | The paths of the traits that mutated, inside `traits`, joined with dots (`"ears"`, `"voice.pitch"`), each once, or `[]`. |
+
+A word's genome has none of these four fields: it is exactly round 1's.
+
+### Crossing
+
+`cross(a, b, clutch = 1)` in `src/cross.mjs` takes two genomes as `genomeOf` returns them (a genome with
+`parents` is a child) and returns their child: exactly `genomeOf` of their lineage. It is pure (it never
+changes its arguments, and neither it nor what it imports calls `Math.random` or reads the clock) and
+symmetric: `cross(a, b, n)` and `cross(b, a, n)` give the same child, in every process. A cross whose
+lineage would break the limits is refused.
+
+A child inherits this way:
+
+- its species is one parent's species, and its affinity one parent's affinity;
+- each of its traits comes from a parent, or is a mutation listed in `mutations`. A number lies between the
+  two parents' values at the same path (one of them, or a blend); any other value is one parent's value at
+  that path. The child keeps every trait of its parent of the same species;
+- each trait mutates 1 time in 50 (`MUTATION_ONE_IN`), drawn afresh inside the ranges that keep its species
+  appealing;
+- a child of two common parents is rare 1 time in 64 (`RARE_ONE_IN`);
+- it takes after both parents: over many children, 70 % take a trait from each parent where the parents
+  differ in 4 traits or more (`MIX_SHARE`), 80 % have colors nearer their parents' than another couple's
+  (`COLOR_SHARE`), and 95 % of a couple's first four eggs differ in their traits (`SIBLING_SHARE`).
+
+### Lineages on the command and the page
+
+- `node bin/hatch.mjs 'thomas*auri' '(thomas*auri)*noe#2'` prints each child like any genome, one line of
+  JSON each, in order. A bad lineage exits 2, with a reason on stderr and nothing on stdout.
+- `?seed=<lineage>` (any way of writing it, URL-encoded) opens that child, and `window.__wild.creature` is
+  exactly the genome the command prints. Typing a lineage in `seed-input` and pressing Enter hatches the
+  child; the address then carries its lineage, `#` written `%23`. A bad lineage shows a reason in
+  `seed-error` and keeps the creature on screen.
+- For a child, the card (`creature-card`) shows its name, species, affinity, stats and the words of its
+  lineage, and the element with test id `family-tree` shows the child and its ancestors back to its
+  grandparents, each by its creature's name, with where each trait came from: which parent, or a mutation.
+- Save GIF and Save card work for children, with the lineage on the card.
 
 ## The page
 
@@ -137,8 +214,10 @@ heavy scene, so `ready` must eventually become true there through WebGL 2.
 
 ```
 bin/hatch.mjs        the command
-src/genome.mjs       genomeOf(seed): seeds, genomes, names, stats (pure, shared by the command and the page)
-src/rules.mjs        the numbers of the rules: do not change them
+src/genome.mjs       genomeOf(lineage): seeds, genomes, names, stats (pure, shared by the command and the page)
+src/lineage.mjs      lineages: read, write, the reason one is refused
+src/cross.mjs        cross(a, b, clutch): the child of two genomes (pure)
+src/rules.mjs        the numbers of the rules: do not change them, only add to them
 src/main.js          the page's entry point
 index.html           the page
 .launchpad/          the Hotpod project file and each round's checks: entries never touch it
