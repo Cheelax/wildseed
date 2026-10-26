@@ -1,6 +1,7 @@
 // The cry: a few notes sung through two vowel formants, all from the genome. The pitch comes from the
 // voice gene and the body's size, the timbre from the affinity (a soft moss coo, a gruff stone rumble, a
-// buzzy spark chirp), the melody from the contour, the vowel from the vowel gene. Rare creatures add a chime.
+// buzzy spark chirp), the melody from the contour, the vowel from the vowel gene. Rare creatures add a chime,
+// and a child with a mutation a shimmer.
 
 const VOWELS = { a: [800, 1200], e: [480, 1900], i: [320, 2400], o: [520, 880], u: [360, 720] };
 const TIMBRE = {
@@ -169,6 +170,24 @@ export function sing(ctx, genome, start = 0) {
     chime.start(end);
     chime.stop(end + 0.65);
     end += 0.6;
+  }
+
+  if (genome.mutations?.length) {
+    // A child with a mutation ends its cry in a shimmer: three quick notes up.
+    for (let k = 0; k < 3; k++) {
+      const t = end + 0.07 * k;
+      const ping = ctx.createOscillator();
+      ping.type = "sine";
+      ping.frequency.value = pitch * (3 + k);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+      ping.connect(g).connect(out);
+      ping.start(t);
+      ping.stop(t + 0.2);
+    }
+    end += 0.32;
   }
   return end - start;
 }

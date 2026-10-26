@@ -27,6 +27,7 @@ export class Hatchery {
     // page keeps answering.
     this.paused = false;
     this.waiting = false;
+    this.warming = false;
     this.cost = 0;
     this.drawnAt = 0;
     this.restUntil = 0;
@@ -83,8 +84,9 @@ export class Hatchery {
   }
 
   /**
-   * Starts hatching a genome, after its `parents` meet and lay the egg when they are given; `quick` starts
-   * as the shell bursts. Returns when the egg cracks, opens and bursts, in seconds from now, for the sounds.
+   * Starts hatching a genome, after its `parents` meet and lay the egg when they are given; with `quick` it
+   * is out of its egg at once. Returns when the egg cracks, opens and bursts, in seconds from now, for the
+   * sounds.
    */
   hatch(genome, { parents = null, quick = false } = {}) {
     this.stage.set(genome, { parents, quick });
