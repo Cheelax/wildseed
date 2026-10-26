@@ -8,13 +8,17 @@ import { Fx } from "./fx.js";
 import { CLASS, PATTERN, tick, toon } from "./toon.js";
 import { cone, cylinder, ellipsoid, gem, hueGap, mesh } from "./parts.js";
 import { hash32, stream } from "../genome/genes.mjs";
+import { genomeOf } from "../genome.mjs";
 import { dispose } from "./dispose.js";
 
 /**
  * The hatch, in seconds: the egg lands, cracks three times as it shakes, its cap pops off and the head
  * peeks out (open), the shell falls apart as the creature climbs out (burst), and it is ready.
  */
-export const HATCH = { drop: 0.32, cracks: [0.62, 0.86, 1.08], open: 1.28, burst: 1.84, ready: 2.45 };
+export const HATCH = { drop: 0.18, cracks: [0.30, 0.47, 0.63], open: 0.78, burst: 1.10, ready: 1.55 };
+
+export const COURTSHIP = 1.55;
+export const hatchOffset = (genome) => genome.parents ? COURTSHIP : 0;
 
 /**
  * Puts a camera where it sees a sphere of `radius` around `center`, `margin` times over, from a little
@@ -46,7 +50,7 @@ export class Stage {
     this.sun = new THREE.DirectionalLight(0xffffff, Math.PI * 0.8);
     this.sun.position.set(-3.5, 7, 5);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(512, 512);
+    this.sun.shadow.mapSize.set(256, 256);
     Object.assign(this.sun.shadow.camera, { left: -3.2, right: 3.2, top: 3.2, bottom: -3.2, near: 1, far: 20 });
     this.sun.shadow.bias = -0.002;
     this.sun.shadow.normalBias = 0.02;
@@ -67,6 +71,8 @@ export class Stage {
     this.egg = new Egg(genome);
     this.creature = new Creature(genome);
     this.world.add(this.egg.root, this.creature.root);
+    this.parents = (genome.parents ?? []).map(seed => new Creature(genomeOf(seed)));
+    for (const parent of this.parents) this.world.add(parent.root);
     // What of the creature is still in its shell is not drawn: everything below this plane.
     this.shell = new THREE.Plane(new THREE.Vector3(0, 1, 0), 10);
     this.creature.root.traverse((o) => {
@@ -101,16 +107,35 @@ export class Stage {
 
   /** Remembers that the creature was poked at time t: it jumps, laughs and hearts float up. */
   poke(t) {
+    t -= hatchOffset(this.genome);
     this.pokes.push(t);
     this.fx.burst("hearts", t, new THREE.Vector3(0, this.creature.height * 0.9, 0.3));
   }
 
   /** Poses everything at t seconds after the hatch began. `look` steers the creature's eyes. */
   frame(t, { look = null, crying = false } = {}) {
+    const realTime = t;
+    t -= hatchOffset(this.genome);
     tick(t);
+    this.parents.forEach((parent, i) => {
+      parent.root.visible = t < 0.3;
+      if (!parent.root.visible) return;
+      parent.pose(realTime, { look: { x: i ? -0.8 : 0.8, y: -0.2 }, crying: realTime > 0.8 });
+      const meet = Math.min(1, realTime / 0.9);
+      const ease = meet * meet * (3 - 2 * meet);
+      const away = Math.max(0, t / 0.3);
+      const sign = i ? 1 : -1;
+      parent.root.position.set(sign * (1.5 - 0.85 * ease + away), 0.12 * Math.sin(meet * Math.PI * 3) ** 2, 0.15);
+      parent.root.rotation.y = sign * -0.5;
+      parent.root.scale.setScalar(Math.min(0.55, 1.0 / parent.height) * (1 - away));
+    });
     const { egg, creature } = this;
     const eggVisible = egg.pose(t, HATCH);
-    egg.root.visible = eggVisible;
+    egg.root.visible = t >= -0.55 && eggVisible;
+    if (t < 0) {
+      egg.root.position.y = 0;
+      egg.root.scale.setScalar(Math.max(0.001, Math.min(1, (t + 0.55) / 0.55)));
+    } else egg.root.scale.setScalar(1);
     const { open, burst, ready } = HATCH;
     creature.root.visible = t >= open;
     if (t >= open) {

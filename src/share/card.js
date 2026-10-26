@@ -1,9 +1,10 @@
 // The card: a trading card drawn in art pixels, then scaled up 4 times without smoothing. Its name on a
 // band of its body color, the creature on its island, species and affinity, its four stats as bars, a
 // line about its mood, and its seed. Rare creatures get a gold frame that sparkles.
-import { HATCH } from "../render/stage.js";
+import { HATCH, hatchOffset } from "../render/stage.js";
 import { film, studio } from "./film.js";
-import { anyText, anyWidth, drawable, measure, pixelText } from "./font.js";
+import { anyText, anyWidth, measure, pixelText } from "./font.js";
+import { makeFamilyCard } from "./family-card.js";
 
 const W = 160, H = 224, SCALE = 4;
 
@@ -41,11 +42,12 @@ function outlined(g, text, x, y, fill, line, scale) {
 }
 
 export async function makeCard(renderer, genome) {
+  if (genome.parents) return makeFamilyCard(renderer, genome);
   const [body, belly, accent, , , ink] = genome.palette;
   const frame = genome.rare ? "#ffd66b" : accent;
   const artW = W - 18, artH = 108;
   const stage = studio(renderer, genome, artW, artH, { zoom: 0.95 });
-  const [picture] = await film(renderer, stage, [HATCH.ready + 0.35], artW, artH);
+  const [picture] = await film(renderer, stage, [HATCH.ready + hatchOffset(genome) + 0.35], artW, artH);
   stage.dispose();
 
   const c = document.createElement("canvas");
@@ -123,14 +125,8 @@ export async function makeCard(renderer, genome) {
   // The seed in the pixel font when it can be, else in the system font, smaller for a long seed.
   const seed = `seed "${genome.seed}"`;
   const room = W - 20;
-  if (drawable(seed) && measure(seed) <= room) {
-    pixelText(g, seed, 10, y, ink);
-    if (measure(seed) + 8 + measure("wildseed") <= room) pixelText(g, "wildseed", W - 10 - measure("wildseed"), y, frame === belly ? body : frame);
-  } else {
-    const size = anyWidth(seed, 9) <= room ? 9 : 7;
-    const text = anyWidth(seed, size) <= room ? seed : `"${genome.seed}"`;
-    anyText(g, text, 10, y - (size === 9 ? 2 : 0), ink, size);
-  }
+  const size = anyWidth(seed, 9) <= room ? 9 : 7;
+  anyText(g, seed, 10, y - (size === 9 ? 2 : 0), ink, size);
 
   const out = document.createElement("canvas");
   out.width = W * SCALE;

@@ -464,3 +464,85 @@ body {
     font-size: 30px;
   }
 }
+
+/* The crossing garden: a paper album around the little pixel world. */
+:root { --paper: #fffaf0; --line: #27382f; }
+body { background: #f3efdf; font-weight: 500; }
+.app { height: auto; min-height: 100dvh; max-width: 1520px; margin: auto; }
+.top { padding: 22px 28px; gap: 12px 24px; }
+.logo { font-size: 30px; letter-spacing: -1.5px; }
+.hatch input, .btn { border-width: 2px; border-radius: 8px; box-shadow: 0 2px 0 var(--line); }
+.hatch input { font-size: 15px; }
+.hatchery { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; padding: 0 28px 32px; gap: 24px; }
+.play-area { min-width: 0; }
+.crossing { background: var(--paper); border: 2px solid var(--line); border-bottom: 0; padding: 20px 22px 12px; border-radius: 14px 14px 0 0; }
+.cross-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 2px; }
+.cross-heading h2, .family h2 { font-family: Georgia, serif; font-weight: 400; font-size: 25px; margin: 5px 0 0; letter-spacing: -.6px; }
+.cross-mark { font-size: 40px; color: #748b4c; }
+.cross-form { display: flex; align-items: center; gap: 10px; }
+.parent-slot { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr); flex: 1; gap: 0 9px; min-width: 0; }
+.parent-portrait { width: 52px; height: 52px; grid-row: span 2; image-rendering: pixelated; border: 1px solid #a7b39a; border-radius: 6px; background: #e6ecce; }
+.parent-slot label { font-size: 10px; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
+.parent-slot input { display: block; width: 100%; min-width: 0; padding: 3px 0; font: 600 15px system-ui; color: var(--line); border: 0; border-bottom: 1px solid #9b9f8d; background: transparent; border-radius: 0; }
+.parent-slot input:focus { outline: 2px solid #9db679; outline-offset: 2px; }
+.use-current { font: 500 10px system-ui; text-align: left; padding: 3px 0 0; border: 0; background: none; color: #536a40; cursor: pointer; text-decoration: underline; }
+.cross-times { font: 25px Georgia; color: #7d8c68; }
+.cross-submit { background: #334e3d; color: #fffbe9; padding: 12px; font-size: 13px; }
+.cross-submit:hover { background: #496449; }
+.cross-note { margin: 12px 0 0; font: italic 12px Georgia, serif; color: #68715b; }
+.stage { height: clamp(360px, 51vw, 510px); border: 2px solid var(--line); border-radius: 0 0 14px 14px; box-shadow: 0 3px 0 var(--line); }
+.stage-caption { position: absolute; z-index: 2; top: 18px; left: 20px; right: 20px; pointer-events: none; }
+.stage-caption .eyebrow { opacity: .6; }
+.stage-status { margin: 5px 0; font: italic 17px Georgia; }
+.stage-footer { position: absolute; z-index: 2; bottom: 14px; width: 100%; text-align: center; font-size: 9px; font-weight: 700; letter-spacing: 2px; pointer-events: none; opacity: .65; }
+.stage-footer span { margin: 0 15px; }
+.side { overflow: visible; gap: 14px; }
+.card { border-width: 2px; border-radius: 14px; padding: 22px 20px; box-shadow: 0 3px 0 var(--line); }
+.card .name { font-family: Georgia, serif; font-weight: 400; font-size: 36px; letter-spacing: -1px; }
+.card .kind { margin-top: 12px; font-size: 12px; }
+.card .species, .card .affinity { border: 1px solid var(--line); border-radius: 4px; padding: 3px 7px; }
+.card .about { font-family: Georgia, serif; font-size: 15px; margin: 14px 0 20px; }
+.stats { gap: 9px; font-size: 12px; }
+.stats .bar { height: 9px; border-width: 1px; border-radius: 2px; }
+.card .seed { font: 11px/1.5 ui-monospace, monospace; margin-top: 18px; }
+.child-actions { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+.child-actions .btn, .share .btn { padding: 10px 7px; font-size: 12px; }
+.next-egg { background: #e5edc9; }
+.copy-link { font-size: 12px; background: transparent; box-shadow: none; }
+.hint { font-size: 11px; }
+.family { grid-column: 1 / -1; background: var(--paper); border: 2px solid var(--line); padding: 24px; border-radius: 14px; }
+.family-heading { display: flex; justify-content: space-between; align-items: center; }
+.egg-number { font: 11px ui-monospace, monospace; border: 1px solid #9aa789; padding: 8px 12px; border-radius: 30px; }
+.family-chart { overflow-x: auto; padding: 24px 0 12px; }
+.family-branch { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
+.ancestors { display: flex; align-items: end; justify-content: center; gap: 18px; width: 100%; position: relative; padding-bottom: 22px; }
+.ancestors::after { content: ''; position: absolute; bottom: 0; left: 50%; height: 22px; border-left: 1px solid #9aa789; }
+.ancestors > .family-branch { position: relative; padding-bottom: 12px; border-bottom: 1px solid #9aa789; }
+.family-member { display: flex; align-items: center; text-align: left; gap: 10px; padding: 8px; border: 1px solid #9aa789; border-radius: 8px; background: #f5f2e3; cursor: pointer; max-width: 100%; min-width: 165px; color: var(--line); }
+.family-member:hover { background: #e8edcf; }
+.family-portrait { width: 60px; height: 60px; image-rendering: pixelated; border-radius: 4px; }
+.member-text { display: flex; flex-direction: column; min-width: 0; gap: 2px; }
+.member-text strong { font: 18px Georgia; }
+.member-text span { font: 10px system-ui; text-transform: uppercase; letter-spacing: 1px; }
+.member-text small { font: 10px ui-monospace, monospace; overflow-wrap: anywhere; max-width: 220px; }
+.inheritance-highlights { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin: 12px 0 20px; gap: 10px; }
+.inheritance-chip { padding: 10px; border-left: 2px solid #9caa78; background: #f0f0df; display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+.inheritance-chip strong { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+.inheritance summary { cursor: pointer; font-size: 12px; padding: 12px 0; border-top: 1px solid #d7dcc8; }
+.trait-list { display: grid; grid-template-columns: 1fr 1fr; margin: 0; gap: 0 30px; font-size: 11px; }
+.trait-list > div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid #e5e5d7; }
+.trait-list dd { margin: 0; text-align: right; }
+.trait-list .mutation { color: #9c4d78; font-weight: 700; }
+[hidden] { display: none !important; }
+button:focus-visible { outline: 3px solid #bc6e83; outline-offset: 3px; }
+@media(max-width: 1000px) { .cross-submit { align-self: stretch; } .parent-portrait { display: none; } .parent-slot { grid-template-columns: 1fr; } }
+@media(max-width: 800px) {
+ .top { padding: 14px 14px 16px; } .hatchery { display: flex; flex-direction: column; padding: 0 14px 24px; gap: 18px; }
+ .play-area,.side,.family { width: 100%; } .crossing { padding: 16px 14px 12px; } .cross-heading h2 { font-size: 21px; }
+ .cross-mark { font-size: 28px; } .cross-form { flex-wrap: wrap; gap: 10px; } .parent-slot { flex-basis: 38%; }
+ .cross-submit { width: 100%; } .stage { height: 400px; } .side { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+ .card,.hatched,.hint,.copy-link { grid-column: 1/-1; } .card .name { font-size: 34px; } .child-actions,.share { grid-template-columns: 1fr; }
+ .family { padding: 18px 14px; } .family h2 { font-size: 22px; } .family-chart > .family-branch { min-width: 580px; } .trait-list { grid-template-columns: 1fr; }
+}
+@media(prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

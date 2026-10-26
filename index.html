@@ -12,7 +12,7 @@
       <header class="top">
         <h1 class="logo">wild<span>seed</span></h1>
         <form class="hatch" autocomplete="off" novalidate>
-          <input data-testid="seed-input" name="seed" aria-label="A word to hatch" placeholder="type a word, your name…" spellcheck="false" enterkeyhint="go">
+          <input data-testid="seed-input" name="seed" aria-label="A word or lineage to hatch" placeholder="a word, or thomas * auri…" spellcheck="false" enterkeyhint="go">
           <button type="submit" class="btn hatch-btn">Hatch</button>
           <button type="button" class="btn" data-testid="random">Random</button>
         </form>
@@ -20,7 +20,19 @@
         <p class="error" data-testid="seed-error" role="alert" hidden></p>
       </header>
       <main class="hatchery">
-        <div class="stage"><canvas data-testid="scene" aria-label="The creature, in 3D: drag to turn the camera, click it to poke it"></canvas></div>
+        <section class="play-area">
+          <div class="crossing">
+            <div class="cross-heading"><div><span class="eyebrow">THE CROSSING GARDEN</span><h2>A little of you. A little of them.</h2></div><span class="cross-mark" aria-hidden="true">✳</span></div>
+            <form class="cross-form" autocomplete="off" novalidate>
+              <div class="parent-slot"><canvas class="parent-portrait" width="72" height="72" aria-label="First parent preview"></canvas><label>Your word<input id="parent-a" value="thomas" aria-label="First parent" spellcheck="false"></label><button type="button" class="use-current" data-parent="a">Use current</button></div>
+              <span class="cross-times" aria-hidden="true">×</span>
+              <div class="parent-slot"><canvas class="parent-portrait" width="72" height="72" aria-label="Second parent preview"></canvas><label>Their word<input id="parent-b" value="auri" aria-label="Second parent" spellcheck="false"></label><button type="button" class="use-current" data-parent="b">Use current</button></div>
+              <button class="btn cross-submit" type="submit">Lay an egg <span aria-hidden="true">↗</span></button>
+            </form>
+            <p class="cross-note">Two names make a creature only they could make.</p>
+          </div>
+          <div class="stage"><div class="stage-caption"><span class="eyebrow">A SMALL WORLD OF YOUR OWN</span><p class="stage-status" role="status">Someone is waking up…</p></div><canvas data-testid="scene" aria-label="The creature, in 3D: drag to turn the camera, click it to poke it"></canvas><div class="stage-footer">DRAG TO TURN <span>✦</span> TAP TO SAY HELLO</div></div>
+        </section>
         <aside class="side">
           <article class="card" data-testid="creature-card">
             <p class="rare" hidden>★ rare</p>
@@ -30,16 +42,18 @@
             <dl class="stats"></dl>
             <p class="seed"></p>
           </article>
+          <div class="child-actions" hidden><button class="btn next-egg" type="button">Next egg</button><button class="btn breed-child" type="button">Cross this child</button></div>
           <div class="share">
             <button type="button" class="btn" data-testid="save-gif">Save GIF</button>
             <button type="button" class="btn" data-testid="save-card">Save card</button>
           </div>
-          <p class="hint">Drag to turn the camera, click the creature to poke it.</p>
+          <button class="btn copy-link" type="button">Copy creature link ↗</button><p class="hint">Drag to turn the camera, click the creature to poke it.</p>
           <section class="hatched" hidden>
             <h3>Hatched here</h3>
             <nav class="recent" aria-label="Creatures hatched on this device"></nav>
           </section>
         </aside>
+        <section class="family" data-testid="family-tree" hidden></section>
       </main>
     </div>
     <script type="module" src="./src/main.js"></script>

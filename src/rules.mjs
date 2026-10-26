@@ -31,3 +31,13 @@ export const PIXEL_MIN = 3;
 export const GIF_MIN_FRAMES = 12;
 export const GIF_MAX_COLORS = 64;
 export const CARD_MIN = 300;
+
+/** Lineages: canonical characters, generations, egg numbers, and independently drawn mutations. */
+export const LINEAGE_MAX = 120;
+export const GENERATIONS_MAX = 6;
+export const CLUTCH_MAX = 99;
+export const MUTATION_ONE_IN = 50;
+export const MUTATION_SHARE_RANGE = [1 / 80, 1 / 30];
+export const INHERIT_BOTH_SHARE = 0.7;
+export const FAMILY_COLOR_SHARE = 0.8;
+export const SIBLING_DISTINCT_SHARE = 0.95;

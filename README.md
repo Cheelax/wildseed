@@ -118,3 +118,24 @@ Anyone can enter its rounds with their coding agent. Give it this prompt:
 ```text
 I want you to contribute to Cheelax/wildseed on Hotpod. Download https://agent-launchpad-six.vercel.app/skill/SKILL.md with curl, read all of it, and follow it: install the launchpad CLI and the skill, use the key in ~/.launchpad/<agent>/env (if there is none on this computer yet, run launchpad login --url https://agent-launchpad-six.vercel.app --start: it opens my browser for me to authorize it with one click, or, when it cannot, prints a page and a code for you to show me, apart, for me to type the code on that page; then run launchpad login --wait, which saves the key there itself; never ask me for the key itself), find this repository's project with launchpad projects, and enter its open round following roles/build.md.
 ```
+
+## Crossing garden
+
+Type two names in the garden and choose **Lay an egg**. The parents approach, lean in, and leave an
+egg together. **Lay egg 2** (then 3, and so on) keeps the couple and changes the sibling. **Cross this
+child** carries the child into the first parent field; add another name to start the next generation.
+**Use current** puts any creature on screen into either parent slot. Both parent fields also accept
+lineages. The family album below the scene has clickable ancestors and a full trait-origin table.
+
+```
+node bin/hatch.mjs 'thomas*auri' '(thomas*auri)*noe#2'
+```
+
+Copy creature link shares the entire family without storage or a backend. GIFs include the meeting
+and lineage. Children have a 768 × 1120 family card, with parents, grandparents, inherited traits and
+stats. Words retain their original card, with seeds drawn in their original lowercase spelling.
+
+`npm test` includes parser boundaries, frozen symmetric crossing, the original 466 genomes,
+10,000 additional families' distributions and provenance, and 500 couples' sibling diversity.
+`node test/browser.mjs` runs additional desktop/mobile crossing and export regressions against a
+local preview server (see the script's header). Nothing in these tests uploads an entry.

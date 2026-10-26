@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { PIXEL_MIN } from "../rules.mjs";
 import { PixelRenderer } from "./pixel.js";
-import { HATCH, Stage, aim } from "./stage.js";
+import { HATCH, Stage, aim, hatchOffset } from "./stage.js";
 
 /** The art pixel's size in CSS pixels for a scene of w × h: about 160 art pixels tall, 3 or more. */
 export function pixelSize(w, h) {
@@ -91,13 +91,14 @@ export class Hatchery {
     this.resize();
     this.controls.update();
     const t = this.time;
+    const offset = hatchOffset(this.stage.genome);
     this.stage.frame(t, { look: this.lookAt() });
     this.renderer.render(this.stage, this.size.width, this.size.height);
-    if (!this.cried && t >= HATCH.burst) {
+    if (!this.cried && t >= HATCH.burst + offset) {
       this.cried = true;
       this.onHatched(this.stage.genome);
     }
-    if (this.whenReady && t >= HATCH.ready) {
+    if (this.whenReady && t >= HATCH.ready + offset) {
       this.whenReady();
       this.whenReady = null;
       this.onReady(this.stage.genome);
@@ -144,10 +145,13 @@ export class Hatchery {
   /** A tap or click: if it lands on the creature, the creature reacts. */
   tap(point) {
     const { camera, creature } = this.stage;
-    if (!creature?.root.visible || this.time < HATCH.ready) return;
+    if (!creature?.root.visible || this.time < HATCH.ready + hatchOffset(this.stage.genome)) return;
     const ray = new THREE.Raycaster();
     ray.setFromCamera(point, camera);
-    if (ray.intersectObject(creature.root, true).length) {
+    creature.root.updateWorldMatrix(true, true);
+    // Small gaps between a drift's tentacles are part of its touch silhouette too.
+    const bounds = new THREE.Box3().setFromObject(creature.root).expandByScalar(0.08);
+    if (ray.intersectObject(creature.root, true).length || ray.ray.intersectsBox(bounds)) {
       this.stage.poke(this.time);
       this.onPoke(this.stage.genome);
     }
