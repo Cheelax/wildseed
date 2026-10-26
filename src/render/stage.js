@@ -38,6 +38,9 @@ const WORLDS = {
   spark: { grass: "#e4cd6b", dirt: "#c98a52", rock: "#a8694a", sky: ["#f7a98f", "#f9bf98", "#fbd4a6", "#fde6bd"], ink: "#3a2416", decor: ["crystal", "tuft", "flower", "crystal", "rock"] },
 };
 
+/** Where the camera looks from: a little to the right, or nearly head-on at a family, so both parents show. */
+export const viewOf = (stage) => (stage.parents ? { azimuth: 0.12, elevation: 0.2 } : { azimuth: 0.4, elevation: 0.2 });
+
 /** The four bands of an affinity's sky, top first. */
 export const skyOf = (affinity) => WORLDS[affinity].sky;
 
@@ -99,11 +102,13 @@ export class Stage {
     this.fx.setup(genome, this.creature.height, this.alone.radius);
     const m = this.meet;
     if (this.parents) {
-      this.fx.burst("hearts", MEET.greet[1] + 0.05, new THREE.Vector3(0, 0.85, -0.35));
+      this.fx.burst("hearts", MEET.greet[1] + 0.05, new THREE.Vector3(0, 0.85, -0.5));
       this.fx.burst("sparkles", m, new THREE.Vector3(0, 0.5, 0));
     }
     this.fx.burst("sparkles", m + HATCH.open, new THREE.Vector3(0, RIM + 0.3, 0));
     this.fx.burst("puff", m + HATCH.burst, new THREE.Vector3(0, RIM * 0.7, 0));
+    // A child with a mutation comes out in a shower of sparkles: something new in the family.
+    if (genome.mutations?.length) this.fx.burst("sparkles", m + HATCH.burst + 0.15, new THREE.Vector3(0, this.creature.height, 0));
     this.colors = {
       sky: look.sky,
       ink: { ground: look.ink, decor: look.ink, creature: genome.palette[5], egg: genome.rare ? "#14122e" : "#3b3328" },
@@ -173,6 +178,8 @@ export class Stage {
       this.shell.constant = -shellAt;
       creature.root.scale.setScalar(scale);
       creature.root.position.y = y;
+      // A child turns a little as it comes out, so the camera facing its family sees its side, tail and all.
+      creature.root.rotation.y = this.parents ? 0.35 * Math.min(1, (h - open) / (ready - open)) : 0;
       const past = this.pokes.filter((p) => p <= t);
       const react = past.length ? t - past.at(-1) : Infinity;
       this.doing = creature.pose(h - open, { look, react, pokes: past.length - 1, crying: crying || cries });

@@ -7,7 +7,8 @@ import { Hatchery } from "./render/hatchery.js";
 import { MEET } from "./render/meeting.js";
 import { HATCH, skyOf } from "./render/stage.js";
 import { cry, hatchSounds, meetSounds, mute, wakeAudio } from "./audio/cry.js";
-import { makeGif } from "./share/film.js";
+import { makeGif, portrait } from "./share/film.js";
+import { labelOf } from "./family.mjs";
 import { makeCard } from "./share/card.js";
 import { save } from "./share/save.js";
 import { FamilyTree } from "./ui/family.js";
@@ -60,7 +61,9 @@ function showCard(g, parents) {
   card.querySelector(".about").textContent = MOODS[g.traits.mood];
   card.querySelector(".rare").hidden = !g.rare;
   card.querySelector(".seed").textContent = parents ? `lineage “${g.seed}”` : `seed “${g.seed}”`;
+  const mutated = [...new Set((g.mutations ?? []).map(labelOf))];
   card.querySelector(".parents").textContent = parents ? `egg #${g.clutch} of ${parents[0].name} × ${parents[1].name}` : "";
+  card.querySelector(".mutant").textContent = mutated.length ? `✦ mutation: ${mutated.join(", ")}` : "";
   card.querySelector(".stats").replaceChildren(
     ...STATS.map(([key, name]) => {
       const row = document.createElement("div");
@@ -89,7 +92,10 @@ function showError(message) {
   error.hidden = false;
 }
 
-const tree = new FamilyTree($("family-tree"), { onPick: (lineage) => hatch(lineage) });
+const tree = new FamilyTree($("family-tree"), {
+  onPick: (lineage) => hatch(lineage),
+  portrait: async (genome, size) => (view ? portrait(view.renderer, genome, size, size, { zoom: 1.7 }) : null),
+});
 const nest = new Nest({ root: $("cross"), recent: document.querySelector(".hatched"), stage: document.querySelector(".stage") }, {
   current: () => wild.creature,
   hatch: (lineage) => hatch(lineage),
@@ -107,7 +113,7 @@ function hatch(lineage, { push = true, tempo = 1 } = {}) {
   wild.creature = genome;
   error.hidden = true;
   input.value = parents ? genome.seed.replaceAll("*", " × ") : genome.seed;
-  view?.hatch(genome, { parents, tempo });
+  view?.hatch(genome, { parents, tempo }).then(() => tree.paint());
   if (view && parents) meetSounds(parents, MEET);
   if (view) hatchSounds(HATCH, parents ? MEET.laid : 0);
   showCard(genome, parents);

@@ -8,7 +8,7 @@ import { Creature } from "./creature.js";
 export const MEET = { walk: 0.7, greet: [0.78, 0.98], back: [1.2, 1.65], laid: 1.45 };
 
 const SCALE = 0.66; // the parents stand a little back, smaller than the child that hatches in front
-const START = 2.2, NEAR = 0.5, FAR = 1.5, DEPTH = -0.35;
+const START = 2.3, NEAR = 0.5, FAR = 1.72, DEPTH = -0.5;
 
 const ease = (s) => s * s * (3 - 2 * s);
 

@@ -43,7 +43,7 @@ export function nameOf(seed, affinity, d) {
 
 /**
  * A child's name sounds like both parents': the first syllable of one parent's name, then what follows the
- * first syllable of the other's ("Thombun" and "Aurizap" make "Thomizap" or "Aurbun").
+ * first syllable of the other's ("Thombit" and "Noetik" make "Thomik" or "Noetbit").
  */
 export function childName(first, second, d) {
   const [front, back] = d.chance(0.5) ? [first, second] : [second, first];

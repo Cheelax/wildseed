@@ -152,7 +152,7 @@ body {
   overflow: hidden;
   border: 4px solid var(--line);
   border-radius: 18px;
-  background: linear-gradient(var(--sky0) 50%, var(--sky3) 50%);
+  background: var(--sky2); /* flat colors only: on a software renderer, gradients and color-mix() slow the first paint */
   box-shadow: 0 5px 0 var(--line);
 }
 
@@ -333,7 +333,7 @@ body {
 .card .seed {
   margin: 12px 0 0;
   padding-top: 8px;
-  border-top: 2px dashed color-mix(in srgb, var(--line) 40%, transparent);
+  border-top: 2px dashed rgba(36, 28, 48, 0.4);
   font-size: 13px;
   overflow-wrap: anywhere;
 }
@@ -419,8 +419,20 @@ body {
   font-size: 13px;
 }
 
-.card .parents:empty {
+.card .parents:empty,
+.card .mutant:empty {
   display: none;
+}
+
+.card .mutant {
+  display: inline-block;
+  margin: 6px 0 0;
+  padding: 1px 8px;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: #ffd66b;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .stage.dropping {
@@ -498,58 +510,89 @@ body {
 
 .tree {
   display: grid;
-  gap: 10px;
+  gap: 14px;
+}
+
+/* Each generation in three columns, the middle one for the ♥, so each pair of grandparents stands over its child. */
+.tree .row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 20px 1fr;
+  align-items: end;
   justify-items: center;
 }
 
-.tree .row {
+.tree .pair {
   position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-}
-
-.tree .grand {
-  justify-content: space-between;
-}
-
-.tree .pair {
-  display: flex;
-  flex: 1;
   justify-content: center;
   gap: 4px;
-  padding-bottom: 8px;
+  width: 100%;
+  padding-bottom: 6px;
   border-bottom: 2px solid var(--line);
 }
 
+.tree .pair::after,
+.tree .parents .node::after,
+.tree .parents::after,
+.tree .child .node::before {
+  content: "";
+  position: absolute;
+  background: var(--line);
+}
+
+/* From each pair of grandparents down to their child, from each parent down to the line between them, and
+   from that line down to the child. */
+.tree .pair::after {
+  left: calc(50% - 1px);
+  bottom: -16px;
+  width: 2px;
+  height: 14px;
+}
+
 .tree .pair.word {
+  align-self: end;
   border-bottom-style: dashed;
   opacity: 0.7;
 }
 
-.tree .parents .node,
+.tree .parents {
+  align-items: center;
+}
+
+.tree .parents .node {
+  position: relative;
+}
+
+.tree .parents .node::after {
+  left: calc(50% - 1px);
+  bottom: -9px;
+  width: 2px;
+  height: 7px;
+}
+
+.tree .parents::after {
+  left: 25%;
+  right: 25%;
+  bottom: -9px;
+  height: 2px;
+}
+
+.tree .child {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
 .tree .child .node {
   position: relative;
 }
 
-.tree .parents .node::after,
 .tree .child .node::before {
-  content: "";
-  position: absolute;
-  left: 50%;
+  left: calc(50% - 1px);
+  top: -7px;
   width: 2px;
-  height: 10px;
-  background: var(--line);
-}
-
-.tree .parents .node::after {
-  bottom: -12px;
-}
-
-.tree .child .node::before {
-  top: -12px;
+  height: 7px;
 }
 
 .node {
@@ -573,12 +616,26 @@ body {
 }
 
 .node .swatch {
-  width: 22px;
-  height: 14px;
-  margin-bottom: 2px;
+  display: block;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 3px;
+  overflow: hidden;
   border: 2px solid var(--line);
-  border-radius: 7px 7px 4px 4px;
-  background: linear-gradient(var(--a) 62%, var(--b) 62%);
+  border-radius: 8px;
+  background: var(--a);
+  box-shadow: inset 0 -12px 0 var(--b);
+}
+
+.node .face {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.node .face:not([src]) {
+  visibility: hidden;
 }
 
 .node small {
@@ -598,8 +655,13 @@ body {
 }
 
 .node.child .swatch {
-  width: 30px;
-  height: 18px;
+  width: 64px;
+  height: 64px;
+}
+
+.node.grand .swatch {
+  width: 38px;
+  height: 38px;
 }
 
 .tree .heart {
@@ -626,7 +688,7 @@ body {
   padding: 3px 8px;
   border-left: 8px solid var(--who);
   border-radius: 4px;
-  background: color-mix(in srgb, var(--who) 18%, var(--paper));
+  background: var(--tint);
 }
 
 .origins .from-both {

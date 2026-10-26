@@ -72,7 +72,7 @@ export async function makeCard(renderer, genome, { parents = null } = {}) {
   const frame = genome.rare ? "#ffd66b" : accent;
   const artW = W - 18, artH = 108, face = 30;
   const picture = await portrait(renderer, genome, artW, artH);
-  const faces = parents ? await Promise.all(parents.map((p) => portrait(renderer, p, face))) : null;
+  const faces = parents ? await Promise.all(parents.map((p) => portrait(renderer, p, face, face, { zoom: 1.7 }))) : null;
   const lines = seedLines(genome.seed, W - 20);
   const H = 224 + (parents ? FAMILY : 0) + (lines ? lines.length * LINE : 0);
 
