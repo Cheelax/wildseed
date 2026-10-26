@@ -3,7 +3,7 @@
 // line about its mood, and its seed. Rare creatures get a gold frame that sparkles.
 import { HATCH } from "../render/stage.js";
 import { film, studio } from "./film.js";
-import { anyText, anyWidth, drawable, measure, pixelText } from "./font.js";
+import { anyText, anyWidth, measure, pixelText } from "./font.js";
 
 const W = 160, H = 224, SCALE = 4;
 
@@ -120,23 +120,35 @@ export async function makeCard(renderer, genome) {
   g.fillStyle = ink;
   for (let x = 10; x < W - 10; x += 2) g.fillRect(x, y, 1, 1);
   y += 4;
-  // The seed in the pixel font when it can be, else in the system font, smaller for a long seed.
-  const seed = `seed "${genome.seed}"`;
+  // Preserve the written seed, including lowercase letters and lineage signs.
   const room = W - 20;
-  if (drawable(seed) && measure(seed) <= room) {
-    pixelText(g, seed, 10, y, ink);
-    if (measure(seed) + 8 + measure("wildseed") <= room) pixelText(g, "wildseed", W - 10 - measure("wildseed"), y, frame === belly ? body : frame);
-  } else {
-    const size = anyWidth(seed, 9) <= room ? 9 : 7;
-    const text = anyWidth(seed, size) <= room ? seed : `"${genome.seed}"`;
-    anyText(g, text, 10, y - (size === 9 ? 2 : 0), ink, size);
+  const lines = [];
+  let line = '';
+  for (const ch of `seed "${genome.seed}"`) {
+    if (anyWidth(line + ch, 7) > room) { lines.push(line); line = ''; }
+    line += ch;
   }
+  lines.push(line);
+  // Long families get extra paper below the normal card.
+  const extra = Math.max(0, lines.length - 1) * 10;
+  const paper = document.createElement('canvas');
+  paper.width = W;
+  paper.height = H + extra;
+  const pg = paper.getContext('2d');
+  pg.fillStyle = ink;
+  pg.fillRect(0, 0, W, paper.height);
+  pg.fillStyle = belly;
+  pg.fillRect(5, 5, W - 10, paper.height - 10);
+  pg.drawImage(c, 0, 0);
+  pg.fillStyle = belly;
+  pg.fillRect(5, y - 1, W - 10, paper.height - y - 4);
+  lines.forEach((text, i) => anyText(pg, text, 10, y + i * 10, ink, 7));
 
   const out = document.createElement("canvas");
   out.width = W * SCALE;
-  out.height = H * SCALE;
+  out.height = paper.height * SCALE;
   const o = out.getContext("2d");
   o.imageSmoothingEnabled = false;
-  o.drawImage(c, 0, 0, out.width, out.height);
+  o.drawImage(paper, 0, 0, out.width, out.height);
   return new Promise((resolve) => out.toBlob(resolve, "image/png"));
 }

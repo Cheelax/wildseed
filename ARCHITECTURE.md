@@ -143,3 +143,37 @@ src/main.js          the page's entry point
 index.html           the page
 .launchpad/          the Hotpod project file and each round's checks: entries never touch it
 ```
+
+## Lineages
+
+Round 2 extends seeds with binary crosses. Words still use the original seed reader and keep every
+original genome field unchanged. The grammar is:
+
+```
+lineage = word | cross
+cross   = parent "*" parent [ "#" clutch ]
+parent  = word | "(" cross ")"
+```
+
+`×` reads as `*`; whitespace around signs is ignored. Egg numbers are 1–99 without leading zeros;
+`#1` is omitted in writing. Only crossed parents get parentheses: `(a)`, `(a)*b`, `(a*b)`,
+`((a*b))*c` and `a*b*c` are refused. Words may cross with themselves.
+
+The written form sorts both parents with JavaScript's default string order, including a crossed
+parent's parentheses, recursively inside first. Thus `Thomas × Auri` becomes `auri*thomas` and
+`noe*(thomas*auri)` becomes `(auri*thomas)*noe`. Limits apply after writing: six generations
+(words have depth zero) and 120 characters.
+
+`genomeOf(lineage)` recursively crosses the parents. `cross(a, b, clutch = 1)` is pure and symmetric;
+all choices draw from genes keyed by the child's written seed. Children add `parents` (written forms
+without outer parentheses, in seed order), `clutch`, `mutations` (distinct dotted trait paths) and
+`inherited` (trait path to `a`, `b` or `mutation`). Species and affinity come from a parent. The child
+keeps its species' trait keys; each trait is picked from a compatible parent value, except a 1-in-50
+mutation drawn with the original species' trait generator. Stats blend, palettes blend HSL on the short
+hue arc, and names combine a syllable and an ending of the parents' names. Two common parents have a
+1-in-64 rare child; a rare parent raises this to 1-in-8.
+
+The command validates all lineages before printing. The page carries written lineages in its query,
+encoding `#` as `%23`. Its crossing form brings two parents together before the egg hatches; the next
+egg button advances the clutch, and Use this creature puts the child in the first parent field.
+The family tree shows the child, parents, grandparents, palette swatches and every trait's source.

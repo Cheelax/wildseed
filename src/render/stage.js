@@ -14,7 +14,7 @@ import { dispose } from "./dispose.js";
  * The hatch, in seconds: the egg lands, cracks three times as it shakes, its cap pops off and the head
  * peeks out (open), the shell falls apart as the creature climbs out (burst), and it is ready.
  */
-export const HATCH = { drop: 0.32, cracks: [0.62, 0.86, 1.08], open: 1.28, burst: 1.84, ready: 2.45 };
+export const HATCH = { drop: 0.16, cracks: [0.28, 0.40, 0.52], open: 0.62, burst: 0.88, ready: 1.25 };
 
 /**
  * Puts a camera where it sees a sphere of `radius` around `center`, `margin` times over, from a little
@@ -46,7 +46,7 @@ export class Stage {
     this.sun = new THREE.DirectionalLight(0xffffff, Math.PI * 0.8);
     this.sun.position.set(-3.5, 7, 5);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(512, 512);
+    this.sun.shadow.mapSize.set(256, 256);
     Object.assign(this.sun.shadow.camera, { left: -3.2, right: 3.2, top: 3.2, bottom: -3.2, near: 1, far: 20 });
     this.sun.shadow.bias = -0.002;
     this.sun.shadow.normalBias = 0.02;
@@ -57,8 +57,19 @@ export class Stage {
     this.center = new THREE.Vector3(0, 1, 0);
   }
 
+  meet(parents) {
+    this.couple = parents.map(g => new Creature(g));
+    this.couple.forEach(c => { c.root.scale.setScalar(0.55); this.world.add(c.root); });
+  }
+
+  clearCouple() {
+    this.couple?.forEach(c => { this.world.remove(c.root); dispose(c.root); });
+    this.couple = null;
+  }
+
   /** Builds the island, the egg and the creature of a genome, ready to hatch from t = 0. */
   set(genome) {
+    this.clearCouple();
     this.genome = genome;
     dispose(this.world);
     this.world.clear();
@@ -107,6 +118,16 @@ export class Stage {
 
   /** Poses everything at t seconds after the hatch began. `look` steers the creature's eyes. */
   frame(t, { look = null, crying = false } = {}) {
+    if (t < 0 && this.couple) {
+      this.egg.root.visible = this.creature.root.visible = false;
+      this.couple.forEach((c, i) => {
+        c.pose(t + 1);
+        c.root.position.set((i ? 1 : -1) * (0.42 - t * 1.5), 0, 0);
+        c.root.rotation.y = (i ? -1 : 1) * 0.6;
+      });
+      return;
+    }
+    if (this.couple) this.clearCouple();
     tick(t);
     const { egg, creature } = this;
     const eggVisible = egg.pose(t, HATCH);
@@ -135,9 +156,10 @@ export class Stage {
       this.shell.constant = -shellAt;
       creature.root.scale.setScalar(scale);
       creature.root.position.y = y;
-      const past = this.pokes.filter((p) => p <= t);
-      const react = past.length ? t - past.at(-1) : Infinity;
-      this.doing = creature.pose(t - open, { look, react, pokes: past.length - 1, crying: crying || cries });
+      let count = 0;
+      while (count < this.pokes.length && this.pokes[count] <= t) count++;
+      const react = count ? t - this.pokes[count - 1] : Infinity;
+      this.doing = creature.pose(t - open, { look, react, pokes: count - 1, crying: crying || cries });
     } else this.doing = { habit: null, s: 0 };
     this.fx.pose(t, this.center, this.doing);
   }
@@ -188,7 +210,7 @@ function island(look, seed) {
   for (let i = 0; i < 5; i++) g.add(cloud(r, i));
   for (let i = 0; i < 3; i++) g.add(farIsland(r, i, look));
   g.traverse((o) => {
-    if (o.isMesh && o !== top && o !== under) o.receiveShadow = true;
+    if (o.isMesh && o !== top) { o.receiveShadow = false; o.castShadow = false; }
   });
   return g;
 }

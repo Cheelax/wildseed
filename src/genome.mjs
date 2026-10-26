@@ -3,10 +3,12 @@
 // Every field draws from genes named after it (src/genome/genes.mjs), so a field never depends on the
 // order in which the others are drawn, and later rounds can add genes without changing a creature.
 import { AFFINITIES, RARE_ONE_IN, STAT_RANGE, STATS } from "./rules.mjs";
-import { parseSeed } from "./seed.mjs";
+import { parseLineage, writtenForm } from "./lineage.mjs";
+import { cross } from "./cross.mjs";
 import { genesOf } from "./genome/genes.mjs";
 import { nameOf } from "./genome/names.mjs";
 import { paletteOf } from "./genome/palette.mjs";
+import { traitsOf } from "./genome/traits.mjs";
 import { SPECIES } from "./genome/species.mjs";
 
 export { normalizeSeed, parseSeed, seedProblem, SeedError } from "./seed.mjs";
@@ -15,15 +17,10 @@ export { SPECIES };
 /** Each affinity leans one stat: moss is hardy, stone is tough, spark is quick. */
 const LEAN = { moss: "hp", stone: "defense", spark: "speed" };
 
-/** What an affinity can wear on its head or back. */
-const CHARMS = {
-  moss: { none: 2, sprout: 1, leaf: 1, flower: 1, mushroom: 1 },
-  stone: { none: 2, pebble: 1, crystal: 1, stack: 1 },
-  spark: { none: 2, bolt: 1, orb: 1, star: 1 },
-};
-
 export function genomeOf(text) {
-  const seed = parseSeed(text);
+  const node = parseLineage(text);
+  if ("a" in node) return cross(genomeOf(writtenForm(node.a)), genomeOf(writtenForm(node.b)), node.clutch);
+  const seed = node.word;
   const gene = genesOf(seed);
   const species = gene("species").pick(Object.keys(SPECIES));
   const affinity = gene("affinity").pick(AFFINITIES);
@@ -59,28 +56,4 @@ function statsOf(profile, affinity, rare, gene) {
     points[best]++;
   }
   return Object.fromEntries(STATS.map((k, i) => [k, points[i]]));
-}
-
-/** The knobs of the body and face: the ones every species has, then the species' own. */
-function traitsOf(species, affinity, gene) {
-  const size = gene("size").num(0.88, 1.12);
-  return {
-    size,
-    build: gene("build").num(0, 1),
-    eyes: gene("eyes").pick({ round: 3, tall: 2, gem: 2, sleepy: 1, button: 1 }),
-    eyeSize: gene("eyeSize").num(0.85, 1.2),
-    eyeGap: gene("eyeGap").num(0.85, 1.15),
-    mouth: gene("mouth").pick(["smile", "cat", "open", "fang", "beam"]),
-    cheeks: gene("cheeks").chance(0.55),
-    marking: gene("marking").pick({ none: 2, spots: 2, stripes: 2, patch: 1, mask: 1, socks: 1 }),
-    charm: gene("charm").pick(CHARMS[affinity]),
-    mood: gene("mood").pick(["bouncy", "sleepy", "curious", "shy", "proud"]),
-    voice: {
-      pitch: Math.round((species.voice * gene("pitch").num(0.85, 1.2)) / size),
-      notes: gene("notes").int(1, 3),
-      contour: gene("contour").pick(["rise", "fall", "hop", "trill"]),
-      vowel: gene("vowel").pick(["a", "e", "i", "o", "u"]),
-    },
-    ...species.knobs(gene),
-  };
 }

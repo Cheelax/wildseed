@@ -3,8 +3,8 @@
 import * as THREE from "three";
 import { CLASS, PATTERN, flat, toon } from "./toon.js";
 
-const SPHERE = new THREE.SphereGeometry(1, 22, 16);
-const HEMISPHERE = new THREE.SphereGeometry(1, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+const SPHERE = new THREE.SphereGeometry(1, 16, 12);
+const HEMISPHERE = new THREE.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2);
 const CONE = new THREE.ConeGeometry(1, 1, 14, 1);
 const CYLINDER = new THREE.CylinderGeometry(1, 1, 1, 14, 1);
 const OCTAHEDRON = new THREE.OctahedronGeometry(1, 0);

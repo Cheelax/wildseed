@@ -12,7 +12,7 @@
       <header class="top">
         <h1 class="logo">wild<span>seed</span></h1>
         <form class="hatch" autocomplete="off" novalidate>
-          <input data-testid="seed-input" name="seed" aria-label="A word to hatch" placeholder="type a word, your name…" spellcheck="false" enterkeyhint="go">
+          <input data-testid="seed-input" name="seed" aria-label="A word or lineage to hatch" placeholder="a word, or thomas*auri…" spellcheck="false" enterkeyhint="go">
           <button type="submit" class="btn hatch-btn">Hatch</button>
           <button type="button" class="btn" data-testid="random">Random</button>
         </form>
@@ -22,6 +22,12 @@
       <main class="hatchery">
         <div class="stage"><canvas data-testid="scene" aria-label="The creature, in 3D: drag to turn the camera, click it to poke it"></canvas></div>
         <aside class="side">
+          <form class="crossing" autocomplete="off">
+            <h2>Two seeds, one little surprise</h2>
+            <div class="couple"><input data-testid="parent-a" aria-label="First parent word or lineage" value="thomas" spellcheck="false"><span>×</span><input data-testid="parent-b" aria-label="Second parent word or lineage" value="auri" spellcheck="false"></div>
+            <div class="cross-actions"><button class="btn hatch-btn" type="submit">Cross · lay an egg</button><button class="btn" type="button" data-testid="use-child">Use this creature</button></div>
+            <button class="btn next-egg" type="button" data-testid="next-egg" hidden>Lay the next egg →</button>
+          </form>
           <article class="card" data-testid="creature-card">
             <p class="rare" hidden>★ rare</p>
             <h2 class="name">…</h2>
@@ -30,6 +36,7 @@
             <dl class="stats"></dl>
             <p class="seed"></p>
           </article>
+          <section class="family" data-testid="family-tree" hidden></section>
           <div class="share">
             <button type="button" class="btn" data-testid="save-gif">Save GIF</button>
             <button type="button" class="btn" data-testid="save-card">Save card</button>
