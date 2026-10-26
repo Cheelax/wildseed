@@ -3,7 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { cross } from "../src/cross.mjs";
 import { genomeOf } from "../src/genome.mjs";
-import { originsOf } from "../src/family.mjs";
+import { originsOf, resemblance } from "../src/family.mjs";
 import { splitName } from "../src/genome/names.mjs";
 import { HEIRLOOMS } from "../src/genome/species.mjs";
 import { heirloomsOf } from "../src/genome/traits.mjs";
@@ -97,12 +97,16 @@ test("children take after both parents: a part from each, colors near theirs, an
   assert.ok(differ >= SIBLINGS_DIFFER * 4 * couples.length);
 });
 
-test("a child's name is the front of one parent's name and the ending of the other's", () => {
+test("a child's name sounds like both parents', and its brothers and sisters have names of their own", () => {
   for (const { a, b, child } of families.slice(0, 500)) {
-    const [front] = splitName(child.name);
     const fronts = [a, b].map((p) => splitName(p.name)[0]);
-    assert.ok(fronts.some((f) => f.startsWith(front.slice(0, -1)) || front.startsWith(f.slice(0, -1))), `${a.name} × ${b.name} = ${child.name}`);
+    const lower = child.name.toLowerCase();
+    assert.ok(fronts.some((f) => lower.startsWith(f.slice(0, -1))), `${a.name} × ${b.name} = ${child.name}`);
     assert.ok(![a.name, b.name].includes(child.name));
+  }
+  for (const { child } of families.slice(0, 200)) {
+    const names = [1, 2, 3, 4].map((n) => genomeOf(`${child.seed}#${n}`).name);
+    assert.equal(new Set(names).size, 4, names.join(" "));
   }
 });
 
@@ -111,6 +115,10 @@ test("the family tree says where each part came from, and a mutation is new", ()
   const origins = originsOf(child.child, child.a, child.b);
   assert.ok(origins.some((o) => o.from === "new"));
   assert.deepEqual(origins.slice(0, 3).map((o) => o.part), ["species", "affinity", "colors"]);
+  const [a, b] = genomeOf("thomas*auri").parents.map(genomeOf);
+  const words = resemblance(genomeOf("thomas*auri"), a, b);
+  assert.match(words[0], /^an? \w+ like (\w+|both)$/);
+  assert.ok(words.slice(1).every((w) => /^(\w+'s \w+|✦ .+)$/.test(w)), words.join(" · "));
 });
 
 test("a child of a child: grandchildren hatch, up to six generations", () => {

@@ -148,9 +148,10 @@ ARCHITECTURE.md ([src/lineage.mjs](src/lineage.mjs)).
 - **Colors**: the child wears one parent's coat (body, belly, outline ink) tinted a fifth to almost half of
   the way toward the other's, the hue turning the short way round; its accent, its detail and its eyes each
   come from one parent.
-- **Names** sound like both parents: the front of one parent's name and the ending of the other's
-  (Thomnub × Aurizap gives a Thomzap or an Aurinub). A child that would carry a parent's very name takes a new
-  ending of its affinity.
+- **Names** sound like both parents: the front of one parent's name with the ending of the other's, or
+  the fronts of both (Thomnub × Aurizap gives a Thomzap, an Aurinub, a Thomauri or an Aurithom). Brothers
+  and sisters get different names: an egg skips the names of the eggs laid before it, and once the four are
+  worn it takes a parent's front with a new ending of its affinity. No child carries a parent's very name.
 - **Stats**: the parents' totals averaged and nudged by up to 10, shared in the proportions of both
   parents' stats; 25 more for a rare child.
 - **Mutations**: one part in 50 is drawn afresh inside its species' ranges, every trait of the part listed

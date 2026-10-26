@@ -1,5 +1,6 @@
 // Pipkin: a round bird that is mostly face. A crest on top, a beak, wing nubs and a fan of tail feathers.
 import { cone, ellipsoid, eyes, cheeks, joint } from "../parts.js";
+import { crest } from "../features.js";
 
 export function pipkin(g, m) {
   const t = g.traits;
@@ -22,15 +23,7 @@ export function pipkin(g, m) {
   head.add(beakAt);
 
   const wiggles = [], flaps = [];
-  const crest = joint([0, ball[1] - 0.06, -0.08]);
-  for (let i = 0; i < t.crest; i++) {
-    const spread = (i - (t.crest - 1) / 2) * 0.42;
-    const feather = joint([spread * 0.12, 0, 0], [-0.35, 0, -spread]);
-    feather.add(ellipsoid(m.accent, [0.07, 0.24 * t.crestLength, 0.05], { at: [0, 0.2 * t.crestLength, 0] }));
-    crest.add(feather);
-    wiggles.push({ obj: feather, axis: "x", amp: 0.08, speed: 3.1, phase: i });
-  }
-  head.add(crest);
+  crest(head, t, m, { at: [0, ball[1] - 0.06, -0.08], wiggles });
 
   for (const side of [-1, 1]) {
     const wing = joint([side * R * 0.92, 0.86, -0.02], [0, 0, side * 0.2]);

@@ -15,6 +15,7 @@ import { save } from "./share/save.js";
 import { showCard } from "./page/card.js";
 import { showTree } from "./page/tree.js";
 import { Faces } from "./page/faces.js";
+import { showHatched } from "./page/hatched.js";
 import { resemblance } from "./family.mjs";
 
 const $ = (id) => document.querySelector(`[data-testid="${id}"]`);
@@ -52,7 +53,7 @@ const view = (() => {
     note.className = "no-webgl";
     note.textContent = "This browser cannot draw the hatchery: it needs WebGL 2.";
     document.querySelector(".stage").append(note);
-    for (const id of ["save-gif", "save-card"]) $(id).disabled = true;
+    for (const b of document.querySelectorAll(".share .btn:not(.copy-link)")) b.disabled = true;
     console.error(e);
     return null;
   }
@@ -71,60 +72,10 @@ function announce(child, [a, b]) {
   newsTimer = setTimeout(() => (news.hidden = true), 5000);
 }
 
-/** The creatures hatched on this device, newest first: chips that hatch them again, or cross them with the one on screen. */
-const KEPT = "wildseed.hatched";
-function remember(genome) {
-  let seeds = [];
-  try {
-    seeds = JSON.parse(localStorage.getItem(KEPT) ?? "[]").filter((s) => typeof s === "string" && lineage(s));
-  } catch {}
-  seeds = [genome.seed, ...seeds.filter((s) => s !== genome.seed)].slice(0, 12);
-  try {
-    localStorage.setItem(KEPT, JSON.stringify(seeds));
-  } catch {}
-  const chips = seeds.map((seed) => {
-    const g = genomeOf(seed);
-    const chip = document.createElement("span");
-    chip.className = "chip";
-    chip.draggable = true;
-    chip.style.setProperty("--chip", g.palette[0]);
-    chip.setAttribute("aria-current", String(seed === genome.seed));
-    chip.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/plain", seed));
-    const name = document.createElement("button");
-    name.type = "button";
-    name.textContent = g.name;
-    name.title = `“${seed}”: ${g.species}, ${g.affinity}. Hatch it again`;
-    name.addEventListener("click", () => hatch(seed));
-    chip.append(name);
-    if (seed !== genome.seed) {
-      const pair = document.createElement("button");
-      pair.type = "button";
-      pair.className = "pair";
-      pair.textContent = "×";
-      pair.title = `Lay an egg: ${g.name} × the creature on screen`;
-      pair.setAttribute("aria-label", `Cross ${g.name} with the creature on screen`);
-      pair.addEventListener("click", () => layWith(seed));
-      chip.append(pair);
-    }
-    return chip;
-  });
-  document.querySelector(".recent").replaceChildren(...chips);
-  document.querySelector(".hatched").hidden = seeds.length < 2;
-}
-
 function showError(message) {
   error.textContent = message;
   error.hidden = false;
 }
-
-/** The written form of a lineage, or null when it is not one. */
-const lineage = (text) => {
-  try {
-    return canonical(text);
-  } catch {
-    return null;
-  }
-};
 
 /** The first egg of two lineages (each a word or a child): their child's seed. Throws a LineageError. */
 function crossOf(a, b, clutch = 1) {
@@ -158,7 +109,7 @@ function hatch(seed, { push = true, quick = false } = {}) {
   showTree($("family-tree"), genome, { face: (g, size, canvas) => faces.draw(g, size, canvas), pick: (s) => hatch(s) });
   showEggs(genome, parents);
   treeButton.hidden = !parents;
-  remember(genome);
+  showHatched(document.querySelector(".hatched"), genome, { hatch, layWith });
   const url = new URL(location.href);
   url.search = `?seed=${encodeURIComponent(genome.seed)}`;
   if (url.href !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);

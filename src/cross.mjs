@@ -5,8 +5,8 @@
 // A child takes its species from one parent and its affinity from one parent. Its body is inherited part
 // by part (one parent's ears, the other's tail), and a child of two species may wear a part of its other
 // parent's on its head (an heirloom: a wyrmlet's horns on a hopple). Its coat is one parent's colors tinted
-// by the other's, its name joins the front of one parent's name to the ending of the other's, and now and
-// then a part mutates. genomeOf(lineage) hatches every child through here.
+// by the other's, its name sounds like both parents' (the front of one's, the ending of the other's), and
+// now and then a part mutates. genomeOf(lineage) hatches every child through here.
 import { CLUTCH_MAX, MUTATION_ONE_IN, RARE_CHILD_ONE_IN, STATS } from "./rules.mjs";
 import { isCross, readLineage, writeCross } from "./lineage.mjs";
 import { genesOf } from "./genome/genes.mjs";
@@ -30,12 +30,11 @@ export function cross(a, b, clutch = 1) {
   const { species } = either("species");
   const { affinity } = either("affinity");
   const rare = gene("rare").chance(1 / RARE_CHILD_ONE_IN[[x, y].filter((p) => p.rare).length]);
-  const front = either("namer");
   const heirlooms = heirloomsFor(x, y, species, gene("heirloom"));
   const { traits, mutations } = inherit(x, y, species, affinity, heirlooms, gene);
   return {
     seed,
-    name: crossName(front, front === x ? y : x, affinity, gene("name")),
+    name: eggNames(x, y, clutch).at(-1),
     species,
     affinity,
     rare,
@@ -46,6 +45,20 @@ export function cross(a, b, clutch = 1) {
     clutch,
     mutations,
   };
+}
+
+/**
+ * The names of a couple's eggs, from the first to egg `clutch`: each one sounds like both parents, and
+ * differs from its elder brothers' and sisters' names while it can.
+ */
+function eggNames(x, y, clutch) {
+  const names = [];
+  for (let n = 1; n <= clutch; n++) {
+    const gene = genesOf(writeCross(x.seed, y.seed, n));
+    const { affinity } = gene("affinity").chance(0.5) ? y : x; // as cross() draws it for that egg
+    names.push(crossName(x, y, affinity, gene("name"), names));
+  }
+  return names;
 }
 
 /**

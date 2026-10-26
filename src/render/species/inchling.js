@@ -1,5 +1,6 @@
 // Inchling: a caterpillar of round segments that rears its head up in an S.
-import { cone, ellipsoid, face, joint, tube } from "../parts.js";
+import { cone, ellipsoid, face, joint } from "../parts.js";
+import { antennae } from "../features.js";
 
 export function inchling(g, m) {
   const t = g.traits;
@@ -31,17 +32,7 @@ export function inchling(g, m) {
   head.add(f.group);
 
   const A = t.antennaLength;
-  for (const side of [-1, 1]) {
-    const ant = joint([side * 0.16, 0.33, -0.02], [0, 0, -side * 0.35]);
-    if (t.antennae === "curl") ant.add(tube(m.detail, [[0, 0, 0], [0, 0.22 * A, 0], [side * 0.08, 0.32 * A, 0], [side * 0.14, 0.26 * A, 0], [side * 0.08, 0.22 * A, 0]], 0.03, 0.025, { segments: 12 }));
-    else {
-      ant.add(tube(m.detail, [[0, 0, 0], [0, 0.18 * A, 0.02], [0, 0.3 * A, 0.05]], 0.028, 0.022, { segments: 8 }));
-      ant.add(ellipsoid(t.antennae === "bulb" ? m.accent : m.detail, [0.06, 0.06, 0.06], { at: [0, 0.32 * A, 0.06] }));
-    }
-    head.add(ant);
-    wiggles.push({ obj: ant, axis: "z", amp: 0.14, speed: 3.4, phase: side * 0.7 });
-    flaps.push({ obj: ant, axis: "z", amp: side * 0.5 });
-  }
+  antennae(head, t, m, { at: [0, 0.33, -0.02], spread: 0.16, wiggles, flaps });
 
   return {
     body, head, wiggles, flaps,

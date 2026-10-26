@@ -151,7 +151,8 @@ export class Stage {
    */
   aim(camera, margin, { least = 0, ...angles } = {}) {
     if (this.meeting) {
-      const d = frame(camera, this.box, margin * 0.94, angles);
+      // A tall picture (a phone) lets the parents go a little off its edges, so their child stays big.
+      const d = frame(camera, this.box, margin * 0.94 * Math.min(1, 0.55 + 0.45 * camera.aspect), angles);
       this.center.copy(this.box.getCenter(new THREE.Vector3()));
       return d;
     }
@@ -215,6 +216,9 @@ export class Stage {
       creature.root.position.y = y;
       const past = this.pokes.filter((p) => p <= time);
       const react = past.length ? time - past.at(-1) : Infinity;
+      // Out of its egg, a child looks at one parent, then the other, before anything else.
+      const since = t - ready;
+      if (this.meeting && !look && since > 0 && since < 2.4) look = { x: Math.floor(since / 0.8) % 2 ? 0.9 : -0.9, y: 0.25 };
       this.doing = creature.pose(t - open, { look, react, pokes: past.length - 1, crying: crying || cries });
     } else this.doing = { habit: null, s: 0 };
     this.fx.pose(time, this.center, this.doing);

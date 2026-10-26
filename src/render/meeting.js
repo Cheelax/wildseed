@@ -68,7 +68,7 @@ export class Meeting {
       // Once back in their places they look at the egg, then at their child.
       const since = [MEET.meet, cheer, ...pokes[i]].filter((at) => at <= t);
       const last = since.length ? since.at(-1) : -Infinity;
-      const kind = last === MEET.meet ? 2 : 0; // a happy wiggle as they meet, a jump otherwise
+      const kind = last === MEET.meet ? 1 : 0; // a twirl as they meet, a jump otherwise
       p.pose(t + i * 0.7, { look: t > MEET.back ? { x: -side, y: -0.3 } : null, react: t - last, pokes: kind, crying: Math.abs(t - MEET.meet - 0.1) < 0.25 });
     });
   }
