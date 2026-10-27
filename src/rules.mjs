@@ -31,3 +31,11 @@ export const PIXEL_MIN = 3;
 export const GIF_MIN_FRAMES = 12;
 export const GIF_MAX_COLORS = 64;
 export const CARD_MIN = 300;
+
+/** Lineages: depth and length apply to their canonical written form. */
+export const MAX_GENERATIONS = 6;
+export const MAX_LINEAGE_LENGTH = 120;
+export const CLUTCH_MIN = 1;
+export const CLUTCH_MAX = 99;
+export const MUTATION_ONE_IN = 50;
+export const CHILD_RARE_ONE_IN = 64;

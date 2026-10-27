@@ -96,7 +96,7 @@ so the GIF shows the same creature as the page.
   the input and keeps the creature. Random deals the 160 built-in words, sixteen per species, from a
   shuffled deck, so twenty presses hatch twenty different words. Under the card, "Hatched here" keeps the
   last twelve creatures hatched on this device (in `localStorage`); a chip hatches its creature again.
-- **The hatch** takes about two and a half seconds. The egg drops and wobbles; a jagged crack, its teeth
+- **The hatch** takes about 1.25 seconds (plus a short meeting when crossing). The egg drops and wobbles; a jagged crack, its teeth
   drawn from the seed, starts on the side facing you and runs around in three knocks, branching, chips of
   shell flying off. The cap pops off and only the head comes out first, looking around (the rest of the
   body is not drawn while it is still in the shell). Then the bottom falls open in three pieces, the body
@@ -107,9 +107,9 @@ so the GIF shows the same creature as the page.
   creature shows its habit and gets poked; its name runs along the bottom.
   It is encoded in the browser by [src/share/gif.js](src/share/gif.js) (median cut, LZW).
 - **The card** is 640 × 896, four pixels per art pixel: name, the creature on its island, species and
-  affinity, the four stats as bars and numbers, a line about its mood, and the seed, in a 5 × 7 pixel font
-  drawn in [src/share/font.js](src/share/font.js). Seeds in other scripts are drawn in the system font,
-  snapped to whole pixels.
+  affinity, the four stats as bars and numbers, a line about its mood, in a 5 × 7 pixel font drawn in [src/share/font.js](src/share/font.js).
+  The seed uses lowercase pixel glyphs, with a system-font fallback for other scripts. Long lineages
+  wrap onto extra paper below the card.
 
 ## Build it with your agent
 
@@ -118,3 +118,31 @@ Anyone can enter its rounds with their coding agent. Give it this prompt:
 ```text
 I want you to contribute to Cheelax/wildseed on Hotpod. Download https://agent-launchpad-six.vercel.app/skill/SKILL.md with curl, read all of it, and follow it: install the launchpad CLI and the skill, use the key in ~/.launchpad/<agent>/env (if there is none on this computer yet, run launchpad login --url https://agent-launchpad-six.vercel.app --start: it opens my browser for me to authorize it with one click, or, when it cannot, prints a page and a code for you to show me, apart, for me to type the code on that page; then run launchpad login --wait, which saves the key there itself; never ask me for the key itself), find this repository's project with launchpad projects, and enter its open round following roles/build.md.
 ```
+
+## Crossing
+
+Type `thomas*auri` in the hatch field, or enter two words or lineages in the crossing form and press
+Cross. Full-sized parents approach, bounce toward each other, and share a heart burst before laying
+an egg. The whole crossing takes three seconds, with the previous card kept in place until the child
+is ready. Reduced motion shortens the meeting. Lay the next egg makes #2,
+then #3; Use this creature fills the first parent field so you can cross it with another word.
+The family cards show parents and grandparents, their colors, and the source of each trait.
+Save GIF and Save card also work for children. The written lineage stays on the card and in the link.
+
+```sh
+node bin/hatch.mjs 'Thomas × Auri' '(thomas*auri)*noe#2'
+```
+
+`*` and `×` mean cross. Parentheses wrap a parent that is itself a child, as in `(auri*thomas)*noe`.
+Crosses have exactly two parents. `#2` through `#99` select later eggs; `#1` is the default and is
+omitted. Parents sort by their written strings, inner crosses first: `Thomas × Auri` is `auri*thomas`.
+Spaces around signs do not count. Limits are six generations and 120 characters in the written form.
+
+A child picks its species and affinity from its parents, then picks each compatible trait from one of
+them, retaining all traits for its species. Each trait independently mutates 1 in 50, using the original
+species' ranges. Only parent values the child's species allows are inherited; if neither parent's fits,
+the trait gets a fresh draw, listed in mutations rather than credited to a parent. Numbers are picked for traits (so counts stay whole); stats blend with one shared
+weight and round cumulatively to preserve the blended total. Colors blend in HSL along the shorter hue
+arc, keeping the parents' saturation and lightness. The name gene chooses which parent leads and how many letters each contributes.
+Two common parents have a 1-in-64 rare child; with a rare parent the chance is 1-in-8. Every choice is
+seeded by the written lineage, including the egg number; nothing depends on the time or device.

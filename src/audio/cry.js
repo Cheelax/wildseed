@@ -26,9 +26,9 @@ export function wakeAudio() {
 }
 
 /** The egg's sounds, from now: a crack at each of `cracks` seconds, a pop as the cap comes off at `open`, a crumble at `burst`. */
-export function hatchSounds({ cracks, open, burst }) {
+export function hatchSounds({ cracks, open, burst }, delay = 0) {
   if (muted || live?.state !== "running") return;
-  const now = live.currentTime + 0.02;
+  const now = live.currentTime + 0.02 + delay;
   cracks.forEach((t, i) => noise(live, now + t, 0.035, 1800 + 500 * i, 0.5));
   noise(live, now + open, 0.1, 1100, 0.8);
   noise(live, now + burst, 0.16, 650, 0.9);

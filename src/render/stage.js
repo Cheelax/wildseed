@@ -2,6 +2,7 @@
 // creature and their effects. frame(t) poses all of it at t seconds after the hatch began: the page
 // calls it every frame, the GIF calls it at the times it records.
 import * as THREE from "three";
+import { Courtship, CROSSING } from "./courtship.js";
 import { Creature } from "./creature.js";
 import { Egg, RIM } from "./egg.js";
 import { Fx } from "./fx.js";
@@ -14,7 +15,8 @@ import { dispose } from "./dispose.js";
  * The hatch, in seconds: the egg lands, cracks three times as it shakes, its cap pops off and the head
  * peeks out (open), the shell falls apart as the creature climbs out (burst), and it is ready.
  */
-export const HATCH = { drop: 0.32, cracks: [0.62, 0.86, 1.08], open: 1.28, burst: 1.84, ready: 2.45 };
+export const HATCH = { drop: 0.16, cracks: [0.28, 0.40, 0.52], open: 0.62, burst: 0.88, ready: 1.25 };
+const LAID_HATCH = { ...HATCH, drop: 0 };
 
 /**
  * Puts a camera where it sees a sphere of `radius` around `center`, `margin` times over, from a little
@@ -46,7 +48,7 @@ export class Stage {
     this.sun = new THREE.DirectionalLight(0xffffff, Math.PI * 0.8);
     this.sun.position.set(-3.5, 7, 5);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(512, 512);
+    this.sun.shadow.mapSize.set(256, 256);
     Object.assign(this.sun.shadow.camera, { left: -3.2, right: 3.2, top: 3.2, bottom: -3.2, near: 1, far: 20 });
     this.sun.shadow.bias = -0.002;
     this.sun.shadow.normalBias = 0.02;
@@ -57,8 +59,23 @@ export class Stage {
     this.center = new THREE.Vector3(0, 1, 0);
   }
 
+  meet(parents, reduced = false) {
+    this.courtship = new Courtship(parents, this.world, this.fx, reduced);
+    this.childRadius = this.bounds.radius;
+    this.courtship.bounds.union(new THREE.Box3().setFromObject(this.creature.root));
+    this.courtship.bounds.getBoundingSphere(this.bounds);
+    this.crossed = true;
+  }
+
+  clearCouple() {
+    this.courtship?.dispose();
+    this.courtship = null;
+  }
+
   /** Builds the island, the egg and the creature of a genome, ready to hatch from t = 0. */
   set(genome) {
+    this.clearCouple();
+    this.crossed = false;
     this.genome = genome;
     dispose(this.world);
     this.world.clear();
@@ -107,9 +124,20 @@ export class Stage {
 
   /** Poses everything at t seconds after the hatch began. `look` steers the creature's eyes. */
   frame(t, { look = null, crying = false } = {}) {
+    if (this.courtship) {
+      const laid = this.courtship.pose(t);
+      if (t < 0) {
+        this.creature.root.visible = false;
+        this.egg.pose(HATCH.drop, HATCH);
+        this.egg.root.visible = laid;
+        this.fx.pose(t, this.center);
+        return;
+      }
+      if (t >= CROSSING.leave) this.clearCouple();
+    }
     tick(t);
     const { egg, creature } = this;
-    const eggVisible = egg.pose(t, HATCH);
+    const eggVisible = egg.pose(t, this.crossed ? LAID_HATCH : HATCH);
     egg.root.visible = eggVisible;
     const { open, burst, ready } = HATCH;
     creature.root.visible = t >= open;
@@ -135,9 +163,10 @@ export class Stage {
       this.shell.constant = -shellAt;
       creature.root.scale.setScalar(scale);
       creature.root.position.y = y;
-      const past = this.pokes.filter((p) => p <= t);
-      const react = past.length ? t - past.at(-1) : Infinity;
-      this.doing = creature.pose(t - open, { look, react, pokes: past.length - 1, crying: crying || cries });
+      let count = 0;
+      while (count < this.pokes.length && this.pokes[count] <= t) count++;
+      const react = count ? t - this.pokes[count - 1] : Infinity;
+      this.doing = creature.pose(t - open, { look, react, pokes: count - 1, crying: crying || cries });
     } else this.doing = { habit: null, s: 0 };
     this.fx.pose(t, this.center, this.doing);
   }
@@ -188,7 +217,7 @@ function island(look, seed) {
   for (let i = 0; i < 5; i++) g.add(cloud(r, i));
   for (let i = 0; i < 3; i++) g.add(farIsland(r, i, look));
   g.traverse((o) => {
-    if (o.isMesh && o !== top && o !== under) o.receiveShadow = true;
+    if (o.isMesh && o !== top) { o.receiveShadow = false; o.castShadow = false; }
   });
   return g;
 }

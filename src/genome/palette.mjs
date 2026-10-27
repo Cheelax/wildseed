@@ -85,3 +85,21 @@ export function paletteOf(affinity, rare, d) {
   const ink = { h: body.h + 10, s: d.int(30, 45), l: d.int(9, 13) };
   return [body, belly, accent, detail, eye, ink].map(css);
 }
+
+/** Read a palette color back into HSL for crossing. */
+function hsl(color) {
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16) / 255);
+  const hi = Math.max(r, g, b), lo = Math.min(r, g, b), d = hi - lo;
+  const l = (hi + lo) / 2;
+  const h = !d ? 0 : hi === r ? ((g - b) / d + 6) % 6 : hi === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h * 60, d ? d / (1 - Math.abs(2 * l - 1)) * 100 : 0, l * 100];
+}
+
+/** Short-arc hues and averaged saturation/lightness preserve the parents' bright colors. */
+export function blendPalette(a, b, t) {
+  return a.map((color, i) => {
+    const [h, s, l] = hsl(color), [hh, ss, ll] = hsl(b[i]);
+    const arc = ((hh - h + 540) % 360) - 180;
+    return hex(h + arc * t, s * (1 - t) + ss * t, l * (1 - t) + ll * t);
+  });
+}

@@ -464,3 +464,33 @@ body {
     font-size: 30px;
   }
 }
+
+.crossing, .family {
+  background: var(--paper);
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 3px 0 var(--line);
+}
+.crossing h2, .family h3 { font-size: 14px; margin: 0 0 9px; }
+.couple { display: flex; align-items: center; gap: 6px; }
+.couple span { font-size: 22px; }
+.couple input { width: 0; flex: 1; min-width: 0; border: 2px solid var(--line); border-radius: 8px; padding: 7px; font: inherit; background: #fff; }
+.cross-actions { display: flex; gap: 6px; margin-top: 10px; }
+.crossing .btn { padding: 6px 8px; font-size: 12px; border-width: 2px; }
+.next-egg { width: 100%; margin-top: 8px; background: var(--belly); }
+[hidden] { display: none !important; }
+.family-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.family-cards > .relative { grid-column: 1 / -1; text-align: center; }
+.relative { border: 2px solid var(--relative); border-left-width: 7px; border-radius: 8px; padding: 6px; background: #fff; min-width: 0; }
+.relative strong, .relative span, .relative small { display: block; overflow-wrap: anywhere; }
+.relative strong { font-size: 16px; }
+.relative small, .relative span { font-size: 10px; }
+.branch { display: grid; align-content: start; gap: 6px; }
+.grandparents { display: grid; gap: 4px; padding-left: 10px; border-left: 2px dashed #c7bea9; }
+.swatches { display: flex; gap: 3px; margin-top: 5px; justify-content: center; }
+.swatches i { width: 13px; height: 7px; border-radius: 2px; }
+.family h4 { font-size: 12px; margin: 10px 0 5px; }
+.inheritance { display: flex; flex-wrap: wrap; gap: 4px; }
+.inheritance span { font-size: 10px; border-left: 4px solid; padding: 3px 5px; background: #f3efe5; border-radius: 3px; }
+.side > * { flex-shrink: 0; }

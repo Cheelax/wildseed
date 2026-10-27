@@ -1,12 +1,13 @@
 // The hatchery page: a word in, a creature out. ARCHITECTURE.md, "The page".
 import "./hatchery.css";
-import { genomeOf, normalizeSeed, seedProblem } from "./genome.mjs";
+import { genomeOf } from "./genome.mjs";
+import { lineageProblem } from "./lineage.mjs";
+import { cross } from "./cross.mjs";
+import { showFamily } from "./family.js";
 import { WORDS } from "./words.mjs";
 import { Hatchery } from "./render/hatchery.js";
 import { HATCH, skyOf } from "./render/stage.js";
 import { cry, hatchSounds, mute, wakeAudio } from "./audio/cry.js";
-import { makeGif } from "./share/film.js";
-import { makeCard } from "./share/card.js";
 import { save } from "./share/save.js";
 
 const $ = (id) => document.querySelector(`[data-testid="${id}"]`);
@@ -24,7 +25,10 @@ const view = (() => {
       onHatched: (genome) => cry(genome),
       onPoke: (genome) => cry(genome),
       onReady: (genome) => {
-        if (wild.creature === genome) wild.ready = true;
+        if (wild.creature === genome) {
+          reveal(genome);
+          wild.ready = true;
+        }
       },
       onResize: ({ pixel }) => (wild.pixel = pixel),
     });
@@ -84,7 +88,7 @@ const KEPT = "wildseed.hatched";
 function remember(genome) {
   let seeds = [];
   try {
-    seeds = JSON.parse(localStorage.getItem(KEPT) ?? "[]").filter((s) => typeof s === "string" && !seedProblem(s));
+    seeds = JSON.parse(localStorage.getItem(KEPT) ?? "[]").filter((s) => typeof s === "string" && !lineageProblem(s));
   } catch {}
   seeds = [genome.seed, ...seeds.filter((s) => s !== genome.seed)].slice(0, 12);
   try {
@@ -115,21 +119,35 @@ function showError(message) {
 }
 
 /** Hatches a seed: the egg drops, cracks, and the creature that word was always going to be comes out. */
-function hatch(seed, { push = true } = {}) {
+function hatch(seed, { push = true, parents = null } = {}) {
   const genome = genomeOf(seed);
   wild.ready = false;
   wild.creature = genome;
   error.hidden = true;
-  view?.hatch(genome);
-  if (view) hatchSounds(HATCH);
+  view?.hatch(genome, parents);
+  if (view) hatchSounds(HATCH, parents ? view.meetingDuration : 0);
+  card.style.minHeight = `${card.offsetHeight}px`;
+  card.setAttribute('aria-busy', 'true');
+  card.classList.remove('fresh');
+  $("next-egg").disabled = true;
+  if (!view) reveal(genome);
+  const url = new URL(location.href);
+  url.search = `?seed=${encodeURIComponent(genome.seed)}`;
+  if (url.href !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);
+}
+
+/** Reveal the card and ancestors together once the child has left its shell. */
+function reveal(genome) {
+  card.removeAttribute('aria-busy');
+  $("next-egg").disabled = false;
   showCard(genome);
+  showFamily($("family-tree"), genome);
+  $("next-egg").hidden = !genome.parents || genome.clutch >= 99;
+  $("next-egg").textContent = `Lay egg #${genome.clutch + 1} →`;
   card.classList.remove("fresh");
   void card.offsetWidth; // restart the card's little hop
   card.classList.add("fresh");
   remember(genome);
-  const url = new URL(location.href);
-  url.search = `?seed=${encodeURIComponent(genome.seed)}`;
-  if (url.href !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);
 }
 
 /** Random deals the words from a shuffled deck: no word comes back before the deck runs out. */
@@ -149,8 +167,8 @@ const randomWord = () => {
 document.querySelector("form.hatch").addEventListener("submit", (e) => {
   e.preventDefault();
   wakeAudio();
-  const seed = normalizeSeed(input.value);
-  const problem = seedProblem(seed);
+  const problem = lineageProblem(input.value);
+  const seed = input.value;
   if (problem) return showError(problem);
   hatch(seed);
 });
@@ -195,14 +213,14 @@ async function exporting(button, busyText, make, filename) {
   }
 }
 const fileName = (g) => `${g.name.toLowerCase()}-${g.seed.replace(/[\s']+/g, "-")}`;
-$("save-gif").addEventListener("click", () => exporting($("save-gif"), "Filming…", makeGif, (g) => `${fileName(g)}.gif`));
-$("save-card").addEventListener("click", () => exporting($("save-card"), "Drawing…", makeCard, (g) => `${fileName(g)}-card.png`));
+$("save-gif").addEventListener("click", () => exporting($("save-gif"), "Filming…", async (...args) => (await import("./share/film.js")).makeGif(...args), (g) => `${fileName(g)}.gif`));
+$("save-card").addEventListener("click", () => exporting($("save-card"), "Drawing…", async (...args) => (await import("./share/card.js")).makeCard(...args), (g) => `${fileName(g)}-card.png`));
 
 function fromAddress({ push }) {
   const asked = new URLSearchParams(location.search).get("seed");
   if (asked !== null) {
-    const seed = normalizeSeed(asked);
-    const problem = seedProblem(seed);
+    const seed = asked;
+    const problem = lineageProblem(seed);
     if (!problem) {
       input.value = seed;
       return hatch(seed, { push });
@@ -212,6 +230,34 @@ function fromAddress({ push }) {
   }
   hatch(randomWord(), { push: false });
 }
+
+const parentA = $("parent-a"), parentB = $("parent-b");
+document.querySelector('.crossing').addEventListener('submit', e => {
+  e.preventDefault();
+  const problem = lineageProblem(parentA.value) || lineageProblem(parentB.value);
+  if (problem) return showError(problem);
+  try {
+    wakeAudio();
+    const parents = [genomeOf(parentA.value), genomeOf(parentB.value)];
+    const child = cross(...parents);
+    input.value = child.seed;
+    hatch(child.seed, { parents });
+  } catch (e) { showError(e.message); }
+});
+$("next-egg").addEventListener('click', () => {
+  const g = wild.creature;
+  if (!g.parents || g.clutch >= 99) return;
+  try {
+    const parents = g.parents.map(genomeOf);
+    const child = cross(...parents, g.clutch + 1);
+    input.value = child.seed;
+    hatch(child.seed, { parents });
+  } catch (e) { showError(e.message); }
+});
+$("use-child").addEventListener('click', () => {
+  parentA.value = wild.creature.seed;
+  parentB.focus();
+});
 
 addEventListener("popstate", () => fromAddress({ push: false }));
 fromAddress({ push: false });

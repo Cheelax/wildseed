@@ -15,7 +15,7 @@ test("prints one line of JSON per seed, in order", () => {
 });
 
 test("one bad seed: nothing on stdout, the reason on stderr, exit 2", () => {
-  for (const args of [[], ["moss", "a*b"], ["🐸"]]) {
+  for (const args of [[], ["moss", "a**b"], ["🐸"]]) {
     const r = hatch(...args);
     assert.equal(r.status, 2);
     assert.equal(r.stdout, "");

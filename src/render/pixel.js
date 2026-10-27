@@ -65,6 +65,7 @@ export class PixelRenderer {
     this.gl.outputColorSpace = THREE.LinearSRGBColorSpace;
     this.gl.setPixelRatio(1);
     this.gl.shadowMap.enabled = true;
+    this.gl.shadowMap.autoUpdate = false;
     this.gl.shadowMap.type = THREE.BasicShadowMap;
     this.gl.localClippingEnabled = true; // a hatching creature shows only what is out of its shell
     this.gl.setClearColor(0x000000, 0);
@@ -120,7 +121,14 @@ export class PixelRenderer {
   }
 
   /** Draws a stage at width × height art pixels into `out` (a render target) or, without one, the canvas. */
-  render({ scene, camera, colors }, width, height, out = null) {
+  render(stage, width, height, out = null) {
+    const { scene, camera, colors } = stage;
+    const now = performance.now();
+    if (out || this.shadowScene !== scene || now - (this.shadowAt ?? 0) > 100) {
+      this.gl.shadowMap.needsUpdate = true;
+      this.shadowScene = scene;
+      this.shadowAt = now;
+    }
     this.setColors(colors);
     const t = this.target(width, height);
     this.gl.setRenderTarget(t);

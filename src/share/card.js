@@ -6,6 +6,7 @@ import { film, studio } from "./film.js";
 import { anyText, anyWidth, drawable, measure, pixelText } from "./font.js";
 
 const W = 160, H = 224, SCALE = 4;
+const SEED_FONT_SIZE = 9, FOOTER_PADDING = 6;
 
 /** A line about the creature, from its mood. */
 const MOODS = {
@@ -120,23 +121,40 @@ export async function makeCard(renderer, genome) {
   g.fillStyle = ink;
   for (let x = 10; x < W - 10; x += 2) g.fillRect(x, y, 1, 1);
   y += 4;
-  // The seed in the pixel font when it can be, else in the system font, smaller for a long seed.
-  const seed = `seed "${genome.seed}"`;
+  // Preserve the written seed, including lowercase letters and lineage signs.
   const room = W - 20;
-  if (drawable(seed) && measure(seed) <= room) {
-    pixelText(g, seed, 10, y, ink);
-    if (measure(seed) + 8 + measure("wildseed") <= room) pixelText(g, "wildseed", W - 10 - measure("wildseed"), y, frame === belly ? body : frame);
-  } else {
-    const size = anyWidth(seed, 9) <= room ? 9 : 7;
-    const text = anyWidth(seed, size) <= room ? seed : `"${genome.seed}"`;
-    anyText(g, text, 10, y - (size === 9 ? 2 : 0), ink, size);
+  const seed = `seed "${genome.seed}"`;
+  const pixel = drawable(seed, true);
+  const lineHeight = pixel ? 11 : SEED_FONT_SIZE + 5;
+  const textHeight = pixel ? 7 : SEED_FONT_SIZE + 4;
+  const widthOf = text => pixel ? measure(text) : anyWidth(text, SEED_FONT_SIZE);
+  const lines = [];
+  let line = '';
+  for (const ch of seed) {
+    if (widthOf(line + ch) > room) { lines.push(line); line = ''; }
+    line += ch;
   }
+  lines.push(line);
+  // Long families get extra paper below the normal card.
+  const paper = document.createElement('canvas');
+  paper.width = W;
+  paper.height = Math.max(H, y + (lines.length - 1) * lineHeight + textHeight + FOOTER_PADDING);
+  const pg = paper.getContext('2d');
+  box(pg, 0, 0, W, paper.height, ink);
+  box(pg, 2, 2, W - 4, paper.height - 4, frame);
+  box(pg, 5, 5, W - 10, paper.height - 10, belly);
+  pg.drawImage(c, 0, 0, W, y - 1, 0, 0, W, y - 1);
+  lines.forEach((text, i) => {
+    const top = y + i * lineHeight;
+    if (pixel) pixelText(pg, text, 10, top, ink, 1, true);
+    else anyText(pg, text, 10, top, ink, SEED_FONT_SIZE);
+  });
 
   const out = document.createElement("canvas");
   out.width = W * SCALE;
-  out.height = H * SCALE;
+  out.height = paper.height * SCALE;
   const o = out.getContext("2d");
   o.imageSmoothingEnabled = false;
-  o.drawImage(c, 0, 0, out.width, out.height);
+  o.drawImage(paper, 0, 0, out.width, out.height);
   return new Promise((resolve) => out.toBlob(resolve, "image/png"));
 }

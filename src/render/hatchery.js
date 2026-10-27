@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { PIXEL_MIN } from "../rules.mjs";
 import { PixelRenderer } from "./pixel.js";
+import { CROSSING } from "./courtship.js";
 import { HATCH, Stage, aim } from "./stage.js";
 
 /** The art pixel's size in CSS pixels for a scene of w × h: about 160 art pixels tall, 3 or more. */
@@ -19,9 +20,18 @@ export class Hatchery {
     this.controls = new OrbitControls(this.stage.camera, canvas);
     Object.assign(this.controls, { enablePan: false, enableDamping: true, dampingFactor: 0.12, rotateSpeed: 0.55, minPolarAngle: 0.45, maxPolarAngle: 1.5 });
     Object.assign(this, { onPoke, onHatched, onReady, onResize });
+    this.ray = new THREE.Raycaster();
+    this.head = new THREE.Vector3();
+    this.direction = new THREE.Vector3();
+    this.at = new THREE.Vector3();
+    this.plane = new THREE.Plane();
+    this.hitBox = new THREE.Box3();
+    this.reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.meetingDuration = this.reducedMotion ? 0.2 : CROSSING.hatch;
     this.pointer = null;
     this.size = { width: 0, height: 0, pixel: 3 };
     this.listen();
+    new ResizeObserver(() => this.resize()).observe(canvas.parentElement);
     this.loop = this.loop.bind(this);
     requestAnimationFrame(this.loop);
   }
@@ -72,9 +82,13 @@ export class Hatchery {
   }
 
   /** Starts hatching a genome. Resolves when the creature is out and alive. */
-  hatch(genome) {
+  hatch(genome, parents = null) {
+    this.stage.camera.zoom = 1;
+    this.stage.camera.updateProjectionMatrix();
     this.stage.set(genome);
-    this.started = performance.now();
+    if (parents) this.stage.meet(parents, this.reducedMotion);
+    this.crossZoom = parents ? this.stage.bounds.radius / this.stage.childRadius : 1;
+    this.started = performance.now() + (parents ? this.meetingDuration * 1000 : 0);
     this.cried = false;
     this.resize();
     this.reframe();
@@ -88,10 +102,14 @@ export class Hatchery {
   loop() {
     requestAnimationFrame(this.loop);
     if (!this.stage.genome) return;
-    this.resize();
     this.controls.update();
     const t = this.time;
     this.stage.frame(t, { look: this.lookAt() });
+    const zoom = 1 + (this.crossZoom - 1) * THREE.MathUtils.smoothstep(t, 0, HATCH.open);
+    if (this.stage.camera.zoom !== zoom) {
+      this.stage.camera.zoom = zoom;
+      this.stage.camera.updateProjectionMatrix();
+    }
     this.renderer.render(this.stage, this.size.width, this.size.height);
     if (!this.cried && t >= HATCH.burst) {
       this.cried = true;
@@ -108,12 +126,12 @@ export class Hatchery {
   lookAt() {
     if (!this.pointer) return null;
     const { camera, creature } = this.stage;
-    const head = new THREE.Vector3();
+    const head = this.head;
     creature.rig.head.getWorldPosition(head);
-    const ray = new THREE.Raycaster();
+    const ray = this.ray;
     ray.setFromCamera(this.pointer, camera);
-    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()).negate(), head);
-    const at = ray.ray.intersectPlane(plane, new THREE.Vector3());
+    const plane = this.plane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(this.direction).negate(), head);
+    const at = ray.ray.intersectPlane(plane, this.at);
     if (!at) return null;
     const v = at.sub(head);
     const yaw = Math.atan2(v.x, v.z);
@@ -145,9 +163,11 @@ export class Hatchery {
   tap(point) {
     const { camera, creature } = this.stage;
     if (!creature?.root.visible || this.time < HATCH.ready) return;
-    const ray = new THREE.Raycaster();
+    const ray = this.ray;
     ray.setFromCamera(point, camera);
-    if (ray.intersectObject(creature.root, true).length) {
+    creature.root.updateWorldMatrix(true, true);
+    this.hitBox.setFromObject(creature.root).expandByScalar(0.12);
+    if (ray.intersectObject(creature.root, true).length || ray.ray.intersectsBox(this.hitBox)) {
       this.stage.poke(this.time);
       this.onPoke(this.stage.genome);
     }
