@@ -15,12 +15,23 @@ test("prints one line of JSON per seed, in order", () => {
 });
 
 test("one bad seed: nothing on stdout, the reason on stderr, exit 2", () => {
-  for (const args of [[], ["moss", "a*b"], ["🐸"]]) {
+  for (const args of [[], ["moss", "a**b"], ["🐸"]]) {
     const r = hatch(...args);
     assert.equal(r.status, 2);
     assert.equal(r.stdout, "");
     assert.ok(r.stderr.trim().length > 0);
   }
+});
+
+test("a cross hatches a child with parents and clutch", () => {
+  const r = hatch("thomas*auri", "Thomas × Auri #2");
+  assert.equal(r.status, 0, r.stderr);
+  const [a, b] = r.stdout.trimEnd().split("\n").map((l) => JSON.parse(l));
+  assert.equal(a.seed, "auri*thomas");
+  assert.deepEqual(a.parents, ["auri", "thomas"]);
+  assert.equal(a.clutch, 1);
+  assert.equal(b.seed, "auri*thomas#2");
+  assert.equal(b.clutch, 2);
 });
 
 test("hatches 1,000 seeds in a few seconds at most", () => {

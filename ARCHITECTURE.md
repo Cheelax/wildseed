@@ -36,7 +36,36 @@ A seed is a word or a short phrase. The command and the page read it the same wa
    refused, including an empty seed.
 
 So `Thomas`, `  thomas ` and `thomas` are one seed; `noé` typed with a composed or a decomposed `é` is one
-seed; `東京`, `o'brien` and `x-1` are valid; `a*b`, `🐸` and a 25-character seed are refused.
+seed; `東京`, `o'brien` and `x-1` are valid; `🐸` and a 25-character seed are refused. From round 2,
+`a*b` is a lineage, not a word.
+
+## Lineages
+
+A child's seed is its lineage, so a link carries the whole family tree and nothing is stored anywhere.
+
+```
+lineage = word | cross
+cross   = parent "*" parent [ "#" clutch ]
+parent  = word | "(" cross ")"
+```
+
+- A word is a round 1 seed, read the way round 1 reads it. A word may cross with itself.
+- `×` reads as `*`, and spaces around `*`, `#`, `(` and `)` do not count: `Thomas × Auri` is `thomas*auri`.
+- `#n` is a couple's n-th egg, n from 1 to 99 with no leading zero. `#1` is the first egg, written with no number.
+- Parentheses wrap a parent that is itself a child, and nothing else: `(a)`, `(a)*b`, `(a*b)` on its own and
+  `((a*b))*c` are refused, and so is `a*b*c` (write `(a*b)*c`).
+- Every lineage has one written form: the two parents of every cross in JavaScript's default sort order
+  (`[x, y].sort()`, each parent as it is written, a child with its parentheses), inner crosses first, and `#1` left
+  out. `thomas*auri`, `Auri × Thomas` and `thomas*auri#1` are all `auri*thomas`; `noe*(thomas*auri)` is
+  `(auri*thomas)*noe`.
+- At most 6 generations (a child of two words is one generation, its child with a word two) and 120 characters,
+  counted on the written form.
+
+`genomeOf(lineage)` returns the child's genome: round 1's fields, plus `parents`, `clutch` and `mutations`.
+`cross(a, b, clutch = 1)` in `src/cross.mjs` takes two genomes and returns their child, exactly `genomeOf` of
+their lineage. It is pure and symmetric.
+
+The numbers `MUTATION_ONE_IN`, `LINEAGE_MAX` and `DEPTH_MAX` live in `src/rules.mjs`.
 
 ## The genome
 

@@ -17,6 +17,13 @@ export const TOTAL_RANGE = [160, 280];
 /** About one creature in RARE_ONE_IN is rare. */
 export const RARE_ONE_IN = 64;
 
+/** About one trait in MUTATION_ONE_IN mutates when two creatures cross. */
+export const MUTATION_ONE_IN = 50;
+
+/** A lineage's written form is at most LINEAGE_MAX characters; at most DEPTH_MAX generations. */
+export const LINEAGE_MAX = 120;
+export const DEPTH_MAX = 6;
+
 /** At least MIN_SPECIES species, each at least MIN_SPECIES_SHARE of seeds. */
 export const MIN_SPECIES = 6;
 export const MIN_SPECIES_SHARE = 0.02;

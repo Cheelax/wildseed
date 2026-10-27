@@ -120,17 +120,12 @@ export async function makeCard(renderer, genome) {
   g.fillStyle = ink;
   for (let x = 10; x < W - 10; x += 2) g.fillRect(x, y, 1, 1);
   y += 4;
-  // The seed in the pixel font when it can be, else in the system font, smaller for a long seed.
-  const seed = `seed "${genome.seed}"`;
+  // Print the seed/lineage as written (not uppercased): pixel font uppercases, so use anyText.
+  const seed = genome.parents ? genome.seed : `seed "${genome.seed}"`;
   const room = W - 20;
-  if (drawable(seed) && measure(seed) <= room) {
-    pixelText(g, seed, 10, y, ink);
-    if (measure(seed) + 8 + measure("wildseed") <= room) pixelText(g, "wildseed", W - 10 - measure("wildseed"), y, frame === belly ? body : frame);
-  } else {
-    const size = anyWidth(seed, 9) <= room ? 9 : 7;
-    const text = anyWidth(seed, size) <= room ? seed : `"${genome.seed}"`;
-    anyText(g, text, 10, y - (size === 9 ? 2 : 0), ink, size);
-  }
+  const size = anyWidth(seed, 9) <= room ? 9 : anyWidth(seed, 7) <= room ? 7 : 6;
+  const text = anyWidth(seed, size) <= room ? seed : genome.seed.slice(0, 28);
+  anyText(g, text, 10, y - (size >= 9 ? 2 : 0), ink, size);
 
   const out = document.createElement("canvas");
   out.width = W * SCALE;

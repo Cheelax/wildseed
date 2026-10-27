@@ -1,7 +1,7 @@
 // The genome's promises: ARCHITECTURE.md, "Seeds" and "The genome". Run with `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { genomeOf, normalizeSeed, seedProblem } from "../src/genome.mjs";
+import { genomeOf, normalizeSeed, seedProblem, lineageProblem } from "../src/genome.mjs";
 import { STAT_RANGE, TOTAL_RANGE } from "../src/rules.mjs";
 
 const words = Array.from({ length: 4000 }, (_, i) => `word${i}`);
@@ -17,10 +17,19 @@ test("case, spaces and composed or decomposed accents do not change the creature
   assert.deepEqual(genomeOf("noé"), genomeOf("noé"));
 });
 
-test("seeds are refused with a reason: empty, too long, or with * ( ) # or emoji", () => {
-  for (const bad of ["", "   ", "a".repeat(25), "a*b", "(a)", "x#2", "🐸"]) assert.ok(seedProblem(normalizeSeed(bad)), bad);
+test("plain seeds are refused with a reason: empty, too long, or emoji", () => {
+  for (const bad of ["", "   ", "a".repeat(25), "🐸"]) assert.ok(seedProblem(normalizeSeed(bad)), bad);
   for (const good of ["東京", "кот", "o'brien", "x-1", "a", "a".repeat(24)]) assert.equal(seedProblem(normalizeSeed(good)), null, good);
-  assert.throws(() => genomeOf("a*b"), /cannot be part of a seed/);
+});
+
+test("a*b is a lineage, not a plain seed; bad lineages are refused", () => {
+  assert.ok(seedProblem(normalizeSeed("a*b")));
+  assert.equal(lineageProblem("a*b"), null);
+  assert.equal(genomeOf("a*b").seed, "a*b");
+  assert.ok(lineageProblem("a**b"));
+  assert.ok(lineageProblem("(a)"));
+  assert.ok(lineageProblem("x#2"));
+  assert.throws(() => genomeOf("a**b"), /./);
 });
 
 test("stats are integers from 10 to 100 that add up to 160 to 280", () => {
@@ -56,4 +65,15 @@ test("palettes are six #rrggbb colors: body, belly, accent, detail, eye, ink", (
 test("a seed's creature never changes (round 1's genomes, kept in test/hatched.json)", async () => {
   const { default: kept } = await import("./hatched.json", { with: { type: "json" } });
   for (const g of kept) assert.deepEqual(genomeOf(g.seed), g);
+});
+
+test("crossing is symmetric and pure", async () => {
+  const { cross } = await import("../src/cross.mjs");
+  const a = genomeOf("thomas");
+  const b = genomeOf("auri");
+  const ab = cross(a, b, 1);
+  const ba = cross(b, a, 1);
+  assert.deepEqual(ab, ba);
+  assert.deepEqual(ab, genomeOf("thomas*auri"));
+  assert.equal(ab.seed, "auri*thomas");
 });
