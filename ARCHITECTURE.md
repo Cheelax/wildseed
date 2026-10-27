@@ -143,3 +143,44 @@ src/main.js          the page's entry point
 index.html           the page
 .launchpad/          the Hotpod project file and each round's checks: entries never touch it
 ```
+
+## Lineages
+
+Round 2 extends `genomeOf` and the command to words or crosses. The word parser in `src/seed.mjs`
+retains the Round 1 rules. `src/lineage.mjs` parses this grammar:
+
+```
+lineage = word | cross
+cross = parent "*" parent [ "#" clutch ]
+parent = word | "(" cross ")"
+```
+
+`×` means `*`; spaces around operators do not count. An egg number is 1–99 without leading zeros;
+`#1` is omitted. Parentheses wrap crossed parents only, never words or the whole expression.
+Every cross sorts its written parent expressions in JavaScript default sort order, after recursively
+canonicalizing them. A crossed parent includes its parentheses when sorting. The written form has
+at most 120 Unicode code points and six generations (words are generation zero). Self-crosses work.
+
+`src/cross.mjs` exports `cross(a, b, clutch = 1)`. It is pure, symmetric, and returns the same genome
+as `genomeOf` of that lineage. A child adds `parents` (unwrapped canonical seeds in written order),
+`clutch`, `mutations` (unique dotted paths inside traits), and `origins` (parent 0, parent 1, both,
+blend, or mutation). Its species and affinity come from a parent. Each nonmutated trait is a parent's
+value or a number between the parents' values. All traits of the same-species parent survive.
+Every trait independently mutates with probability 1/50, freshly drawn using the original species'
+authored ranges. Two common parents produce a rare child with probability 1/64; with a rare parent,
+we use 1/4. Names join the parents' first syllables. Stats use one convex blend, rounded to integers,
+with corrections only at total limits. Colors blend corresponding palette slots: one parent's body
+leads while the other parent's accent leads. The family album reports every trait's provenance.
+
+The eligibility tolerances are mutations 1/80–1/30, common-parent rarity 1/100–1/40; at least 70% of
+children inherit from both parents where four traits differ, 80% have colors closer to their family
+than another couple, and 95% of a couple's first four eggs have distinct trait sets. New constants
+are appended to `src/rules.mjs`; no Round 1 constant or word genome changes.
+
+The page accepts lineages in `seed-input` and `?seed=`; `#` is URL-encoded as `%23`. Invalid input
+preserves the current creature. The crossing form accepts words or children, has current-creature
+selectors and previews, and supports subsequent eggs and grandchildren. `family-tree` shows the
+child, parents, grandparents, and an expandable table of trait origins. The GIF includes the meeting,
+egg, hatch, parent names and complete lineage. A child's PNG is a family album card with parent
+portraits, grandparent names, inheritance, stats and the complete, case-preserving lineage. Solo
+hatches take 1.55 seconds; children first have a 1.55-second meeting. All imagery is generated in code.

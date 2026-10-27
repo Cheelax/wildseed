@@ -3,6 +3,7 @@
 // pose() is a pure function of time and of what it is told, so the GIF is the same creature as the page.
 import * as THREE from "three";
 import { charm, materialsOf } from "./parts.js";
+import { batchRig } from "./batch.js";
 import { pipkin } from "./species/pipkin.js";
 import { hopple } from "./species/hopple.js";
 import { trundle } from "./species/trundle.js";
@@ -48,6 +49,7 @@ export class Creature {
       c.rotation.set(...rig.charmAt.rot);
       rig.charmAt.parent.add(c);
     }
+    batchRig(rig);
     this.root = new THREE.Group(); // where it stands; the hatch scales it
     this.pivot = new THREE.Group(); // hops and squashes
     this.pivot.scale.setScalar(traits.size);

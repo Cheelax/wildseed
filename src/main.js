@@ -1,9 +1,12 @@
 // The hatchery page: a word in, a creature out. ARCHITECTURE.md, "The page".
 import "./hatchery.css";
-import { genomeOf, normalizeSeed, seedProblem } from "./genome.mjs";
+import { genomeOf } from "./genome.mjs";
+import { lineageProblem as seedProblem } from "./lineage.mjs";
+import { setupFamily } from "./family.js";
+const normalizeSeed = (text) => text;
 import { WORDS } from "./words.mjs";
 import { Hatchery } from "./render/hatchery.js";
-import { HATCH, skyOf } from "./render/stage.js";
+import { HATCH, COURTSHIP, skyOf } from "./render/stage.js";
 import { cry, hatchSounds, mute, wakeAudio } from "./audio/cry.js";
 import { makeGif } from "./share/film.js";
 import { makeCard } from "./share/card.js";
@@ -24,7 +27,7 @@ const view = (() => {
       onHatched: (genome) => cry(genome),
       onPoke: (genome) => cry(genome),
       onReady: (genome) => {
-        if (wild.creature === genome) wild.ready = true;
+        if (wild.creature === genome) { wild.ready = true; document.querySelector(".stage-status").textContent = genome.parents ? `Hello, ${genome.name}. A little of both of you.` : `Hello, ${genome.name}.`; }
       },
       onResize: ({ pixel }) => (wild.pixel = pixel),
     });
@@ -80,6 +83,7 @@ function showCard(g) {
 }
 
 /** The creatures hatched on this device, newest first: a row of chips that hatch them again. */
+let family;
 const KEPT = "wildseed.hatched";
 function remember(genome) {
   let seeds = [];
@@ -117,11 +121,22 @@ function showError(message) {
 /** Hatches a seed: the egg drops, cracks, and the creature that word was always going to be comes out. */
 function hatch(seed, { push = true } = {}) {
   const genome = genomeOf(seed);
+  input.value = genome.seed;
   wild.ready = false;
   wild.creature = genome;
   error.hidden = true;
   view?.hatch(genome);
-  if (view) hatchSounds(HATCH);
+  if (view) {
+    const offset = genome.parents ? COURTSHIP : 0;
+    if (genome.parents) {
+      const parents = genome.parents.map(genomeOf);
+      cry(parents[0]);
+      setTimeout(() => { if (wild.creature === genome) cry(parents[1]); }, 420);
+    }
+    hatchSounds({ cracks: HATCH.cracks.map(t => t + offset), open: HATCH.open + offset, burst: HATCH.burst + offset });
+  }
+  document.querySelector(".stage-status").textContent = genome.parents ? `${genome.parents.map(seed => genomeOf(seed).name).join(" meets ")}…` : "Someone is waking up…";
+  family?.show(genome);
   showCard(genome);
   card.classList.remove("fresh");
   void card.offsetWidth; // restart the card's little hop
@@ -213,5 +228,6 @@ function fromAddress({ push }) {
   hatch(randomWord(), { push: false });
 }
 
+family = setupFamily({ view, hatch, current: () => wild.creature, onError: showError, wakeAudio });
 addEventListener("popstate", () => fromAddress({ push: false }));
 fromAddress({ push: false });

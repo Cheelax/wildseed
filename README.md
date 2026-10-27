@@ -96,7 +96,7 @@ so the GIF shows the same creature as the page.
   the input and keeps the creature. Random deals the 160 built-in words, sixteen per species, from a
   shuffled deck, so twenty presses hatch twenty different words. Under the card, "Hatched here" keeps the
   last twelve creatures hatched on this device (in `localStorage`); a chip hatches its creature again.
-- **The hatch** takes about two and a half seconds. The egg drops and wobbles; a jagged crack, its teeth
+- **The solo hatch** takes 1.55 seconds. A child first has a 1.55-second meeting between its parents. The egg drops and wobbles; a jagged crack, its teeth
   drawn from the seed, starts on the side facing you and runs around in three knocks, branching, chips of
   shell flying off. The cap pops off and only the head comes out first, looking around (the rest of the
   body is not drawn while it is still in the shell). Then the bottom falls open in three pieces, the body
@@ -118,3 +118,33 @@ Anyone can enter its rounds with their coding agent. Give it this prompt:
 ```text
 I want you to contribute to Cheelax/wildseed on Hotpod. Download https://agent-launchpad-six.vercel.app/skill/SKILL.md with curl, read all of it, and follow it: install the launchpad CLI and the skill, use the key in ~/.launchpad/<agent>/env (if there is none on this computer yet, run launchpad login --url https://agent-launchpad-six.vercel.app --start: it opens my browser for me to authorize it with one click, or, when it cannot, prints a page and a code for you to show me, apart, for me to type the code on that page; then run launchpad login --wait, which saves the key there itself; never ask me for the key itself), find this repository's project with launchpad projects, and enter its open round following roles/build.md.
 ```
+
+## Crossing garden
+
+Type two names in the garden and choose **Lay an egg**. The parents approach, lean in, and leave an
+egg together. **Lay egg 2** (then 3, and so on) keeps the couple and changes the sibling. **Cross this
+child** carries the child into the first parent field; add another name to start the next generation.
+**Use current** puts any creature on screen into either parent slot. Both parent fields also accept
+lineages. The family album below the scene has clickable ancestors and a full trait-origin table.
+
+```
+node bin/hatch.mjs 'thomas*auri' '(thomas*auri)*noe#2'
+```
+
+Copy creature link shares the entire family without storage or a backend. GIFs include the meeting
+and lineage. Children have a 768 × 1120 family card, with parents, grandparents, inherited traits and
+stats. Words retain their original card, with seeds drawn in their original lowercase spelling.
+
+`npm test` includes parser boundaries, frozen symmetric crossing, the original 466 genomes,
+10,000 additional families' distributions and provenance, and 500 couples' sibling diversity.
+`npm run build && node test/browser.mjs` runs additional desktop/mobile crossing and export regressions
+in a Playwright environment; the script starts its own local server under `/garden/`. Nothing in these tests uploads an entry.
+
+The renderer batches stationary sibling meshes and scenery while leaving every animated joint and face
+part independent. Object-space pattern coordinates survive the batching. Pattern spots use one jittered
+cell lookup; shadows use a 256-pixel map. The drift uses its full bounds as a touch target, including
+the gaps between its tentacles. Capture targets are disposed when export dimensions change.
+
+Crossed hopples can wear round, pointed and leaf ears inherited from trundles. Siblings retain both
+parents' name stems with a rotating ending. The additional render regression constructs and poses
+1,000 crossed creatures and descendants, checking every transform and position for finite values.

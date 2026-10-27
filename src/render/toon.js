@@ -49,15 +49,9 @@ float hash13(vec3 p) {
 // Distance to the nearest of one random point per cell: round spots of radius r where it is below r.
 float cells(vec3 p) {
   vec3 i = floor(p);
-  float best = 9.0;
-  for (int x = -1; x <= 1; x++)
-  for (int y = -1; y <= 1; y++)
-  for (int z = -1; z <= 1; z++) {
-    vec3 c = i + vec3(x, y, z);
-    vec3 o = vec3(hash13(c), hash13(c + 17.1), hash13(c + 41.7));
-    best = min(best, length(c + 0.2 + 0.6 * o - p));
-  }
-  return best;
+  vec3 o = vec3(hash13(i), hash13(i + 17.1), hash13(i + 41.7));
+  // A spot sits inside its own cell; no 27-neighbour search in every shaded pixel.
+  return length(fract(p) - (0.25 + 0.5 * o));
 }
 
 float tri(float x) { return abs(fract(x) - 0.5) * 2.0; }
@@ -126,8 +120,8 @@ export function toon(base, { mark = null, belly = null, stars = 0, cls = CLASS.c
   m.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
-      .replace("#include <common>", "#include <common>\nvarying vec3 vObj;\nvarying vec3 vObjN;")
-      .replace("#include <begin_vertex>", "#include <begin_vertex>\nvObj = position;\nvObjN = normal;");
+      .replace("#include <common>", "#include <common>\nvarying vec3 vObj;\nvarying vec3 vObjN;\n#ifdef BATCHED_PARTS\nattribute vec3 patternPosition;\nattribute vec3 patternNormal;\n#endif")
+      .replace("#include <begin_vertex>", "#include <begin_vertex>\n#ifdef BATCHED_PARTS\nvObj = patternPosition;\nvObjN = patternNormal;\n#else\nvObj = position;\nvObjN = normal;\n#endif");
     shader.fragmentShader = shader.fragmentShader
       .replace("#include <common>", `#include <common>\n${PARS}`)
       .replace("#include <opaque_fragment>", MAIN);
