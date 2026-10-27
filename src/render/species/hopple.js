@@ -1,12 +1,13 @@
 // Hopple: a hopper with a big head, long ears (up, flopped or out to the sides) and big feet.
-import { ellipsoid, face, joint, onSurface } from "../parts.js";
+import { ellipsoid, face, joint, onSurface, skin } from "../parts.js";
 
 const EARS = { up: [-0.12, 0.2], lop: [0.35, 2.25], side: [0, 1.2] };
 
 export function hopple(g, m) {
   const t = g.traits;
   const body = joint();
-  body.add(ellipsoid(m.torso, [0.58 + 0.1 * t.build, 0.55, 0.54], { at: [0, 0.58, 0] }));
+  const torso = [0.58 + 0.1 * t.build, 0.55, 0.54];
+  body.add(ellipsoid(m.torso, torso, { at: [0, 0.58, 0] }));
 
   const radii = [0.6, 0.54, 0.54];
   const head = joint([0, 1.28, 0.06]);
@@ -44,6 +45,7 @@ export function hopple(g, m) {
     body, head, wiggles, flaps,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
     charmAt: t.ears === "up" ? { parent: head, at: [0, 0.47, 0.12], rot: [0.2, 0, 0] } : { parent: head, at: [0, 0.49, 0], rot: [0, 0, 0] },
+    places: { crown: { parent: head, at: skin(radii, 0, 1.3) }, back: { parent: body, at: skin(torso, Math.PI, 0.75, [0, 0.58, 0]) } },
     height: 1.24 + (t.ears === "up" ? 0.5 + 0.7 * L : 0.6),
   };
 }

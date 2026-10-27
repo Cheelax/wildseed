@@ -1,6 +1,6 @@
 // Prickle: a round hedgehog of spines with a soft face that pokes out in front.
 import * as THREE from "three";
-import { cone, ellipsoid, face, joint, onSurface } from "../parts.js";
+import { cone, ellipsoid, face, joint, onSurface, skin } from "../parts.js";
 
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -61,6 +61,11 @@ export function prickle(g, m) {
     body, head, wiggles, flaps,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
     charmAt: { parent: ball, at: [0, back[1] + 0.18 * t.spikeLength, -0.1], rot: [0, 0, 0] },
+    places: {
+      crown: { parent: head, at: skin(radii, Math.PI, 1.3) },
+      back: { parent: ball, at: skin(back, Math.PI, 0.9) },
+      tail: { parent: ball, at: skin(back, Math.PI, -0.25) },
+    },
     height: 0.62 + back[1] + 0.25 * t.spikeLength,
   };
 }

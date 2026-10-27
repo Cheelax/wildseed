@@ -64,8 +64,6 @@ export class PixelRenderer {
     this.gl = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance" });
     this.gl.outputColorSpace = THREE.LinearSRGBColorSpace;
     this.gl.setPixelRatio(1);
-    this.gl.shadowMap.enabled = true;
-    this.gl.shadowMap.type = THREE.BasicShadowMap;
     this.gl.localClippingEnabled = true; // a hatching creature shows only what is out of its shell
     this.gl.setClearColor(0x000000, 0);
     this.kind = "webgl2"; // three.js renders through WebGL 2 only
@@ -105,24 +103,49 @@ export class PixelRenderer {
     sky.forEach((c, i) => this.post.uniforms.uSky.value[i].set(c));
   }
 
-  target(width, height) {
-    const key = `${width}x${height}`;
-    let t = this.targets.get(key);
-    if (!t) {
-      t = new THREE.WebGLRenderTarget(width, height, {
-        minFilter: THREE.NearestFilter,
-        magFilter: THREE.NearestFilter,
-        depthTexture: new THREE.DepthTexture(width, height),
-      });
-      this.targets.set(key, t);
+  /** A render target of a size, kept for the next frame of that size; the least used go when there are many. */
+  keep(key, make) {
+    const t = this.targets.get(key) ?? make();
+    this.targets.delete(key);
+    this.targets.set(key, t);
+    for (const [k, old] of this.targets) {
+      if (this.targets.size <= 16) break;
+      old.dispose();
+      this.targets.delete(k);
     }
     return t;
+  }
+
+  target(width, height) {
+    return this.keep(`${width}x${height}`, () => new THREE.WebGLRenderTarget(width, height, {
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      depthTexture: new THREE.DepthTexture(width, height),
+    }));
+  }
+
+  /**
+   * Whether the last frame drew a part of `classes` (CLASS ids) within `radius` art pixels of a point given
+   * from -1 to 1 on each axis: a tap that lands between a drift's tentacles still touches the drift.
+   */
+  touches(point, classes, radius = 2) {
+    const t = this.last;
+    if (!t) return false;
+    const size = 2 * radius + 1;
+    const x = Math.round(((point.x + 1) / 2) * t.width) - radius, y = Math.round(((point.y + 1) / 2) * t.height) - radius;
+    const x0 = Math.max(0, x), y0 = Math.max(0, y), w = Math.min(t.width, x + size) - x0, h = Math.min(t.height, y + size) - y0;
+    if (w <= 0 || h <= 0) return false;
+    const pixels = new Uint8Array(w * h * 4);
+    this.gl.readRenderTargetPixels(t, x0, y0, w, h, pixels);
+    for (let i = 3; i < pixels.length; i += 4) if (classes.includes(pixels[i])) return true;
+    return false;
   }
 
   /** Draws a stage at width × height art pixels into `out` (a render target) or, without one, the canvas. */
   render({ scene, camera, colors }, width, height, out = null) {
     this.setColors(colors);
     const t = this.target(width, height);
+    if (!out) this.last = t;
     this.gl.setRenderTarget(t);
     this.gl.clear();
     this.gl.render(scene, camera);
@@ -133,15 +156,27 @@ export class PixelRenderer {
     u.uNear.value = camera.near;
     u.uFar.value = camera.far;
     this.gl.setRenderTarget(out);
+    // On the canvas, the last pass is wrapped in a query: drawn() says, without waiting, once the GPU drew it.
+    const gl = this.gl.getContext();
+    if (!out) gl.beginQuery(gl.ANY_SAMPLES_PASSED_CONSERVATIVE, (this.query ??= gl.createQuery()));
     this.gl.render(this.postScene, this.postCamera);
+    if (!out) {
+      gl.endQuery(gl.ANY_SAMPLES_PASSED_CONSERVATIVE);
+      this.pending = true;
+    }
     this.gl.setRenderTarget(null);
+  }
+
+  /** Whether the GPU has drawn the last frame rendered on the canvas. Never waits for it. */
+  drawn() {
+    const gl = this.gl.getContext();
+    if (this.pending && gl.getQueryParameter(this.query, gl.QUERY_RESULT_AVAILABLE)) this.pending = false;
+    return !this.pending;
   }
 
   /** Renders a stage off screen and returns the RGBA pixels, top row first. */
   capture(stage, width, height) {
-    const out = (this.captureTarget?.width === width && this.captureTarget?.height === height)
-      ? this.captureTarget
-      : (this.captureTarget = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false }));
+    const out = this.keep(`out ${width}x${height}`, () => new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false }));
     this.render(stage, width, height, out);
     const raw = new Uint8Array(width * height * 4);
     this.gl.readRenderTargetPixels(out, 0, 0, width, height, raw);

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="description" content="Type a word, hatch a creature: the creature that word was always going to be.">
+    <meta name="description" content="Type a word, hatch a creature, then cross two of them: they lay an egg, and out comes their child.">
     <title>Wildseed</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 12' shape-rendering='crispEdges'%3E%3Cpath fill='%232b2238' d='M3 0h4v1h1v2h1v3h1v4h-1v1h-1v1h-6v-1h-1v-1h-1v-4h1v-3h1v-2h1z'/%3E%3Cpath fill='%23fff1c4' d='M3 1h4v2h1v3h1v4h-1v1h-6v-1h-1v-4h1v-3h1z'/%3E%3Cpath fill='%238fca72' d='M4 3h2v2h-2zM6 7h2v2h-2zM2 8h2v1h-2z'/%3E%3C/svg%3E">
   </head>
@@ -12,7 +12,7 @@
       <header class="top">
         <h1 class="logo">wild<span>seed</span></h1>
         <form class="hatch" autocomplete="off" novalidate>
-          <input data-testid="seed-input" name="seed" aria-label="A word to hatch" placeholder="type a word, your name…" spellcheck="false" enterkeyhint="go">
+          <input data-testid="seed-input" name="seed" aria-label="A word or a lineage to hatch" placeholder="a word, your name… or two: thomas × auri" spellcheck="false" enterkeyhint="go">
           <button type="submit" class="btn hatch-btn">Hatch</button>
           <button type="button" class="btn" data-testid="random">Random</button>
         </form>
@@ -20,7 +20,10 @@
         <p class="error" data-testid="seed-error" role="alert" hidden></p>
       </header>
       <main class="hatchery">
-        <div class="stage"><canvas data-testid="scene" aria-label="The creature, in 3D: drag to turn the camera, click it to poke it"></canvas></div>
+        <div class="stage">
+          <canvas data-testid="scene" aria-label="The creature, in 3D: drag to turn the camera, click it to poke it"></canvas>
+          <p class="caption" aria-live="polite" hidden></p>
+        </div>
         <aside class="side">
           <article class="card" data-testid="creature-card">
             <p class="rare" hidden>★ rare</p>
@@ -33,8 +36,24 @@
           <div class="share">
             <button type="button" class="btn" data-testid="save-gif">Save GIF</button>
             <button type="button" class="btn" data-testid="save-card">Save card</button>
+            <button type="button" class="btn" data-testid="send-link">Send link</button>
           </div>
-          <p class="hint">Drag to turn the camera, click the creature to poke it.</p>
+          <section class="family" data-testid="family-tree" aria-label="Family tree" hidden></section>
+          <section class="cross" aria-labelledby="cross-title">
+            <h3 id="cross-title">Lay an egg</h3>
+            <form class="pair" autocomplete="off" novalidate>
+              <span class="mate" title="The creature on screen"></span>
+              <span class="times" aria-hidden="true">×</span>
+              <input data-testid="cross-input" name="partner" aria-label="Who to cross it with" placeholder="a friend's name…" spellcheck="false" enterkeyhint="go">
+              <button type="submit" class="btn" data-testid="cross">Lay an egg</button>
+              <button type="button" class="btn" data-testid="random-mate" title="Cross it with a word from the list">With anyone</button>
+            </form>
+            <div class="again" hidden>
+              <button type="button" class="btn" data-testid="replay">Watch them meet</button>
+              <button type="button" class="btn next-egg" data-testid="next-egg">Their next egg</button>
+            </div>
+          </section>
+          <p class="hint">Drag to turn the camera, click the creature to poke it. Drag a creature you hatched onto the scene to cross it.</p>
           <section class="hatched" hidden>
             <h3>Hatched here</h3>
             <nav class="recent" aria-label="Creatures hatched on this device"></nav>

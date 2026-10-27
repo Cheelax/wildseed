@@ -85,3 +85,31 @@ export function paletteOf(affinity, rare, d) {
   const ink = { h: body.h + 10, s: d.int(30, 45), l: d.int(9, 13) };
   return [body, belly, accent, detail, eye, ink].map(css);
 }
+
+/** The color between two "#rrggbb" colors, `t` of the way from the first. */
+function mix(c, d, t) {
+  const channel = (i) => {
+    const [x, y] = [c, d].map((h) => parseInt(h.slice(i, i + 2), 16));
+    return Math.round(x + (y - x) * t).toString(16).padStart(2, "0");
+  };
+  return `#${channel(1)}${channel(3)}${channel(5)}`;
+}
+
+/**
+ * A child's six colors: its body and belly are its body's parent's colors blended toward the other's, it
+ * mostly wears the other parent's accent, and either's horns and eyes. A rare child is starlit.
+ */
+export function childPalette(main, other, affinity, rare, d) {
+  if (rare) return paletteOf(affinity, true, d);
+  const [body, belly, accent, detail, eye, ink] = main.palette;
+  const [oBody, oBelly, oAccent, oDetail, oEye, oInk] = other.palette;
+  const t = d.num(0.25, 0.5);
+  return [
+    mix(body, oBody, t),
+    mix(belly, oBelly, t),
+    d.chance(0.7) ? oAccent : accent,
+    d.chance(0.5) ? oDetail : detail,
+    d.chance(0.5) ? oEye : eye,
+    mix(ink, oInk, t),
+  ];
+}

@@ -40,3 +40,15 @@ export function nameOf(seed, affinity, d) {
   const name = (stem.endsWith(ending[0]) ? stem.slice(0, -1) : stem) + ending;
   return name[0].toUpperCase() + name.slice(1, 12);
 }
+
+/** A name's first syllable, "thom" of Thombun, and its last, "bun". */
+const headOf = (name) => /^[^aeiouy]*[aeiouy]+[^aeiouy]?/.exec(name)?.[0] ?? name;
+const tailOf = (name) => /[^aeiouy]?[aeiouy]+[^aeiouy]*$/.exec(name)?.[0] ?? name;
+
+/** A child's name sounds like both parents': the start of one parent's name and the end of the other's. */
+export function childName(a, b, d) {
+  const [first, last] = d.chance(0.5) ? [a, b] : [b, a];
+  let name = headOf(first.toLowerCase()) + tailOf(last.toLowerCase());
+  if (name.length < 3) name = first.toLowerCase() + tailOf(last.toLowerCase());
+  return name[0].toUpperCase() + name.slice(1, 12);
+}

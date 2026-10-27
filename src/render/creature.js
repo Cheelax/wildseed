@@ -3,6 +3,7 @@
 // pose() is a pure function of time and of what it is told, so the GIF is the same creature as the page.
 import * as THREE from "three";
 import { charm, materialsOf } from "./parts.js";
+import { graft } from "./grafts.js";
 import { pipkin } from "./species/pipkin.js";
 import { hopple } from "./species/hopple.js";
 import { trundle } from "./species/trundle.js";
@@ -42,7 +43,9 @@ export class Creature {
     const rig = BUILDERS[genome.species](genome, this.materials);
     this.rig = rig;
     const { traits } = genome;
-    if (traits.charm !== "none" && rig.charmAt) {
+    // A child can wear parts from a parent of another species; its charm gives way to a part on its crown.
+    const grafted = graft(rig, genome, this.materials);
+    if (traits.charm !== "none" && rig.charmAt && !grafted.includes("crown")) {
       const c = charm(traits.charm, this.materials);
       c.position.set(...rig.charmAt.at);
       c.rotation.set(...rig.charmAt.rot);

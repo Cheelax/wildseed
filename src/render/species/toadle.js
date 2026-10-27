@@ -1,5 +1,5 @@
 // Toadle: a squat frog with its eyes up on two domes, a wide grin, and a throat that swells when it sings.
-import { ellipsoid, eye, cheeks, joint, mouth, onSurface } from "../parts.js";
+import { ellipsoid, eye, cheeks, joint, mouth, onSurface, skin } from "../parts.js";
 
 export function toadle(g, m) {
   const t = g.traits;
@@ -47,6 +47,12 @@ export function toadle(g, m) {
     body, head, wiggles: [], flaps: [], puffs: [throat],
     face: { eyes: open, happy, irises, mouth: mo },
     charmAt: { parent: head, at: [0, 0.44, -0.12], rot: [0, 0, 0] },
+    places: {
+      crown: { parent: head, at: skin(torso, Math.PI, 1.3) },
+      ears: { parent: head, at: skin(torso, 1.25, 0.7) },
+      back: { parent: head, at: skin(torso, Math.PI, 0.75) },
+      tail: { parent: head, at: skin(torso, Math.PI, 0.05) },
+    },
     height: 0.5 + 0.36 + D * 1.9,
   };
 }

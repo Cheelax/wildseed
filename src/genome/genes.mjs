@@ -48,3 +48,13 @@ export function die(next) {
 export function genesOf(seed) {
   return (name) => die(stream(hash32(`${name}\u0000${seed}`)));
 }
+
+/** A knob's draw from its die: [how, ...range], how being "num", "int", "chance" or "pick" (species.mjs). */
+export const draw = (d, [how, ...range]) => d[how](...range);
+
+/** Whether a value is one a knob [how, ...range] could draw: a number, a boolean, or one of its choices. */
+export function fits([how, choices], value) {
+  if (how === "num" || how === "int") return typeof value === "number";
+  if (how === "chance") return typeof value === "boolean";
+  return (Array.isArray(choices) ? choices : Object.keys(choices)).includes(value);
+}

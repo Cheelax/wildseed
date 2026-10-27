@@ -1,6 +1,7 @@
 // The cry: a few notes sung through two vowel formants, all from the genome. The pitch comes from the
 // voice gene and the body's size, the timbre from the affinity (a soft moss coo, a gruff stone rumble, a
-// buzzy spark chirp), the melody from the contour, the vowel from the vowel gene. Rare creatures add a chime.
+// buzzy spark chirp), the melody from the contour, the vowel from the vowel gene. Rare creatures add a chime,
+// and a child with a mutation a shimmer.
 
 const VOWELS = { a: [800, 1200], e: [480, 1900], i: [320, 2400], o: [520, 880], u: [360, 720] };
 const TIMBRE = {
@@ -25,13 +26,19 @@ export function wakeAudio() {
   if (live.state === "suspended") live.resume();
 }
 
-/** The egg's sounds, from now: a crack at each of `cracks` seconds, a pop as the cap comes off at `open`, a crumble at `burst`. */
-export function hatchSounds({ cracks, open, burst }) {
+/**
+ * The egg's sounds, from now: a crack at each of `cracks` seconds, a pop as the cap comes off at `open` (null
+ * when it is already off), a crumble at `burst`. When `parents` meet first, each calls out to the other at
+ * `meet`, and the egg plops out at `lay`.
+ */
+export function hatchSounds({ cracks, open, burst }, { parents = null, meet = 0, lay = 0 } = {}) {
   if (muted || live?.state !== "running") return;
   const now = live.currentTime + 0.02;
+  parents?.forEach((g, i) => sing(live, g, now + meet + 0.45 * i));
+  if (parents) noise(live, now + lay, 0.12, 420, 0.9);
   cracks.forEach((t, i) => noise(live, now + t, 0.035, 1800 + 500 * i, 0.5));
-  noise(live, now + open, 0.1, 1100, 0.8);
-  noise(live, now + burst, 0.16, 650, 0.9);
+  if (open !== null) noise(live, now + open, 0.1, 1100, 0.8);
+  if (burst > 0) noise(live, now + burst, 0.16, 650, 0.9);
 }
 
 /** A short burst of filtered noise: a crack (short, high) or a pop (longer, lower). */
@@ -163,6 +170,24 @@ export function sing(ctx, genome, start = 0) {
     chime.start(end);
     chime.stop(end + 0.65);
     end += 0.6;
+  }
+
+  if (genome.mutations?.length) {
+    // A child with a mutation ends its cry in a shimmer: three quick notes up.
+    for (let k = 0; k < 3; k++) {
+      const t = end + 0.07 * k;
+      const ping = ctx.createOscillator();
+      ping.type = "sine";
+      ping.frequency.value = pitch * (3 + k);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+      ping.connect(g).connect(out);
+      ping.start(t);
+      ping.stop(t + 0.2);
+    }
+    end += 0.32;
   }
   return end - start;
 }

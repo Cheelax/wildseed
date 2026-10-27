@@ -31,3 +31,22 @@ export const PIXEL_MIN = 3;
 export const GIF_MIN_FRAMES = 12;
 export const GIF_MAX_COLORS = 64;
 export const CARD_MIN = 300;
+
+// Round 2: lineages and crossing. ARCHITECTURE.md, "Lineages" and "Crossing".
+
+/** Written out, a lineage holds at most LINEAGE_MAX characters and GENERATIONS_MAX generations; an egg's number is 1 to CLUTCH_MAX. */
+export const LINEAGE_MAX = 120;
+export const GENERATIONS_MAX = 6;
+export const CLUTCH_MAX = 99;
+
+/** Each trait of a child mutates 1 time in MUTATION_ONE_IN; a child of two common parents is rare 1 time in RARE_ONE_IN. */
+export const MUTATION_ONE_IN = 50;
+
+/**
+ * Family resemblance, measured over many children: MIX_SHARE of them take a trait from each parent (where the
+ * parents differ in 4 traits or more), COLOR_SHARE have colors nearer their parents' than another couple's, and
+ * SIBLING_SHARE of a couple's first four eggs differ in their traits.
+ */
+export const MIX_SHARE = 0.7;
+export const COLOR_SHARE = 0.8;
+export const SIBLING_SHARE = 0.95;

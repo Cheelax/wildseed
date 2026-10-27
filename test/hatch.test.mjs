@@ -7,15 +7,15 @@ import { fileURLToPath } from "node:url";
 const bin = fileURLToPath(new URL("../bin/hatch.mjs", import.meta.url));
 const hatch = (...seeds) => spawnSync(process.execPath, [bin, ...seeds], { encoding: "utf8" });
 
-test("prints one line of JSON per seed, in order", () => {
-  const r = hatch("moss", "Pebble", "東京");
+test("prints one line of JSON per seed or lineage, in order", () => {
+  const r = hatch("moss", "Pebble", "東京", "Thomas × Auri", "(thomas*auri)*noe#2");
   assert.equal(r.status, 0);
   const lines = r.stdout.trimEnd().split("\n").map((l) => JSON.parse(l));
-  assert.deepEqual(lines.map((g) => g.seed), ["moss", "pebble", "東京"]);
+  assert.deepEqual(lines.map((g) => g.seed), ["moss", "pebble", "東京", "auri*thomas", "(auri*thomas)*noe#2"]);
 });
 
-test("one bad seed: nothing on stdout, the reason on stderr, exit 2", () => {
-  for (const args of [[], ["moss", "a*b"], ["🐸"]]) {
+test("one bad seed or lineage: nothing on stdout, the reason on stderr, exit 2", () => {
+  for (const args of [[], ["moss", "a**b"], ["🐸"], ["(a*b"], ["thomas*auri", "a*b#0"]]) {
     const r = hatch(...args);
     assert.equal(r.status, 2);
     assert.equal(r.stdout, "");

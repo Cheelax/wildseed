@@ -152,8 +152,17 @@ body {
   overflow: hidden;
   border: 4px solid var(--line);
   border-radius: 18px;
-  background: linear-gradient(var(--sky0) 50%, var(--sky3) 50%);
+  background: var(--sky0);
   box-shadow: 0 5px 0 var(--line);
+}
+
+/* The sky's last band under the canvas's edge, as a plain fill: a gradient here costs a page drawn in
+   software seconds before its first frame (README, "Speed"). */
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 50% 0 0;
+  background: var(--sky3);
 }
 
 .no-webgl {
@@ -199,6 +208,12 @@ body {
 
 .card.fresh {
   animation: hop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 1.3s both;
+}
+
+/* The card of an egg about to hatch: no kind and no stats yet. */
+.card.egg .kind,
+.card.egg .stats {
+  visibility: hidden;
 }
 
 @keyframes hop {
@@ -340,8 +355,12 @@ body {
 
 .share {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.share .btn {
+  padding: 9px 6px;
 }
 
 .hint {
@@ -372,12 +391,17 @@ body {
 
 .chip {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px 3px 6px;
+  align-items: stretch;
   border: 2px solid var(--line);
   border-radius: 999px;
   background: var(--paper);
+  overflow: hidden;
+  cursor: grab;
+}
+
+.chip button {
+  border: 0;
+  background: none;
   color: var(--line);
   font: inherit;
   font-size: 13px;
@@ -385,7 +409,14 @@ body {
   cursor: pointer;
 }
 
-.chip::before {
+.chip .open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 6px;
+}
+
+.chip .open::before {
   content: "";
   width: 12px;
   height: 12px;
@@ -394,8 +425,313 @@ body {
   background: var(--chip);
 }
 
+.chip .mate-with {
+  padding: 0 9px 0 7px;
+  border-left: 2px solid var(--line);
+  font-size: 15px;
+}
+
+.chip .mate-with:hover {
+  background: var(--accent);
+}
+
 .chip[aria-current="true"] {
   background: var(--accent);
+}
+
+/* The scene while a creature is dragged over it: drop it to cross. */
+.stage.dropping {
+  outline: 4px dashed var(--accent);
+  outline-offset: -12px;
+}
+
+/* What happens in the scene while two parents meet and lay their egg. */
+.caption {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 28px);
+  margin: 0;
+  padding: 5px 14px;
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: 0 3px 0 var(--line);
+  font-weight: 800;
+  text-align: center;
+  pointer-events: none;
+  animation: pop 0.3s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+.caption[hidden] {
+  display: none;
+}
+
+@keyframes pop {
+  from {
+    transform: translateX(-50%) scale(0.6);
+    opacity: 0;
+  }
+}
+
+.cross,
+.family {
+  padding: 12px 14px 14px;
+  border: 4px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: 0 5px 0 var(--line);
+}
+
+.cross h3,
+.family h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.cross .pair {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.cross .mate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 110px;
+  overflow: hidden;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cross .mate::before,
+.family .who::before {
+  content: "";
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: var(--chip, var(--c));
+}
+
+.cross .times {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.cross input {
+  min-width: 0;
+  padding: 6px 10px;
+  border: 3px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--line);
+  font: inherit;
+}
+
+.cross input:focus {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.cross .pair .btn {
+  grid-column: span 2;
+  background: var(--accent);
+}
+
+.cross .pair [data-testid="random-mate"] {
+  grid-column: span 1;
+  padding: 9px 10px;
+  background: var(--paper);
+}
+
+.cross .again {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cross .again .btn {
+  padding: 7px 10px;
+  white-space: normal;
+}
+
+.cross[hidden],
+.cross .next-egg[hidden],
+.cross .again[hidden],
+.family[hidden] {
+  display: none;
+}
+
+/* The family tree: grandparents over parents over the child, on a grid of four columns, each couple
+   joined to its child by an ink bracket. */
+.tree {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: auto 10px auto 12px auto;
+  gap: 0 4px;
+  justify-items: center;
+  align-items: end;
+}
+
+.tree .grand,
+.tree .word {
+  grid-row: 1;
+}
+
+.tree .word {
+  align-self: center;
+  margin-bottom: 6px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.tree .link {
+  grid-row: 2;
+  justify-self: center;
+  width: 50%;
+  height: 100%;
+  border: 2px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+}
+
+.tree .parent {
+  grid-row: 3;
+}
+
+.tree .link.down {
+  grid-row: 4;
+  grid-column: 1 / -1;
+}
+
+.tree .child {
+  grid-row: 5;
+  grid-column: 1 / -1;
+}
+
+.who {
+  position: relative;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0 5px;
+  max-width: 100%;
+  padding: 3px 8px;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--line);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.who b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A portrait, once painted, takes the place of the color dot: two screen pixels per art pixel. */
+.who .face {
+  display: none;
+  flex-basis: 100%;
+  width: calc(var(--w) * 2px);
+  margin: 0 auto 3px;
+  border: 2px solid var(--line);
+  border-radius: 4px;
+  image-rendering: pixelated;
+}
+
+.who.grand .face {
+  --w: 24;
+}
+
+.who.parent .face {
+  --w: 28;
+}
+
+.who.child .face {
+  --w: 36;
+}
+
+.who.painted .face {
+  display: block;
+}
+
+.family .who.painted::before {
+  display: none;
+}
+
+.who small {
+  flex-basis: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.who.grand {
+  padding: 2px 5px;
+  font-size: 11px;
+}
+
+.who.grand small {
+  font-size: 10px;
+}
+
+.who.grand::before {
+  width: 8px;
+  height: 8px;
+}
+
+.who.child {
+  padding: 5px 14px;
+  background: var(--accent);
+  font-size: 15px;
+  cursor: default;
+}
+
+.who:not(:disabled):hover {
+  background: var(--detail);
+}
+
+.heritage {
+  display: grid;
+  gap: 4px;
+  margin: 12px 0 0;
+  padding: 10px 0 0;
+  border-top: 2px dashed color-mix(in srgb, var(--line) 40%, transparent);
+  font-size: 13px;
+  font-weight: 600;
+  list-style: none;
+}
+
+.heritage b {
+  padding: 0 6px;
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  background: var(--c);
+}
+
+.heritage .mutation {
+  font-weight: 800;
+}
+
+.heritage .mutation::before {
+  content: "✦ ";
+  color: #c03ad6;
 }
 
 @media (max-width: 800px) {
@@ -428,39 +764,7 @@ body {
     overflow: visible;
   }
 
-  .card.fresh {
-  animation: hop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) 1.3s both;
-}
-
-@keyframes hop {
-  from {
-    transform: translateY(0) scale(1);
-  }
-  40% {
-    transform: translateY(-10px) scale(1.02);
-  }
-  to {
-    transform: translateY(0) scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .card.fresh {
-    animation: none;
-  }
-}
-
-.sound {
-  padding: 6px 12px;
-  font-size: 14px;
-}
-
-.sound[aria-pressed="false"] {
-  opacity: 0.7;
-  text-decoration: line-through;
-}
-
-.card .name {
+  .card .name {
     font-size: 30px;
   }
 }

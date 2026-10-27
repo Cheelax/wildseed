@@ -1,21 +1,28 @@
-// The hatchery page: a word in, a creature out. ARCHITECTURE.md, "The page".
+// The hatchery page: a word in, a creature out; two creatures in, an egg and their child out.
+// ARCHITECTURE.md, "The page".
 import "./hatchery.css";
-import { genomeOf, normalizeSeed, seedProblem } from "./genome.mjs";
+import { genomeOf, lineageOf, lineageProblem, SeedError } from "./genome.mjs";
+import { crossLineage } from "./lineage.mjs";
 import { WORDS } from "./words.mjs";
 import { Hatchery } from "./render/hatchery.js";
-import { HATCH, skyOf } from "./render/stage.js";
+import { skyOf } from "./render/stage.js";
+import { MEET } from "./render/meeting.js";
 import { cry, hatchSounds, mute, wakeAudio } from "./audio/cry.js";
 import { makeGif } from "./share/film.js";
 import { makeCard } from "./share/card.js";
 import { save } from "./share/save.js";
+import { drawFamily, traitWords } from "./family.js";
+import { portrait } from "./render/portrait.js";
 
 const $ = (id) => document.querySelector(`[data-testid="${id}"]`);
 const card = $("creature-card");
 const input = $("seed-input");
 const error = $("seed-error");
+const caption = document.querySelector(".caption");
 
 /** What the page shows, kept up to date: ARCHITECTURE.md, "window.__wild". */
 const wild = (window.__wild = { ready: false, renderer: null, pixel: null, creature: null });
+let readyAt = 0;
 
 /** The live scene, or null where the browser offers no WebGL 2: the page then says so and still names the creature. */
 const view = (() => {
@@ -23,8 +30,10 @@ const view = (() => {
     return new Hatchery($("scene"), {
       onHatched: (genome) => cry(genome),
       onPoke: (genome) => cry(genome),
+      onCue: (cue) => tell(cueText(cue)),
       onReady: (genome) => {
         if (wild.creature === genome) wild.ready = true;
+        readyAt = performance.now();
       },
       onResize: ({ pixel }) => (wild.pixel = pixel),
     });
@@ -55,7 +64,7 @@ function showCard(g) {
   card.querySelector(".affinity").textContent = g.affinity;
   card.querySelector(".about").textContent = MOODS[g.traits.mood];
   card.querySelector(".rare").hidden = !g.rare;
-  card.querySelector(".seed").textContent = `seed “${g.seed}”`;
+  card.querySelector(".seed").textContent = g.parents ? `lineage “${g.seed}”` : `seed “${g.seed}”`;
   card.querySelector(".stats").replaceChildren(
     ...STATS.map(([key, name]) => {
       const row = document.createElement("div");
@@ -79,30 +88,45 @@ function showCard(g) {
   document.title = `${g.name} · Wildseed`;
 }
 
-/** The creatures hatched on this device, newest first: a row of chips that hatch them again. */
+/** The creatures hatched on this device, newest first: chips that open them again, or cross them with the one on screen. */
 const KEPT = "wildseed.hatched";
 function remember(genome) {
   let seeds = [];
   try {
-    seeds = JSON.parse(localStorage.getItem(KEPT) ?? "[]").filter((s) => typeof s === "string" && !seedProblem(s));
+    seeds = JSON.parse(localStorage.getItem(KEPT) ?? "[]").filter((s) => typeof s === "string" && !lineageProblem(s));
   } catch {}
-  seeds = [genome.seed, ...seeds.filter((s) => s !== genome.seed)].slice(0, 12);
+  seeds = [genome.seed, ...seeds.filter((s) => s !== genome.seed)].slice(0, 16);
   try {
     localStorage.setItem(KEPT, JSON.stringify(seeds));
   } catch {}
   const chips = seeds.map((seed) => {
     const g = genomeOf(seed);
-    const chip = document.createElement("button");
-    chip.type = "button";
+    const chip = document.createElement("span");
     chip.className = "chip";
-    chip.textContent = g.name;
-    chip.title = `“${seed}”: ${g.species}, ${g.affinity}`;
+    chip.draggable = true;
     chip.style.setProperty("--chip", g.palette[0]);
     chip.setAttribute("aria-current", String(seed === genome.seed));
-    chip.addEventListener("click", () => {
+    chip.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/x-wildseed", seed);
+      e.dataTransfer.effectAllowed = "copy";
+    });
+    const open = document.createElement("button");
+    open.type = "button";
+    open.className = "open";
+    open.textContent = g.name;
+    open.title = `Open ${g.name}: “${seed}”, ${g.species}, ${g.affinity}`;
+    open.addEventListener("click", () => {
       input.value = seed;
       hatch(seed);
     });
+    const mate = document.createElement("button");
+    mate.type = "button";
+    mate.className = "mate-with";
+    mate.textContent = "×";
+    mate.title = `Cross ${g.name} with the creature on screen`;
+    mate.setAttribute("aria-label", mate.title);
+    mate.addEventListener("click", () => crossWith(seed));
+    chip.append(open, mate);
     return chip;
   });
   document.querySelector(".recent").replaceChildren(...chips);
@@ -114,22 +138,134 @@ function showError(message) {
   error.hidden = false;
 }
 
-/** Hatches a seed: the egg drops, cracks, and the creature that word was always going to be comes out. */
-function hatch(seed, { push = true } = {}) {
+/** A line over the scene while parents meet and lay their egg. */
+function tell(text) {
+  caption.textContent = text ?? "";
+  caption.hidden = !text;
+}
+
+/** The card while two parents meet: their egg, the child unknown. */
+let reveal = null;
+function showEgg(g, [a, b]) {
+  card.classList.remove("fresh");
+  card.classList.add("egg");
+  card.querySelector(".name").textContent = g.clutch > 1 ? `Egg #${g.clutch}` : "An egg";
+  card.querySelector(".about").textContent = `${a.name} and ${b.name}'s egg. What will hatch?`;
+  card.querySelector(".rare").hidden = true;
+  card.querySelector(".seed").textContent = `lineage “${g.seed}”`;
+  $("family-tree").hidden = true;
+  document.querySelector(".cross").hidden = true;
+}
+
+/** What the line says at each moment of a crossing (Stage's cues), about the creature on screen. */
+function cueText(cue) {
+  const g = wild.creature;
+  if (cue === "out") reveal?.();
+  if (!cue || !g?.parents) return null;
+  const [a, b] = g.parents.map((p) => genomeOf(p));
+  if (cue === "meet") return `${a.name} meets ${b.name}…`;
+  if (cue === "lay") return g.clutch > 1 ? `…and they lay egg #${g.clutch}!` : "…and they lay an egg!";
+  if (cue === "hatch") return "It's hatching…";
+  if (g.rare) return `★ A rare child: ${g.name}!`;
+  if (g.mutations.length) return `✦ ${g.name}, with a mutation: its ${traitWords(g.mutations)}!`;
+  return `Say hello to ${g.name}!`;
+}
+
+/**
+ * Hatches a lineage (written form): the egg drops, cracks, and the creature comes out. A child's parents
+ * first meet and lay the egg when `meet` is set; with `quick`, for a page that opens, it is out at once.
+ */
+function hatch(seed, { push = true, meet = false, quick = false } = {}) {
   const genome = genomeOf(seed);
   wild.ready = false;
   wild.creature = genome;
   error.hidden = true;
-  view?.hatch(genome);
-  if (view) hatchSounds(HATCH);
-  showCard(genome);
-  card.classList.remove("fresh");
-  void card.offsetWidth; // restart the card's little hop
-  card.classList.add("fresh");
-  remember(genome);
+  tell(null);
+  const parents = meet && genome.parents ? genome.parents.map((p) => genomeOf(p)) : null;
+  if (view) hatchSounds(view.hatch(genome, { parents, quick }), { parents, meet: MEET.arrive, lay: MEET.lay });
+  // While its parents meet, the card holds their egg: the child shows itself when it is out.
+  reveal = () => {
+    reveal = null;
+    showCard(genome);
+    card.classList.remove("fresh", "egg");
+    void card.offsetWidth; // restart the card's little hop
+    card.classList.add("fresh");
+    drawFamily($("family-tree"), genome, (ancestor) => {
+      input.value = ancestor;
+      hatch(ancestor);
+    }, paint);
+    showCrossing(genome);
+    remember(genome);
+  };
+  if (parents && view) showEgg(genome, parents);
+  else reveal();
   const url = new URL(location.href);
   url.search = `?seed=${encodeURIComponent(genome.seed)}`;
+  url.hash = "";
   if (url.href !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);
+}
+
+/**
+ * Portraits for the family tree, painted one at a time a second after the creature is out (once the frames
+ * have settled), on a machine that draws a frame in under 60 ms; a slower one (a page drawn in software)
+ * keeps the colored dots and its pace.
+ */
+const faces = new Map();
+const unpainted = [];
+let painting = false;
+function paint(genome, canvas) {
+  unpainted.push({ genome, canvas });
+  if (!painting) setTimeout(paintNext, 300);
+  painting = true;
+}
+function paintNext() {
+  const settled = wild.ready && !view?.paused && performance.now() - readyAt > 1000;
+  if (unpainted.length && view && !settled) return setTimeout(paintNext, 300);
+  if (!unpainted.length || !view || view.cost > 60) {
+    unpainted.length = 0;
+    painting = false;
+    return;
+  }
+  const { genome, canvas } = unpainted.shift();
+  if (canvas.isConnected) {
+    const key = `${genome.seed} ${canvas.width}x${canvas.height}`;
+    if (!faces.has(key)) faces.set(key, portrait(view.renderer, genome, canvas.width, canvas.height));
+    canvas.getContext("2d").putImageData(new ImageData(faces.get(key), canvas.width, canvas.height), 0, 0);
+    canvas.parentElement.classList.add("painted");
+  }
+  setTimeout(paintNext, 30);
+}
+
+/** The crossing box: the creature on screen, who to cross it with, and a child's parents' next egg. */
+function showCrossing(g) {
+  document.querySelector(".cross").hidden = false;
+  const mate = document.querySelector(".cross .mate");
+  mate.textContent = g.name;
+  mate.style.setProperty("--chip", g.palette[0]);
+  document.querySelector(".cross .again").hidden = !g.parents;
+  const next = $("next-egg");
+  next.hidden = !g.parents || g.clutch >= 99;
+  if (g.parents) next.textContent = `Their egg #${g.clutch + 1}`;
+}
+
+/** Crosses the creature on screen with another lineage: they meet, lay an egg, and their child hatches. */
+function crossWith(text) {
+  wakeAudio();
+  const problem = lineageProblem(text);
+  if (problem) return showError(problem);
+  layEgg(wild.creature.seed, lineageOf(text), 1);
+}
+
+function layEgg(a, b, clutch) {
+  let child;
+  try {
+    child = crossLineage(a, b, clutch);
+  } catch (e) {
+    if (e instanceof SeedError) return showError(`These two cannot have a child: ${e.message}.`);
+    throw e;
+  }
+  input.value = child;
+  hatch(child, { meet: true });
 }
 
 /** Random deals the words from a shuffled deck: no word comes back before the deck runs out. */
@@ -149,10 +285,33 @@ const randomWord = () => {
 document.querySelector("form.hatch").addEventListener("submit", (e) => {
   e.preventDefault();
   wakeAudio();
-  const seed = normalizeSeed(input.value);
-  const problem = seedProblem(seed);
+  const problem = lineageProblem(input.value);
   if (problem) return showError(problem);
-  hatch(seed);
+  hatch(lineageOf(input.value), { meet: true });
+});
+
+document.querySelector(".cross form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const partner = $("cross-input");
+  if (!partner.value.trim()) return partner.focus();
+  crossWith(partner.value);
+});
+
+$("random-mate").addEventListener("click", () => {
+  const partner = $("cross-input");
+  partner.value = randomWord();
+  crossWith(partner.value);
+});
+
+$("replay").addEventListener("click", () => {
+  wakeAudio();
+  if (wild.creature?.parents) hatch(wild.creature.seed, { meet: true, push: false });
+});
+
+$("next-egg").addEventListener("click", () => {
+  wakeAudio();
+  const g = wild.creature;
+  if (g?.parents) layEgg(g.parents[0], g.parents[1], g.clutch + 1);
 });
 
 $("random").addEventListener("click", () => {
@@ -160,6 +319,22 @@ $("random").addEventListener("click", () => {
   const word = randomWord();
   input.value = word;
   hatch(word);
+});
+
+// Drop a creature hatched here onto the scene, and it crosses with the one on screen.
+const stage = document.querySelector(".stage");
+stage.addEventListener("dragover", (e) => {
+  if (!e.dataTransfer.types.includes("text/x-wildseed")) return;
+  e.preventDefault();
+  stage.classList.add("dropping");
+});
+stage.addEventListener("dragleave", () => stage.classList.remove("dropping"));
+stage.addEventListener("drop", (e) => {
+  stage.classList.remove("dropping");
+  const seed = e.dataTransfer.getData("text/x-wildseed");
+  if (!seed) return;
+  e.preventDefault();
+  crossWith(seed);
 });
 
 addEventListener("pointerdown", wakeAudio);
@@ -180,37 +355,61 @@ try {
   setSound(localStorage.getItem("wildseed.sound") !== "off");
 } catch {}
 
-/** Runs a slow export with its button showing that it works. */
+/** Runs a slow export with its button showing that it works, the live scene paused meanwhile. */
 async function exporting(button, busyText, make, filename) {
   if (button.disabled || !view) return;
   const genome = wild.creature;
   const text = button.textContent;
   button.disabled = true;
   button.textContent = busyText;
+  view.paused = true;
   try {
     save(await make(view.renderer, genome), filename(genome));
   } finally {
+    view.paused = false;
     button.disabled = false;
     button.textContent = text;
   }
 }
-const fileName = (g) => `${g.name.toLowerCase()}-${g.seed.replace(/[\s']+/g, "-")}`;
+/** Sends the creature's link: through the device's share sheet where there is one, else to the clipboard. */
+$("send-link").addEventListener("click", async () => {
+  const button = $("send-link");
+  const g = wild.creature;
+  const text = g.parents ? `${g.name}, the child of ${g.parents.map((p) => genomeOf(p).name).join(" and ")}, hatched on Wildseed` : `${g.name}, hatched from “${g.seed}” on Wildseed`;
+  try {
+    if (navigator.share) await navigator.share({ title: `${g.name} · Wildseed`, text, url: location.href });
+    else {
+      await navigator.clipboard.writeText(location.href);
+      button.textContent = "Link copied";
+      setTimeout(() => (button.textContent = "Send link"), 1600);
+    }
+  } catch {}
+});
+
+const fileName = (g) => `${g.name.toLowerCase()}-${g.seed.replace(/[^\p{L}\p{M}\p{N}]+/gu, "-").replace(/^-|-$/g, "")}`;
 $("save-gif").addEventListener("click", () => exporting($("save-gif"), "Filming…", makeGif, (g) => `${fileName(g)}.gif`));
 $("save-card").addEventListener("click", () => exporting($("save-card"), "Drawing…", makeCard, (g) => `${fileName(g)}-card.png`));
 
+/** The lineage the address asks for: `?seed=`, plus a "#2" left unencoded, which the browser reads as the fragment. */
+function asked() {
+  const seed = new URLSearchParams(location.search).get("seed");
+  if (seed === null) return null;
+  return seed.includes("*") && !seed.includes("#") && /^#\d+$/.test(location.hash) ? seed + location.hash : seed;
+}
+
 function fromAddress({ push }) {
-  const asked = new URLSearchParams(location.search).get("seed");
-  if (asked !== null) {
-    const seed = normalizeSeed(asked);
-    const problem = seedProblem(seed);
+  const text = asked();
+  const first = !wild.creature;
+  if (text !== null) {
+    const problem = lineageProblem(text);
     if (!problem) {
-      input.value = seed;
-      return hatch(seed, { push });
+      input.value = lineageOf(text);
+      return hatch(lineageOf(text), { push, quick: first });
     }
-    if (!wild.creature) hatch(randomWord(), { push: false });
+    if (first) hatch(randomWord(), { push: false, quick: true });
     return showError(problem);
   }
-  hatch(randomWord(), { push: false });
+  hatch(randomWord(), { push: false, quick: first });
 }
 
 addEventListener("popstate", () => fromAddress({ push: false }));
