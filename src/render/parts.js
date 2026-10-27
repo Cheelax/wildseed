@@ -3,14 +3,17 @@
 import * as THREE from "three";
 import { CLASS, PATTERN, flat, toon } from "./toon.js";
 
-const SPHERE = new THREE.SphereGeometry(1, 22, 16);
-const HEMISPHERE = new THREE.SphereGeometry(1, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2);
+// Spheres in three sizes: a body or a head stays round at a creature's 100 art pixels; an eye, a claw or a
+// tuft of mane, a few art pixels across, does with far fewer triangles, which a phone without a GPU feels.
+const SPHERES = [[0.25, new THREE.SphereGeometry(1, 16, 12)], [0.06, new THREE.SphereGeometry(1, 12, 8)], [0, new THREE.SphereGeometry(1, 8, 6)]];
+const sphereFor = (radius) => SPHERES.find(([least]) => radius >= least)[1];
+const HEMISPHERE = new THREE.SphereGeometry(1, 16, 7, 0, Math.PI * 2, 0, Math.PI / 2);
 const CONE = new THREE.ConeGeometry(1, 1, 14, 1);
 const CYLINDER = new THREE.CylinderGeometry(1, 1, 1, 14, 1);
 const OCTAHEDRON = new THREE.OctahedronGeometry(1, 0);
 CONE.translate(0, 0.5, 0); // cones grow up from their base
 CYLINDER.translate(0, 0.5, 0);
-for (const g of [SPHERE, HEMISPHERE, CONE, CYLINDER, OCTAHEDRON]) g.userData.shared = true;
+for (const g of [...SPHERES.map(([, g]) => g), HEMISPHERE, CONE, CYLINDER, OCTAHEDRON]) g.userData.shared = true;
 
 /** A mesh that casts a shadow, placed with optional position, rotation (Euler XYZ) and scale. */
 export function mesh(geometry, material, { at, rot, scale } = {}) {
@@ -22,7 +25,12 @@ export function mesh(geometry, material, { at, rot, scale } = {}) {
   return m;
 }
 
-export const ellipsoid = (material, [rx, ry, rz], options = {}) => mesh(SPHERE, material, { ...options, scale: [rx, ry, rz] });
+/** An ellipsoid of radii rx, ry, rz. One smaller than a few art pixels casts no shadow the sun could show. */
+export function ellipsoid(material, [rx, ry, rz], options = {}) {
+  const m = mesh(sphereFor(Math.max(rx, ry, rz)), material, { ...options, scale: [rx, ry, rz] });
+  m.castShadow = Math.max(rx, ry, rz) >= 0.07;
+  return m;
+}
 export const dome = (material, [rx, ry, rz], options = {}) => mesh(HEMISPHERE, material, { ...options, scale: [rx, ry, rz] });
 export const cone = (material, radius, height, options = {}) => mesh(CONE, material, { scale: [radius, height, radius], ...options });
 export const cylinder = (material, radius, height, options = {}) => mesh(CYLINDER, material, { scale: [radius, height, radius], ...options });

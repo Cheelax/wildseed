@@ -3,6 +3,8 @@
 // pose() is a pure function of time and of what it is told, so the GIF is the same creature as the page.
 import * as THREE from "three";
 import { charm, materialsOf } from "./parts.js";
+import { wearHeirlooms } from "./heirlooms.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { pipkin } from "./species/pipkin.js";
 import { hopple } from "./species/hopple.js";
 import { trundle } from "./species/trundle.js";
@@ -40,6 +42,7 @@ export class Creature {
     this.genome = genome;
     this.materials = materialsOf(genome);
     const rig = BUILDERS[genome.species](genome, this.materials);
+    wearHeirlooms(rig, genome, this.materials);
     this.rig = rig;
     const { traits } = genome;
     if (traits.charm !== "none" && rig.charmAt) {
@@ -48,6 +51,7 @@ export class Creature {
       c.rotation.set(...rig.charmAt.rot);
       rig.charmAt.parent.add(c);
     }
+    mergeStill(rig);
     this.root = new THREE.Group(); // where it stands; the hatch scales it
     this.pivot = new THREE.Group(); // hops and squashes
     this.pivot.scale.setScalar(traits.size);
@@ -145,5 +149,46 @@ export class Creature {
     if (m.jaw) m.jaw.rotation.x = open ? 0.45 : 0;
     for (const p of rig.puffs ?? []) p.scale.setScalar(1 + 0.06 * Math.sin(t * 3.1) + (open ? 0.55 : 0));
     return { habit, s };
+  }
+}
+
+/** Whether a material draws the same wherever a part sits: no marking, belly or stars read from its own space. */
+function plain(material) {
+  const u = material.userData.uniforms;
+  if (u) return u.uMarkP.value.x === 0 && u.uBellyP.value.x === 0 && u.uStars.value === 0;
+  return material.isShaderMaterial && "uColor" in material.uniforms;
+}
+
+/**
+ * Merges the parts of a joint that never move on their own and share a plain material into one mesh: a
+ * wyrmlet's mane of twenty tufts, a prickle's spines, a drift's frills each become one draw instead of many,
+ * which a phone drawing without a GPU feels. What the animation moves or hides (a face, a wing, an ear)
+ * stays as it is.
+ */
+function mergeStill(rig) {
+  const keep = new Set([...rig.wiggles, ...rig.flaps].map((w) => w.obj));
+  const { eyes, happy, irises, mouth } = rig.face;
+  for (const o of [...eyes, ...happy, ...irises, mouth?.idle, mouth?.open, mouth?.jaw, ...(rig.puffs ?? [])]) o?.traverse((c) => keep.add(c));
+  const joints = [];
+  rig.body.traverse((o) => !o.isMesh && joints.push(o));
+  for (const joint of joints) {
+    const groups = new Map();
+    for (const part of joint.children) {
+      if (!part.isMesh || part.children.length || keep.has(part) || !plain(part.material)) continue;
+      const g = part.geometry;
+      const key = `${part.material.uuid} ${Object.keys(g.attributes).sort()} ${g.index ? "indexed" : ""}`;
+      groups.set(key, [...(groups.get(key) ?? []), part]);
+    }
+    for (const parts of groups.values()) {
+      if (parts.length < 2) continue;
+      const geometry = mergeGeometries(parts.map((p) => (p.updateMatrix(), p.geometry.clone().applyMatrix4(p.matrix))));
+      const merged = new THREE.Mesh(geometry, parts[0].material);
+      merged.castShadow = parts.some((p) => p.castShadow);
+      for (const p of parts) {
+        joint.remove(p);
+        if (!p.geometry.userData.shared) p.geometry.dispose();
+      }
+      joint.add(merged);
+    }
   }
 }

@@ -18,28 +18,38 @@ starts from the previous winner's code.
 
 ```sh
 npm ci
-npm run dev                  # the hatchery, at the address Vite prints
-node bin/hatch.mjs thomas    # a seed's genome, as JSON
-npm test                     # tests: the genome, the command, the GIF encoder
+npm run dev                          # the hatchery, at the address Vite prints
+node bin/hatch.mjs thomas            # a seed's genome, as JSON
+node bin/hatch.mjs 'thomas*auri#2'   # their second egg's child
+npm test                             # tests: genomes, lineages, crossing, the command, the GIF encoder
 ```
 
 `npm run build` writes the static site to `dist/`. Every push to `main` deploys it to GitHub Pages.
 
-On the page: type a word and press Enter (or Hatch), or press Random. Drag the scene to turn the camera,
-scroll or pinch to zoom, click or tap the creature to poke it. Save GIF and Save card download what you
-see, made in the browser.
+On the page: type a word and press Enter (or Hatch), or press Random. Type a friend's name in the field
+after ×, and the two lay an egg: their parents meet on the island, the egg is laid between them, and their
+child hatches while they watch. Next egg lays the couple's next one; typing a third word after × crosses the
+child with it. The chips under "Hatched here" hatch a creature again, and their × (or dragging a chip onto
+the scene) lays an egg with the creature on screen. Drag the scene to turn the camera, scroll or pinch to
+zoom, click or tap a creature to poke it. Save GIF, Save card and, for a child, Save tree download what you
+see, made in the browser; Copy link copies the child's address, which carries its whole family.
 
 ## How it works
 
 ```
 src/seed.mjs            seeds: normalize, validate, the reason a seed is refused
-src/genome.mjs          genomeOf(seed): species, affinity, rarity, name, stats, palette, traits
-src/genome/             genes (one stream per gene), names, palettes, the ten species' knobs
+src/lineage.mjs         lineages: read one into a tree, write it in its one written form
+src/genome.mjs          genomeOf(lineage): a word's creature, or its parents' child
+src/cross.mjs           cross(a, b, clutch): the child of two genomes, part by part
+src/family.mjs          a child's parents and grandparents, and where each of its parts came from
+src/genome/             genes (one stream per gene), the kinds of trait, every creature's traits, names,
+                        palettes and their blends, stats, the ten species' knobs and parts
 bin/hatch.mjs           the command
 src/render/             the scene: pixel renderer, toon materials, stage, egg, creature, species, effects
-src/share/              the GIF encoder, the card, the pixel font
+src/share/              the GIF encoder, the card, the family tree's picture, faces, the pixel font
 src/audio/cry.js        each creature's cry, through Web Audio
-src/main.js             the page: input, address, card, window.__wild
+src/page/               the card and the family tree on the page
+src/main.js             the page: inputs, address, eggs, window.__wild
 ```
 
 **The genome** is data only; the renderer reads it and never writes it. Every field draws its numbers
@@ -110,6 +120,67 @@ so the GIF shows the same creature as the page.
   affinity, the four stats as bars and numbers, a line about its mood, and the seed, in a 5 × 7 pixel font
   drawn in [src/share/font.js](src/share/font.js). Seeds in other scripts are drawn in the system font,
   snapped to whole pixels.
+
+**Crossing** happens in [src/cross.mjs](src/cross.mjs), apart from the rendering: two genomes in, a child
+out, every choice drawn from genes of the child's own lineage, so the child is the same whichever order its
+parents come in and nothing is stored. Each trait is declared once with its kind and its range
+([src/genome/kinds.mjs](src/genome/kinds.mjs), [src/genome/traits.mjs](src/genome/traits.mjs)): round 1
+draws a word's traits from that declaration, and crossing reads it to keep a child's traits, and its
+mutations, inside its species' ranges. The lineage reader is a small recursive descent over the grammar in
+ARCHITECTURE.md ([src/lineage.mjs](src/lineage.mjs)).
+
+## Choices for crossing, where the brief is silent
+
+- **Parts, not genes one by one.** A child inherits each part whole from one parent: its eyes (style, size
+  and spacing together), its ears, its tail, its crest, its voice. One part in five blends its numbers
+  between both parents instead. So you can point at one parent's ears and the other's tail. Every creature
+  has eight parts (body, eyes, mouth, cheeks, markings, charm, mood, voice), and each species adds its own
+  (a hopple's ears, feet and tail; a drift's bell, tentacles and antenna…).
+- **Heirlooms.** A child of two species takes its body from one, and three times in five wears a part of the
+  other on its head: a wyrmlet's horns, a hopple's ears, a pipkin's crest, an inchling's antennae or a
+  drift's antenna, when its own species has no such part. The part keeps its parent's values and is built
+  the way its species builds it, sized to the new head; the child's own children of its species keep it.
+  So a hopple can have its wyrmlet mother's horns.
+- **Species and affinity** each come from one parent, by a coin of the child's own. A part of the other
+  parent that the child's species cannot have (a trundle's ears on a hopple) is not passed on; a number from
+  another species is brought inside the child's range (a pipkin's short wings on a flutterling). A charm
+  passes on whatever the child's affinity: a moss child can wear its spark parent's bolt.
+- **Colors**: the child wears one parent's coat (body, belly, outline ink) tinted a fifth to almost half of
+  the way toward the other's, the hue turning the short way round; its accent, its detail and its eyes each
+  come from one parent.
+- **Names** sound like both parents: the front of one parent's name with the ending of the other's, or
+  the fronts of both (Thomnub × Aurizap gives a Thomzap, an Aurinub, a Thomauri or an Aurithom). Brothers
+  and sisters get different names: an egg skips the names of the eggs laid before it, and once the four are
+  worn it takes a parent's front with a new ending of its affinity. No child carries a parent's very name.
+- **Stats**: the parents' totals averaged and nudged by up to 10, shared in the proportions of both
+  parents' stats; 25 more for a rare child.
+- **Mutations**: one part in 50 is drawn afresh inside its species' ranges, every trait of the part listed
+  in `mutations`; the family tree marks it ✦ new.
+- **Rare children** are starlit like rare words, and keep the accent and detail their parents gave them.
+  One child in 64 of two common parents is rare, one in 8 with a rare parent, one in 2 with two.
+- **The meeting** lasts about a second before the hatch: the parents hop in from either side of the island,
+  meet nose to nose, twirl under hearts and sing, the egg pops up between them in a puff of sparkles, and
+  they step back to watch, jumping at each knock on the shell. They cheer and sing when their child comes
+  out, then stay behind it, alive, where you can poke them too and compare them with their child; the child
+  looks at one parent, then the other. A line over the scene says whom it takes after ("a wyrmlet like
+  Aurbit · Aurbit's horns · Thomnub's mouth"), and a child with something new comes out in gold stars, with
+  a chime.
+- **The family tree** shows the child, its parents and its grandparents with their faces (drawn by the same
+  renderer, each once), and one chip per part saying whose it is: a parent's name, both, a blend, or ✦ new.
+  Clicking a member hatches it. Save tree downloads it as a picture.
+- **The GIF** of a child starts with its parents meeting, its parents' names along the top; its card shows
+  its parents' faces and names and its whole lineage, cut between parents when it is long, in a pixel font
+  that now has small letters, so seeds print as they are written.
+
+## Smooth without a GPU
+
+The page is drawn by SwiftShader wherever there is no GPU, as in the checks' Chromium, so a few choices
+keep it quick there: the scene's box has square corners (a rounded box that clips the WebGL canvas costs
+the compositor a second or two of compiling, and work on every frame); spheres come in three levels of
+detail by their size, so an eye or a claw is a few dozen triangles; the parts of a joint that never move on
+their own and share a plain material are merged into one mesh (a mane of twenty tufts is one draw); the sun's
+shadow map is about one texel per art pixel; tiny parts cast no shadow; and a page opened from a link starts
+a word's hatch with the egg already landed, so its creature is out and alive about a second sooner.
 
 ## Build it with your agent
 

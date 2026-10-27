@@ -40,3 +40,38 @@ export function nameOf(seed, affinity, d) {
   const name = (stem.endsWith(ending[0]) ? stem.slice(0, -1) : stem) + ending;
   return name[0].toUpperCase() + name.slice(1, 12);
 }
+
+const ALL_ENDINGS = Object.values(ENDINGS).flat().sort((a, b) => b.length - a.length);
+
+/** A name's front and its ending: "Thomnub" is "thom" and "nub". Every name ends with an affinity's ending. */
+export function splitName(name) {
+  const lower = name.toLowerCase();
+  const ending = ALL_ENDINGS.find((e) => lower.endsWith(e) && lower.length > e.length) ?? lower.slice(-2);
+  return [lower.slice(0, -ending.length), ending];
+}
+
+/** The items of a list in an order drawn from a die. */
+function shuffled(list, d) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = d.int(0, i);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/**
+ * A child's name sounds like both parents': the front of one parent's name with the ending of the other's,
+ * or the fronts of both ("Thomnub" and "Aurizap" have a Thomzap, an Aurinub, a Thomauri or an Aurithom).
+ * A child never takes a parent's name nor one of `taken` (its elder brothers' and sisters'): once those
+ * four are worn, it takes a parent's front with a new ending of its affinity.
+ */
+export function crossName(x, y, affinity, d, taken = []) {
+  const [[frontX, endX], [frontY, endY]] = [splitName(x.name), splitName(y.name)];
+  const join = (front, end) => ((front.length > 1 && front.endsWith(end[0]) ? front.slice(0, -1) : front) + end).slice(0, 12);
+  const both = shuffled([join(frontX, endY), join(frontY, endX), join(frontX, frontY), join(frontY, frontX)], d);
+  const fresh = shuffled(ENDINGS[affinity].flatMap((e) => [join(frontX, e), join(frontY, e)]), d);
+  const worn = new Set([x.name, y.name, ...taken].map((n) => n.toLowerCase()));
+  const name = [...both, ...fresh].find((n) => n.length >= 3 && !worn.has(n)) ?? both[0];
+  return name[0].toUpperCase() + name.slice(1);
+}

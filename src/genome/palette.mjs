@@ -85,3 +85,44 @@ export function paletteOf(affinity, rare, d) {
   const ink = { h: body.h + 10, s: d.int(30, 45), l: d.int(9, 13) };
   return [body, belly, accent, detail, eye, ink].map(css);
 }
+
+/** The hue, saturation and lightness of "#rrggbb", rounded to whole degrees and percents: hex() undone. */
+export function hsl(color) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16) / 255);
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (d === 0) return { h: 0, s: 0, l: Math.round(l * 100) };
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = max === r ? ((g - b) / d + 6) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: Math.round(h * 60) % 360, s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+/** A color `t` of the way from `x` to `y` (both "#rrggbb"), the hue turning the short way round. */
+export function mix(x, y, t) {
+  const p = hsl(x), q = hsl(y);
+  // A grey has no hue of its own: it takes the other color's.
+  const ph = p.s < 6 ? q.h : p.h, qh = q.s < 6 ? p.h : q.h;
+  const turn = ((qh - ph + 540) % 360) - 180;
+  return hex(Math.round(ph + turn * t), Math.round(p.s + (q.s - p.s) * t), Math.round(p.l + (q.l - p.l) * t));
+}
+
+/** A rare creature's night-sky body and belly, and its gold eye, drawn from its gene "palette". */
+export function starlit(d) {
+  return { body: css(draw(d, STARLIT.body)), belly: css(draw(d, STARLIT.belly)), eye: css({ h: 46, s: 90, l: 60 }) };
+}
+
+/**
+ * A child's six colors. Its coat (body, belly and ink) is one parent's, tinted a fifth to almost half of
+ * the way toward the other's; its accent, its detail and its eyes each come from one parent. A rare child
+ * is starlit, and keeps the accent and detail its parents gave it.
+ */
+export function crossPalette(x, y, rare, d) {
+  const [coat, tint] = d.chance(0.5) ? [y.palette, x.palette] : [x.palette, y.palette];
+  const t = d.num(0.2, 0.45);
+  const [body, belly, ink] = [0, 1, 5].map((i) => mix(coat[i], tint[i], t));
+  const [accent, detail, eye] = [2, 3, 4].map((i) => (d.chance(0.5) ? y : x).palette[i]);
+  if (!rare) return [body, belly, accent, detail, eye, ink];
+  const sky = starlit(d);
+  return [sky.body, sky.belly, accent, detail, sky.eye, ink];
+}

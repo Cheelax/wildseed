@@ -21,6 +21,7 @@ uniform float uNear;
 uniform float uFar;
 uniform vec3 uInk[8];
 uniform vec3 uSky[4];
+uniform float uSkyAlpha;
 varying vec2 vUv;
 
 float dist(vec2 uv) {
@@ -51,12 +52,14 @@ void main() {
       ink = group(n);
     }
   }
+  float alpha = 1.0;
   if (ink >= 0) c.rgb = uInk[ink];
   else if (id == ${CLASS.sky}) {
     float y = vUv.y;
     c.rgb = y > 0.72 ? uSky[0] : y > 0.46 ? uSky[1] : y > 0.22 ? uSky[2] : uSky[3];
+    alpha = uSkyAlpha;
   }
-  gl_FragColor = vec4(c.rgb, 1.0);
+  gl_FragColor = vec4(c.rgb, alpha);
 }`;
 
 export class PixelRenderer {
@@ -79,6 +82,7 @@ export class PixelRenderer {
         uFar: { value: 100 },
         uInk: { value: Array.from({ length: 8 }, () => new THREE.Color(0x1a1420)) },
         uSky: { value: Array.from({ length: 4 }, () => new THREE.Color(0xbfe3ff)) },
+        uSkyAlpha: { value: 1 },
       },
       vertexShader: VERTEX,
       fragmentShader: FRAGMENT,
@@ -137,12 +141,14 @@ export class PixelRenderer {
     this.gl.setRenderTarget(null);
   }
 
-  /** Renders a stage off screen and returns the RGBA pixels, top row first. */
-  capture(stage, width, height) {
+  /** Renders a stage off screen and returns the RGBA pixels, top row first; `sky: false` leaves the sky clear. */
+  capture(stage, width, height, { sky = true } = {}) {
+    this.post.uniforms.uSkyAlpha.value = sky ? 1 : 0;
     const out = (this.captureTarget?.width === width && this.captureTarget?.height === height)
       ? this.captureTarget
       : (this.captureTarget = new THREE.WebGLRenderTarget(width, height, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: false }));
     this.render(stage, width, height, out);
+    this.post.uniforms.uSkyAlpha.value = 1;
     const raw = new Uint8Array(width * height * 4);
     this.gl.readRenderTargetPixels(out, 0, 0, width, height, raw);
     const rows = new Uint8ClampedArray(raw.length);

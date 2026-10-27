@@ -72,6 +72,7 @@ export function flutterling(g, m) {
   return {
     body, head, wiggles, flaps, hover: 0.32,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
+    top: { at: [0, radii[1] - 0.03, 0], r: radii[0] },
     charmAt: { parent: head, at: [0, 0.38, -0.16], rot: [-0.3, 0, 0] },
     height: 1.4 + 0.4 + 0.45,
   };

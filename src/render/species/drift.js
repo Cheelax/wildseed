@@ -2,6 +2,7 @@
 import * as THREE from "three";
 import { ellipsoid, face, joint, mesh, tube } from "../parts.js";
 import { PATTERN, toon } from "../toon.js";
+import { antenna } from "../features.js";
 
 /** The bell, turned on a lathe: a dome that flares at the rim and tucks in underneath. */
 function bell(material, R, h) {
@@ -61,20 +62,12 @@ export function drift(g, m) {
     flaps.push({ obj: arm, axis: "x", amp: 0.5 * (z > 0 ? -1 : 1) });
   }
 
-  if (t.antenna !== "none") {
-    const top = joint([0, h - 0.03, -0.05]);
-    if (t.antenna === "curl") top.add(tube(m.accent, [[0, 0, 0], [0.02, 0.18, 0], [0.14, 0.28, 0], [0.18, 0.18, 0], [0.1, 0.16, 0]], 0.045, 0.035, { segments: 14 }));
-    else {
-      top.add(tube(m.plain, [[0, 0, 0], [0.03, 0.14, 0], [0.08, 0.22, 0]], 0.04, 0.03, { segments: 8 }));
-      top.add(ellipsoid(m.accent, [0.09, 0.09, 0.09], { at: [0.09, 0.27, 0] }));
-    }
-    head.add(top);
-    wiggles.push({ obj: top, axis: "z", amp: 0.15, speed: 3, phase: 0 });
-  }
+  antenna(head, t, m, { at: [0, h - 0.03, -0.05], wiggles });
 
   return {
     body, head, wiggles, flaps, hover: 0.5,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
+    top: { at: [0, h - 0.04, 0], r: 0.6 },
     charmAt: t.antenna === "none" ? { parent: head, at: [0, h - 0.03, 0], rot: [0, 0, 0] } : null,
     height: 0.95 + h + (t.antenna === "none" ? 0.1 : 0.3),
   };

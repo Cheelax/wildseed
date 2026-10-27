@@ -157,14 +157,17 @@ export class Egg {
   }
 
   /**
-   * Poses the egg at `t` seconds into the hatch: it drops, wobbles harder as it cracks at each of
-   * `cracks`, loses its cap at `open` and falls apart at `burst`. Returns false once nothing is left.
+   * Poses the egg at `t` seconds into the hatch: it drops (or, `laid` by a child's parents, pops up where
+   * they met), wobbles harder as it cracks at each of `cracks`, loses its cap at `open` and falls apart at
+   * `burst`. Returns false once nothing is left.
    */
-  pose(t, { drop, cracks, open, burst }) {
+  pose(t, { drop, cracks, open, burst }, { laid = false } = {}) {
     const { root, wobble, cap } = this;
+    root.scale.setScalar(1);
     if (t < drop) {
       const s = t / drop;
-      root.position.y = 2.4 * (1 - s * s);
+      root.position.y = laid ? 0 : 2.4 * (1 - s * s);
+      if (laid) root.scale.setScalar(0.15 + 0.85 * s * s * (3 - 2 * s) + 0.18 * Math.sin(Math.PI * s));
       wobble.scale.set(1, 1, 1);
     } else {
       root.position.y = 0;

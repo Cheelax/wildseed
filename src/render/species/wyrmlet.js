@@ -1,6 +1,7 @@
 // Wyrmlet: a dragon pup that sits like a dog, front legs straight, a fluffy mane around its head, ram's
 // horns, plates down its chest, wings too small to fly, and a long tail curled at its side.
 import { cone, ellipsoid, eyes, cheeks, joint, mouth, onSurface, plate, tube } from "../parts.js";
+import { horns } from "../features.js";
 
 const WING = [[0, 0], [0.18, 0.2], [0.42, 0.3], [0.62, 0.12], [0.5, 0.04], [0.42, -0.08], [0.3, 0.0], [0.2, -0.1], [0.08, -0.04]];
 const SPADE = [[0, -0.02], [0.12, 0.06], [0.1, 0.18], [0, 0.3], [-0.1, 0.18], [-0.12, 0.06]];
@@ -52,16 +53,7 @@ export function wyrmlet(g, m) {
   for (let k = 0; k < 3; k++) body.add(ellipsoid(m.accent, [0.12 * M, 0.15 * M, 0.12 * M], { at: [0, 1.02 - 0.16 * k, -0.24 - 0.1 * k] }));
 
   const H = t.hornLength * 1.25;
-  for (const side of [-1, 1]) {
-    const horn = joint([side * 0.2, 0.4, -0.02], [-0.15, 0, -side * 0.4]);
-    if (t.horns === "nub") horn.add(cone(m.detail, 0.08, 0.2 * H));
-    else if (t.horns === "curl") horn.add(tube(m.detail, [[0, 0, 0], [side * 0.05, 0.15 * H, -0.04], [side * 0.14, 0.2 * H, -0.16 * H], [side * 0.19, 0.07 * H, -0.22 * H], [side * 0.15, -0.05 * H, -0.13 * H]], 0.075, 0.03, { segments: 14 }));
-    else {
-      horn.add(tube(m.detail, [[0, 0, 0], [0, 0.16 * H, 0], [side * 0.03, 0.3 * H, -0.04]], 0.06, 0.025, { segments: 8 }));
-      horn.add(tube(m.detail, [[0, 0.12 * H, 0], [side * 0.08, 0.2 * H, 0.02], [side * 0.12, 0.24 * H, 0.04]], 0.035, 0.02, { segments: 6 }));
-    }
-    head.add(horn);
-  }
+  horns(head, t, m, { at: [0, 0.4, -0.02], spread: 0.2, out: 0.4 });
 
   const wiggles = [], flaps = [];
   for (const side of [-1, 1]) {
@@ -95,6 +87,7 @@ export function wyrmlet(g, m) {
   return {
     body, head, wiggles, flaps,
     face: { eyes: e.open, happy: e.happy, irises: e.irises, mouth: mo },
+    top: { at: [0, radii[1] - 0.03, 0], r: radii[0] },
     charmAt: { parent: head, at: [0, 0.42, 0.06], rot: [0.15, 0, 0] },
     height: 1.26 + 0.45 + 0.2 * H,
   };

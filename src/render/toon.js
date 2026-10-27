@@ -47,13 +47,16 @@ float hash13(vec3 p) {
 }
 
 // Distance to the nearest of one random point per cell: round spots of radius r where it is below r.
+// Each point lies in the middle 60 % of its cell, so within 0.7 of p only the eight cells on p's side of
+// each axis can hold one: those are the only ones looked at.
 float cells(vec3 p) {
   vec3 i = floor(p);
+  vec3 side = step(0.5, p - i) * 2.0 - 1.0;
   float best = 9.0;
-  for (int x = -1; x <= 1; x++)
-  for (int y = -1; y <= 1; y++)
-  for (int z = -1; z <= 1; z++) {
-    vec3 c = i + vec3(x, y, z);
+  for (int x = 0; x <= 1; x++)
+  for (int y = 0; y <= 1; y++)
+  for (int z = 0; z <= 1; z++) {
+    vec3 c = i + vec3(x, y, z) * side;
     vec3 o = vec3(hash13(c), hash13(c + 17.1), hash13(c + 41.7));
     best = min(best, length(c + 0.2 + 0.6 * o - p));
   }

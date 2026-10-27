@@ -1,7 +1,7 @@
 // The genome's promises: ARCHITECTURE.md, "Seeds" and "The genome". Run with `npm test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { genomeOf, normalizeSeed, seedProblem } from "../src/genome.mjs";
+import { genomeOf, LineageError, normalizeSeed, seedProblem } from "../src/genome.mjs";
 import { STAT_RANGE, TOTAL_RANGE } from "../src/rules.mjs";
 
 const words = Array.from({ length: 4000 }, (_, i) => `word${i}`);
@@ -17,10 +17,15 @@ test("case, spaces and composed or decomposed accents do not change the creature
   assert.deepEqual(genomeOf("noé"), genomeOf("noé"));
 });
 
-test("seeds are refused with a reason: empty, too long, or with * ( ) # or emoji", () => {
+test("words are refused with a reason: empty, too long, or with * ( ) # or emoji", () => {
   for (const bad of ["", "   ", "a".repeat(25), "a*b", "(a)", "x#2", "🐸"]) assert.ok(seedProblem(normalizeSeed(bad)), bad);
   for (const good of ["東京", "кот", "o'brien", "x-1", "a", "a".repeat(24)]) assert.equal(seedProblem(normalizeSeed(good)), null, good);
-  assert.throws(() => genomeOf("a*b"), /cannot be part of a seed/);
+  assert.throws(() => genomeOf("🐸"), /cannot be part of a seed/);
+});
+
+test("since round 2, a*b is a lineage: the child of a and b; a**b is refused", () => {
+  assert.deepEqual(genomeOf("a*b").parents, ["a", "b"]);
+  assert.throws(() => genomeOf("a**b"), LineageError);
 });
 
 test("stats are integers from 10 to 100 that add up to 160 to 280", () => {
