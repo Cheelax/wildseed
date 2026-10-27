@@ -18,27 +18,37 @@ starts from the previous winner's code.
 
 ```sh
 npm ci
-npm run dev                  # the hatchery, at the address Vite prints
-node bin/hatch.mjs thomas    # a seed's genome, as JSON
-npm test                     # tests: the genome, the command, the GIF encoder
+npm run dev                                 # the hatchery, at the address Vite prints
+node bin/hatch.mjs thomas                   # a seed's genome, as JSON
+node bin/hatch.mjs 'thomas*auri' '(thomas*auri)*noe#2'   # a child, a grandchild from its second egg
+npm test                                    # tests: the genome, lineages and crossing, the command, the GIF encoder
 ```
 
 `npm run build` writes the static site to `dist/`. Every push to `main` deploys it to GitHub Pages.
 
-On the page: type a word and press Enter (or Hatch), or press Random. Drag the scene to turn the camera,
-scroll or pinch to zoom, click or tap the creature to poke it. Save GIF and Save card download what you
-see, made in the browser.
+On the page: type a word and press Enter (or Hatch), or press Random. Type two, `Thomas × Auri` (or
+`thomas*auri`), and they lay an egg: their child hatches. Or type the parents under "Lay an egg", press the ♥ of
+a creature you hatched before, or drag it onto the scene. "Lay egg #2" lays the couple's next egg. Drag the scene
+to turn the camera, scroll or pinch to zoom, click or tap a creature to poke it. Save GIF and Save card download
+what you see, made in the browser; a child's link opens it with its whole family.
 
 ## How it works
 
 ```
 src/seed.mjs            seeds: normalize, validate, the reason a seed is refused
-src/genome.mjs          genomeOf(seed): species, affinity, rarity, name, stats, palette, traits
-src/genome/             genes (one stream per gene), names, palettes, the ten species' knobs
+src/lineage.mjs         lineages: reading `(thomas*auri#2)*noe`, its one written form, the reason one is refused
+src/genome.mjs          genomeOf(lineage): species, affinity, rarity, name, stats, palette, traits
+src/cross.mjs           cross(a, b, clutch): two genomes lay an egg, out comes their child
+src/family.mjs          a child's ancestors, and where each of its traits came from
+src/genome/             genes (one stream per gene), names, palettes, the ten species' knobs and traits,
+                        stats, the parts a species hands down to a child of another (heirlooms)
 bin/hatch.mjs           the command
 src/render/             the scene: pixel renderer, toon materials, stage, egg, creature, species, effects
 src/share/              the GIF encoder, the card, the pixel font
 src/audio/cry.js        each creature's cry, through Web Audio
+src/render/meeting.js   a child's parents meet, lay its egg, watch it hatch
+src/render/heirlooms.js a heirloom on a child's body: a crest, a shell, moth wings…
+src/ui/                 the crossing controls and the family tree
 src/main.js             the page: input, address, card, window.__wild
 ```
 
@@ -95,8 +105,9 @@ so the GIF shows the same creature as the page.
   pushes a history entry, so Back returns to the previous creature. A refused seed shows its reason under
   the input and keeps the creature. Random deals the 160 built-in words, sixteen per species, from a
   shuffled deck, so twenty presses hatch twenty different words. Under the card, "Hatched here" keeps the
-  last twelve creatures hatched on this device (in `localStorage`); a chip hatches its creature again.
-- **The hatch** takes about two and a half seconds. The egg drops and wobbles; a jagged crack, its teeth
+  last twelve creatures hatched on this device (in `localStorage`); a chip hatches its creature again, its ♥
+  crosses it with the one on screen, and dragging it onto the scene or onto another chip does too.
+- **The hatch** takes about two and a half seconds (a page opened from a link plays it faster). The egg drops and wobbles; a jagged crack, its teeth
   drawn from the seed, starts on the side facing you and runs around in three knocks, branching, chips of
   shell flying off. The cap pops off and only the head comes out first, looking around (the rest of the
   body is not drawn while it is still in the shell). Then the bottom falls open in three pieces, the body
@@ -107,9 +118,54 @@ so the GIF shows the same creature as the page.
   creature shows its habit and gets poked; its name runs along the bottom.
   It is encoded in the browser by [src/share/gif.js](src/share/gif.js) (median cut, LZW).
 - **The card** is 640 × 896, four pixels per art pixel: name, the creature on its island, species and
-  affinity, the four stats as bars and numbers, a line about its mood, and the seed, in a 5 × 7 pixel font
+  affinity, the four stats as bars and numbers, a line about its mood, and the seed as it is written, in a 5 × 7 pixel font
   drawn in [src/share/font.js](src/share/font.js). Seeds in other scripts are drawn in the system font,
   snapped to whole pixels.
+
+## Crossing
+
+[ARCHITECTURE.md, "Lineages"](ARCHITECTURE.md#lineages) has the rules; here is what they look like.
+
+- **A child's seed is its lineage**: `auri*thomas` is the first egg of Auri and Thomas, `auri*thomas#3` their
+  third, `(auri*thomas)*noe` the child of that first egg and Noe. The link carries the whole family tree:
+  nothing is stored anywhere. However it is typed (`Thomas × Auri`, `thomas*auri#1`), it has one written form.
+- **[src/cross.mjs](src/cross.mjs)** draws every choice from the genes of that written form, with the parents
+  in its order, so a couple's egg is the same child whoever is named first, and their next egg is a sibling,
+  not a twin. The species comes from one parent, the affinity from one (a moss child of a spark parent can keep
+  its bolt). Each trait comes from one parent, or, one time in five for a number, halfway between; each
+  mutates one time in fifty, drawn afresh inside its species' ranges and never to the same value. A child of
+  two common parents is rare one time in 64, one time in 8 with a rare parent, one in 3 with two.
+- **Heirlooms**: a child takes its body from one parent, and when the other is of another species, one of
+  that parent's parts too (sometimes two), wherever its own body leaves room: a hopple with a pipkin's crest, a
+  toadle with a wyrmlet's horns, a trundle with a domeback's shell on its back, a pipkin with a drift's frills.
+  The part keeps the traits that shape it, under the same names, and goes down the family line: a child keeps
+  every heirloom of its parent of its own species. So you can point at one parent's ears and the other's tail.
+- **Colors**: the body is a blend of the parents' bodies (in hue, saturation and lightness, the hue turning the
+  short way round); belly, accent, detail, eyes and outline each come from one parent or halfway between.
+- **Names** sound like both parents: the first syllable of one, then the end of the other (Thombit and Noetik
+  make Thomik).
+- **Stats**: a total between the parents', shared by weights between theirs.
+- **The meeting**: on the page, a child's parents walk onto the island from either side, meet nose to nose,
+  each hopping and calling to the other under hearts, and step back as the egg swells up between them. Then
+  the usual hatch, while they watch; they cheer when their child climbs out, turning to show its side. A child
+  with a mutation comes out in a shower of sparkles. Every creature on the island answers a tap: a click
+  anywhere inside a creature's outline box counts, between a drift's tentacles too.
+- **The family tree** under the card shows the child, its parents and its grandparents, each with its portrait
+  and its name (a click hatches it), and where the child's looks came from: from each parent, between the two,
+  like both, or mutated.
+- **The GIF** of a child films the whole event, wider, with the parents' names under the child's; **the card**
+  shows the two parents' portraits and the lineage as it is written, on as many lines as it needs.
+
+## Round 1's judging, fixed
+
+- The page opened from a link hatches its creature at 1.6 times the speed, and the page's first paint got
+  cheaper (no `color-mix()`, no gradient: on a software renderer they cost the first paint about half a
+  second), so in headless Chromium on SwiftShader it is ready more than a second sooner (about 2.5 s
+  instead of 3.6 s on a laptop, where the hatch alone took 2.45 s).
+- A tap anywhere inside a creature's box pokes it: a drift answers between its tentacles.
+- The spheres creatures are made of have half the triangles, which at 160 art pixels high nobody can see.
+- The card prints the seed as it is written, in a pixel font that now has lowercase letters, `*`, `#`, `(`
+  and `)`.
 
 ## Build it with your agent
 

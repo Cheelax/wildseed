@@ -31,3 +31,27 @@ export const PIXEL_MIN = 3;
 export const GIF_MIN_FRAMES = 12;
 export const GIF_MAX_COLORS = 64;
 export const CARD_MIN = 300;
+
+// Round 2: crossing. ARCHITECTURE.md, "Lineages".
+
+/** A lineage has at most LINEAGE_MAX characters and GENERATIONS_MAX generations once written. */
+export const LINEAGE_MAX = 120;
+export const GENERATIONS_MAX = 6;
+
+/** A couple's eggs are numbered from 1 to CLUTCH_MAX. */
+export const CLUTCH_MAX = 99;
+
+/** Each trait of a child mutates 1 time in MUTATION_ONE_IN. */
+export const MUTATION_ONE_IN = 50;
+
+/** A child is rare 1 time in RARE_CHILD_ONE_IN[n], n its rare parents: two common parents keep round 1's odds. */
+export const RARE_CHILD_ONE_IN = [RARE_ONE_IN, 8, 3];
+
+/**
+ * Children take after both parents: TAKE_AFTER_BOTH of them take a trait from each (where the parents differ
+ * in 4 traits or more), COLORS_NEAR_PARENTS have colors nearer their parents' than another couple's, and
+ * SIBLINGS_DIFFER of a couple's first four eggs differ in their traits.
+ */
+export const TAKE_AFTER_BOTH = 0.7;
+export const COLORS_NEAR_PARENTS = 0.8;
+export const SIBLINGS_DIFFER = 0.95;

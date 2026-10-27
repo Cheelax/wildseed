@@ -97,10 +97,20 @@ function grow(line, f) {
   line.geometry.setDrawRange(0, Math.round(f * line.userData.segments) * 4 * 6);
 }
 
+/**
+ * The egg's colors: its affinity's shell tinted by the creature's belly and marked in its body color; a child's
+ * egg is tinted by one parent and marked in the other's color.
+ */
+function lookOf(genome, parents) {
+  if (genome.rare) return STARLIT;
+  const [tint, mark] = parents ? [parents[0].palette[0], parents[1].palette[0]] : [genome.palette[1], genome.palette[0]];
+  const shell = new THREE.Color(LOOKS[genome.affinity].shell).lerp(new THREE.Color(tint), parents ? 0.35 : 0.5);
+  return { ...LOOKS[genome.affinity], shell: `#${shell.getHexString()}`, mark };
+}
+
 export class Egg {
-  constructor(genome) {
-    const [body, belly] = genome.palette;
-    const look = genome.rare ? STARLIT : { ...LOOKS[genome.affinity], shell: `#${new THREE.Color(LOOKS[genome.affinity].shell).lerp(new THREE.Color(belly), 0.5).getHexString()}`, mark: body };
+  constructor(genome, { parents = null } = {}) {
+    const look = lookOf(genome, parents);
     this.material = toon(look.shell, { mark: { color: look.mark, ...look.pattern }, cls: CLASS.egg, side: THREE.DoubleSide });
     const dark = flat(new THREE.Color(look.mark).lerp(new THREE.Color("#2a1e18"), 0.7), CLASS.egg);
     const r = stream(hash32(`shell\u0000${genome.seed}`));
@@ -157,12 +167,18 @@ export class Egg {
   }
 
   /**
-   * Poses the egg at `t` seconds into the hatch: it drops, wobbles harder as it cracks at each of
-   * `cracks`, loses its cap at `open` and falls apart at `burst`. Returns false once nothing is left.
+   * Poses the egg at `t` seconds into the hatch: it drops (or, `laid` by two parents, pops up out of the
+   * ground between them), wobbles harder as it cracks at each of `cracks`, loses its cap at `open` and falls
+   * apart at `burst`. Returns false once nothing is left.
    */
-  pose(t, { drop, cracks, open, burst }) {
+  pose(t, { drop, cracks, open, burst }, { laid = false } = {}) {
     const { root, wobble, cap } = this;
-    if (t < drop) {
+    if (t < drop && laid) {
+      // It swells up from nothing, a little past its size, and settles.
+      const s = t / drop;
+      root.position.y = 0;
+      wobble.scale.setScalar(Math.max(0.001, s * (1 + 0.5 * (1 - s))));
+    } else if (t < drop) {
       const s = t / drop;
       root.position.y = 2.4 * (1 - s * s);
       wobble.scale.set(1, 1, 1);

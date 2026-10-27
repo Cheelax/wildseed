@@ -1,11 +1,13 @@
 // The card: a trading card drawn in art pixels, then scaled up 4 times without smoothing. Its name on a
 // band of its body color, the creature on its island, species and affinity, its four stats as bars, a
-// line about its mood, and its seed. Rare creatures get a gold frame that sparkles.
-import { HATCH } from "../render/stage.js";
-import { film, studio } from "./film.js";
+// line about its mood, and its seed as it is written. A child's card shows its two parents under it, and
+// its lineage. Rare creatures get a gold frame that sparkles.
+import { portrait } from "./film.js";
 import { anyText, anyWidth, drawable, measure, pixelText } from "./font.js";
 
-const W = 160, H = 224, SCALE = 4;
+const W = 160, SCALE = 4;
+const LINE = 9; // a line of the pixel font, with its gap
+const FAMILY = 54; // the parents' row: two portraits and their names
 
 /** A line about the creature, from its mood. */
 const MOODS = {
@@ -28,25 +30,51 @@ function icon(g, rows, x, y, color) {
 }
 
 /** A rectangle with its corners cut, the pixel artist's rounded box. */
-function box(g, x, y, w, h, color) {
+export function box(g, x, y, w, h, color) {
   g.fillStyle = color;
   g.fillRect(x + 1, y, w - 2, h);
   g.fillRect(x, y + 1, w, h - 2);
 }
 
 /** Text with a one-pixel outline all around. */
-function outlined(g, text, x, y, fill, line, scale) {
+export function outlined(g, text, x, y, fill, line, scale) {
   for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [1, 1]]) pixelText(g, text, x + dx, y + dy, line, scale);
   pixelText(g, text, x, y, fill, scale);
 }
 
-export async function makeCard(renderer, genome) {
+/**
+ * The seed cut into lines of at most `room` pixels: a lineage breaks after a "*" or a ")", a word anywhere.
+ * Null when the pixel font cannot draw it.
+ */
+export function seedLines(seed, room) {
+  if (!drawable(seed, { caps: false })) return null;
+  const per = Math.floor((room + 1) / 6);
+  const lines = [];
+  let rest = seed;
+  while (rest.length > per) {
+    const cut = Math.max(rest.lastIndexOf("*", per - 1), rest.lastIndexOf(")", per - 1)) + 1 || per;
+    lines.push(rest.slice(0, cut));
+    rest = rest.slice(cut);
+  }
+  return [...lines, rest];
+}
+
+/** A picture of RGBA rows w × h, framed in ink at (x, y). */
+export function framed(g, picture, x, y, w, h, ink) {
+  g.fillStyle = ink;
+  g.fillRect(x - 1, y - 1, w + 2, h + 2);
+  g.putImageData(new ImageData(picture, w, h), x, y);
+}
+
+/** The card of `genome`; a child's shows its `parents` (their genomes). Resolves to a PNG blob. */
+export async function makeCard(renderer, genome, { parents = null } = {}) {
   const [body, belly, accent, , , ink] = genome.palette;
   const frame = genome.rare ? "#ffd66b" : accent;
-  const artW = W - 18, artH = 108;
-  const stage = studio(renderer, genome, artW, artH, { zoom: 0.95 });
-  const [picture] = await film(renderer, stage, [HATCH.ready + 0.35], artW, artH);
-  stage.dispose();
+  const artW = W - 18, artH = 108, face = 30;
+  const picture = await portrait(renderer, genome, artW, artH);
+  const faces = parents ? await Promise.all(parents.map((p) => portrait(renderer, p, face, face, { zoom: 1.7 }))) : null;
+  const lines = seedLines(genome.seed, W - 20);
+  const H = 224 + (parents ? FAMILY : 0) + (lines ? lines.length * LINE : 0);
 
   const c = document.createElement("canvas");
   c.width = W;
@@ -84,9 +112,7 @@ export async function makeCard(renderer, genome) {
   }
 
   // The creature, framed.
-  g.fillStyle = ink;
-  g.fillRect(8, 30, artW + 2, artH + 2);
-  g.putImageData(new ImageData(picture, artW, artH), 9, 31);
+  framed(g, picture, 9, 31, artW, artH, ink);
 
   let y = 30 + artH + 5;
   const kind = `${genome.species} · ${genome.affinity}`;
@@ -117,24 +143,46 @@ export async function makeCard(renderer, genome) {
   pixelText(g, about, Math.floor((W - measure(about)) / 2), y, ink);
   y += 11;
 
+  // A child's parents, side by side, each named under its portrait.
+  if (faces) {
+    const col = (W - 20) / 2;
+    faces.forEach((f, i) => {
+      const cx = 10 + col * i + col / 2;
+      framed(g, f, Math.round(cx - face / 2), y + 1, face, face, ink);
+      const name = parents[i].name.slice(0, Math.floor((col + 1) / 6) - 1);
+      pixelText(g, name, Math.round(cx - measure(name) / 2), y + face + 5, ink);
+    });
+    pixelText(g, "×", Math.round(W / 2 - 2), y + face / 2 - 2, ink);
+    y += FAMILY;
+  }
+
   g.fillStyle = ink;
   for (let x = 10; x < W - 10; x += 2) g.fillRect(x, y, 1, 1);
   y += 4;
-  // The seed in the pixel font when it can be, else in the system font, smaller for a long seed.
-  const seed = `seed "${genome.seed}"`;
+  // The seed as it is written, in the pixel font when it can be (a lineage on as many lines as it needs),
+  // else in the system font, smaller for a long seed.
   const room = W - 20;
-  if (drawable(seed) && measure(seed) <= room) {
-    pixelText(g, seed, 10, y, ink);
-    if (measure(seed) + 8 + measure("wildseed") <= room) pixelText(g, "wildseed", W - 10 - measure("wildseed"), y, frame === belly ? body : frame);
+  const label = genome.parents ? "lineage" : "seed";
+  const brand = frame === belly ? body : frame;
+  if (lines) {
+    pixelText(g, label, 10, y, ink);
+    pixelText(g, "wildseed", W - 10 - measure("wildseed"), y, brand);
+    lines.forEach((line, i) => pixelText(g, line, 10, y + LINE * (i + 1), ink, 1, { caps: false }));
   } else {
+    const seed = `${label} "${genome.seed}"`;
     const size = anyWidth(seed, 9) <= room ? 9 : 7;
     const text = anyWidth(seed, size) <= room ? seed : `"${genome.seed}"`;
     anyText(g, text, 10, y - (size === 9 ? 2 : 0), ink, size);
   }
 
+  return toPng(c);
+}
+
+/** A canvas of art pixels as a PNG blob, scaled up SCALE times without smoothing. */
+export function toPng(c) {
   const out = document.createElement("canvas");
-  out.width = W * SCALE;
-  out.height = H * SCALE;
+  out.width = c.width * SCALE;
+  out.height = c.height * SCALE;
   const o = out.getContext("2d");
   o.imageSmoothingEnabled = false;
   o.drawImage(c, 0, 0, out.width, out.height);

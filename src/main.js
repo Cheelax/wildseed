@@ -1,13 +1,19 @@
-// The hatchery page: a word in, a creature out. ARCHITECTURE.md, "The page".
+// The hatchery page: a word in, a creature out; two creatures in, an egg, and their child. ARCHITECTURE.md,
+// "The page".
 import "./hatchery.css";
-import { genomeOf, normalizeSeed, seedProblem } from "./genome.mjs";
+import { genomeOf, lineageOf, lineageProblem } from "./genome.mjs";
 import { WORDS } from "./words.mjs";
 import { Hatchery } from "./render/hatchery.js";
+import { MEET } from "./render/meeting.js";
 import { HATCH, skyOf } from "./render/stage.js";
-import { cry, hatchSounds, mute, wakeAudio } from "./audio/cry.js";
-import { makeGif } from "./share/film.js";
+import { cry, hatchSounds, meetSounds, mute, wakeAudio } from "./audio/cry.js";
+import { makeGif, portrait } from "./share/film.js";
+import { labelOf } from "./family.mjs";
 import { makeCard } from "./share/card.js";
+import { makeTree } from "./share/tree.js";
 import { save } from "./share/save.js";
+import { FamilyTree } from "./ui/family.js";
+import { Nest } from "./ui/nest.js";
 
 const $ = (id) => document.querySelector(`[data-testid="${id}"]`);
 const card = $("creature-card");
@@ -21,7 +27,11 @@ const wild = (window.__wild = { ready: false, renderer: null, pixel: null, creat
 const view = (() => {
   try {
     return new Hatchery($("scene"), {
-      onHatched: (genome) => cry(genome),
+      onHatched: (genome) => {
+        cry(genome);
+        // Its parents call out to it, one after the other.
+        genome.parents?.forEach((p, i) => setTimeout(() => wild.creature === genome && cry(genomeOf(p)), 450 + 300 * i));
+      },
       onPoke: (genome) => cry(genome),
       onReady: (genome) => {
         if (wild.creature === genome) wild.ready = true;
@@ -33,7 +43,7 @@ const view = (() => {
     note.className = "no-webgl";
     note.textContent = "This browser cannot draw the hatchery: it needs WebGL 2.";
     document.querySelector(".stage").append(note);
-    for (const id of ["save-gif", "save-card"]) $(id).disabled = true;
+    for (const id of ["save-gif", "save-card", "save-tree"]) $(id).disabled = true;
     console.error(e);
     return null;
   }
@@ -49,13 +59,16 @@ const MOODS = {
 };
 const STATS = [["hp", "HP"], ["attack", "Attack"], ["defense", "Defense"], ["speed", "Speed"]];
 
-function showCard(g) {
+function showCard(g, parents) {
   card.querySelector(".name").textContent = g.name;
   card.querySelector(".species").textContent = g.species;
   card.querySelector(".affinity").textContent = g.affinity;
   card.querySelector(".about").textContent = MOODS[g.traits.mood];
   card.querySelector(".rare").hidden = !g.rare;
-  card.querySelector(".seed").textContent = `seed “${g.seed}”`;
+  card.querySelector(".seed").textContent = parents ? `lineage “${g.seed}”` : `seed “${g.seed}”`;
+  const mutated = [...new Set((g.mutations ?? []).map(labelOf))];
+  card.querySelector(".parents").textContent = parents ? `egg #${g.clutch} of ${parents[0].name} × ${parents[1].name}` : "";
+  card.querySelector(".mutant").textContent = mutated.length ? `✦ mutation: ${mutated.join(", ")}` : "";
   card.querySelector(".stats").replaceChildren(
     ...STATS.map(([key, name]) => {
       const row = document.createElement("div");
@@ -79,56 +92,64 @@ function showCard(g) {
   document.title = `${g.name} · Wildseed`;
 }
 
-/** The creatures hatched on this device, newest first: a row of chips that hatch them again. */
-const KEPT = "wildseed.hatched";
-function remember(genome) {
-  let seeds = [];
-  try {
-    seeds = JSON.parse(localStorage.getItem(KEPT) ?? "[]").filter((s) => typeof s === "string" && !seedProblem(s));
-  } catch {}
-  seeds = [genome.seed, ...seeds.filter((s) => s !== genome.seed)].slice(0, 12);
-  try {
-    localStorage.setItem(KEPT, JSON.stringify(seeds));
-  } catch {}
-  const chips = seeds.map((seed) => {
-    const g = genomeOf(seed);
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = "chip";
-    chip.textContent = g.name;
-    chip.title = `“${seed}”: ${g.species}, ${g.affinity}`;
-    chip.style.setProperty("--chip", g.palette[0]);
-    chip.setAttribute("aria-current", String(seed === genome.seed));
-    chip.addEventListener("click", () => {
-      input.value = seed;
-      hatch(seed);
-    });
-    return chip;
-  });
-  document.querySelector(".recent").replaceChildren(...chips);
-  document.querySelector(".hatched").hidden = seeds.length < 2;
-}
-
 function showError(message) {
   error.textContent = message;
   error.hidden = false;
 }
 
-/** Hatches a seed: the egg drops, cracks, and the creature that word was always going to be comes out. */
-function hatch(seed, { push = true } = {}) {
-  const genome = genomeOf(seed);
+const tree = new FamilyTree($("family-tree"), {
+  onPick: (lineage) => hatch(lineage),
+  portrait: async (genome, size) => (view ? portrait(view.renderer, genome, size, size, { zoom: 1.7 }) : null),
+});
+const nest = new Nest({ root: $("cross"), recent: document.querySelector(".hatched"), stage: document.querySelector(".stage") }, {
+  current: () => wild.creature,
+  hatch: (lineage) => hatch(lineage),
+  showError,
+});
+
+/** The caption over the scene while a child's parents meet and its egg hatches: what happens, as it happens. */
+const caption = document.querySelector(".caption");
+let story = [];
+function narrate(genome, parents, tempo) {
+  story.forEach(clearTimeout);
+  caption.hidden = true;
+  if (!parents || !view) return;
+  const at = (seconds, text) => setTimeout(() => {
+    caption.textContent = text;
+    caption.hidden = !text;
+  }, (seconds * 1000) / tempo);
+  story = [
+    at(0, `${parents[0].name} meets ${parents[1].name}…`),
+    at(MEET.laid, "An egg!"),
+    at(MEET.laid + HATCH.burst, `It's ${genome.name}!${genome.mutations.length ? " ✦" : ""}`),
+    at(MEET.laid + HATCH.ready + 2, ""),
+  ];
+}
+
+/**
+ * Hatches a lineage: the egg drops, cracks, and the creature that word was always going to be comes out; or,
+ * for a child, its parents meet and lay its egg first. `tempo` plays the hatch faster (a page opened from a link).
+ */
+function hatch(lineage, { push = true, tempo = 1 } = {}) {
+  const genome = genomeOf(lineage);
+  const parents = genome.parents?.map(genomeOf) ?? null;
   wild.ready = false;
   wild.creature = genome;
   error.hidden = true;
-  view?.hatch(genome);
-  if (view) hatchSounds(HATCH);
-  showCard(genome);
+  input.value = parents ? genome.seed.replaceAll("*", " × ") : genome.seed;
+  view?.hatch(genome, { parents, tempo }).then(() => tree.paint());
+  if (view && parents) meetSounds(parents, MEET);
+  if (view) hatchSounds(HATCH, parents ? MEET.laid : 0);
+  narrate(genome, parents, tempo);
+  showCard(genome, parents);
   card.classList.remove("fresh");
   void card.offsetWidth; // restart the card's little hop
   card.classList.add("fresh");
-  remember(genome);
+  tree.show(genome);
+  nest.show(genome);
   const url = new URL(location.href);
   url.search = `?seed=${encodeURIComponent(genome.seed)}`;
+  url.hash = "";
   if (url.href !== location.href) history[push ? "pushState" : "replaceState"](null, "", url);
 }
 
@@ -149,17 +170,14 @@ const randomWord = () => {
 document.querySelector("form.hatch").addEventListener("submit", (e) => {
   e.preventDefault();
   wakeAudio();
-  const seed = normalizeSeed(input.value);
-  const problem = seedProblem(seed);
+  const problem = lineageProblem(input.value);
   if (problem) return showError(problem);
-  hatch(seed);
+  hatch(lineageOf(input.value));
 });
 
 $("random").addEventListener("click", () => {
   wakeAudio();
-  const word = randomWord();
-  input.value = word;
-  hatch(word);
+  hatch(randomWord());
 });
 
 addEventListener("pointerdown", wakeAudio);
@@ -184,34 +202,37 @@ try {
 async function exporting(button, busyText, make, filename) {
   if (button.disabled || !view) return;
   const genome = wild.creature;
+  const parents = genome.parents?.map(genomeOf) ?? null;
   const text = button.textContent;
   button.disabled = true;
   button.textContent = busyText;
   try {
-    save(await make(view.renderer, genome), filename(genome));
+    save(await make(view.renderer, genome, { parents }), filename(genome));
   } finally {
     button.disabled = false;
     button.textContent = text;
   }
 }
-const fileName = (g) => `${g.name.toLowerCase()}-${g.seed.replace(/[\s']+/g, "-")}`;
+/** A file name from the creature's name and its seed: `thomik-auri-x-thomas-3`. */
+const fileName = (g) => `${g.name.toLowerCase()}-${g.seed.replace(/\*/g, "-x-").replace(/[\s'#()]+/g, "-").replace(/-+/g, "-").replace(/-$/, "")}`;
 $("save-gif").addEventListener("click", () => exporting($("save-gif"), "Filming…", makeGif, (g) => `${fileName(g)}.gif`));
 $("save-card").addEventListener("click", () => exporting($("save-card"), "Drawing…", makeCard, (g) => `${fileName(g)}-card.png`));
+$("save-tree").addEventListener("click", () => exporting($("save-tree"), "Drawing…", makeTree, (g) => `${fileName(g)}-family.png`));
 
-function fromAddress({ push }) {
-  const asked = new URLSearchParams(location.search).get("seed");
+/** Hatches what the address names, any way it is written; a page opened from a link hatches briskly. */
+function fromAddress({ push, tempo = 1 }) {
+  let asked = new URLSearchParams(location.search).get("seed");
+  // A link pasted with its # unescaped (`?seed=a*b#2`) still names that egg.
+  if (asked !== null && /^#[0-9]+$/.test(location.hash)) asked += location.hash;
   if (asked !== null) {
-    const seed = normalizeSeed(asked);
-    const problem = seedProblem(seed);
-    if (!problem) {
-      input.value = seed;
-      return hatch(seed, { push });
-    }
-    if (!wild.creature) hatch(randomWord(), { push: false });
+    const problem = lineageProblem(asked);
+    if (!problem) return hatch(lineageOf(asked), { push, tempo });
+    if (!wild.creature) hatch(randomWord(), { push: false, tempo });
+    input.value = asked;
     return showError(problem);
   }
-  hatch(randomWord(), { push: false });
+  hatch(randomWord(), { push: false, tempo });
 }
 
 addEventListener("popstate", () => fromAddress({ push: false }));
-fromAddress({ push: false });
+fromAddress({ push: false, tempo: 1.6 });

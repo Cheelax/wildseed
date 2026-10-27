@@ -3,12 +3,12 @@
 import { ellipsoid, face, joint, plate, tube } from "../parts.js";
 
 /** Wing outlines, the root at the origin, spreading to +x. */
-const UPPER = {
+export const UPPER = {
   round: [[0, 0], [0.22, 0.3], [0.5, 0.44], [0.74, 0.4], [0.84, 0.22], [0.74, 0.04], [0.48, -0.06], [0.2, -0.05]],
   pointed: [[0, 0], [0.26, 0.32], [0.62, 0.46], [0.9, 0.5], [0.72, 0.2], [0.5, 0.02], [0.2, -0.05]],
   swallowtail: [[0, 0], [0.22, 0.3], [0.5, 0.42], [0.76, 0.36], [0.8, 0.16], [0.6, 0.0], [0.2, -0.05]],
 };
-const LOWER = {
+export const LOWER = {
   round: [[0, 0], [0.3, 0.02], [0.5, -0.12], [0.48, -0.32], [0.3, -0.38], [0.12, -0.25]],
   pointed: [[0, 0], [0.32, 0.02], [0.54, -0.16], [0.4, -0.36], [0.18, -0.3]],
   swallowtail: [[0, 0], [0.3, 0.02], [0.46, -0.15], [0.42, -0.3], [0.56, -0.64], [0.34, -0.44], [0.1, -0.25]],
@@ -72,6 +72,12 @@ export function flutterling(g, m) {
   return {
     body, head, wiggles, flaps, hover: 0.32,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
+    anchors: {
+      top: { parent: head, at: [0, 0.38, -0.06] },
+      back: { parent: body, at: [0, 1.0, -0.36], rot: [-0.5, 0, 0] },
+      rear: { parent: body, at: [0, 0.52, -0.42] },
+      neck: { parent: body, at: [0, 1.1, 0.02], r: 0.34 },
+    },
     charmAt: { parent: head, at: [0, 0.38, -0.16], rot: [-0.3, 0, 0] },
     height: 1.4 + 0.4 + 0.45,
   };

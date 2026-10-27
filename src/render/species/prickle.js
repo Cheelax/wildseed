@@ -60,6 +60,12 @@ export function prickle(g, m) {
   return {
     body, head, wiggles, flaps,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
+    anchors: {
+      top: { parent: head, at: [0, 0.4, -0.06] },
+      back: { parent: ball, at: [0, back[1] * 0.92, -0.16] },
+      rear: { parent: ball, at: [0, -0.18, -back[2] * 0.96] },
+      neck: { parent: head, at: [0, -0.3, -0.14], r: 0.42 },
+    },
     charmAt: { parent: ball, at: [0, back[1] + 0.18 * t.spikeLength, -0.1], rot: [0, 0, 0] },
     height: 0.62 + back[1] + 0.25 * t.spikeLength,
   };

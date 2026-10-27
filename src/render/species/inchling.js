@@ -46,6 +46,12 @@ export function inchling(g, m) {
   return {
     body, head, wiggles, flaps,
     face: { eyes: f.eyes, happy: f.happy, irises: f.irises, mouth: f.mouth },
+    anchors: {
+      top: { parent: head, at: [0, 0.42, -0.02] },
+      back: { parent: body, at: [0.1 * Math.sin(5 * 0.4), 0.72, -0.35] },
+      rear: { parent: body, at: [0, 0.24, -0.98] },
+      neck: { parent: head, at: [0, -0.38, -0.04], r: 0.38 },
+    },
     charmAt: { parent: body, at: [0.1 * Math.sin(5 * 0.15), 0.6, -0.65], rot: [0, 0, 0] },
     height: head.position.y + 0.4 + 0.3 * A,
   };
